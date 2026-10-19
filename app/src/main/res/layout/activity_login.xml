@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Screen 1 - Login (portrait).
+    Flat hierarchy: every widget is a direct child of one ConstraintLayout.
+    (TextInputLayout > TextInputEditText is the component's own required pair,
+    not a layout container.)
+
+    Responsiveness:
+    - guideFormStart / guideFormEnd are percentage Guidelines whose values come
+      from @dimen. Phones use 8% / 92%; values-sw600dp switches to 25% / 75%,
+      so the same file centers a narrower form on tablets.
+    - Fields also stop at @dimen/form_max_width (layout_constraintWidth_max).
+    - "New to TripPocket? Create an account" is a packed horizontal chain,
+      so the pair stays centered whatever the text length (e.g. translations).
+    - Landscape uses layout-land/activity_login.xml (two columns).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.login.LoginActivity">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideFormStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="@dimen/guide_form_start" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideFormEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="@dimen/guide_form_end" />
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideTop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        app:layout_constraintGuide_percent="@dimen/guide_login_top" />
+
+    <ImageView
+        android:id="@+id/ivLogo"
+        android:layout_width="@dimen/logo_size"
+        android:layout_height="@dimen/logo_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:contentDescription="@null"
+        android:padding="@dimen/space_lg"
+        android:src="@drawable/ic_flight"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/guideTop"
+        app:tint="?attr/colorOnPrimaryContainer" />
+
+    <TextView
+        android:id="@+id/tvAppName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:text="@string/app_name"
+        android:textAppearance="?attr/textAppearanceHeadlineMedium"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivLogo" />
+
+    <TextView
+        android:id="@+id/tvTagline"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:gravity="center"
+        android:text="@string/login_tagline"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/guideFormEnd"
+        app:layout_constraintStart_toStartOf="@id/guideFormStart"
+        app:layout_constraintTop_toBottomOf="@id/tvAppName" />
+
+    <!-- Email: error text is set from LoginActivity when validation fails. -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilEmail"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xxl"
+        android:hint="@string/login_email_hint"
+        app:errorEnabled="true"
+        app:layout_constraintEnd_toEndOf="@id/guideFormEnd"
+        app:layout_constraintStart_toStartOf="@id/guideFormStart"
+        app:layout_constraintTop_toBottomOf="@id/tvTagline"
+        app:layout_constraintWidth_max="@dimen/form_max_width"
+        app:startIconDrawable="@drawable/ic_email">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etEmail"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="emailAddress"
+            android:imeOptions="actionNext"
+            android:inputType="textEmailAddress" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Password: helper text explains the rule before the user makes a mistake;
+         the same slot shows the error after a failed attempt. -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilPassword"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:hint="@string/login_password_hint"
+        app:endIconMode="password_toggle"
+        app:errorEnabled="true"
+        app:helperText="@string/login_password_helper"
+        app:layout_constraintEnd_toEndOf="@id/tilEmail"
+        app:layout_constraintStart_toStartOf="@id/tilEmail"
+        app:layout_constraintTop_toBottomOf="@id/tilEmail"
+        app:startIconDrawable="@drawable/ic_lock">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etPassword"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints="password"
+            android:imeOptions="actionDone"
+            android:inputType="textPassword" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnForgotPassword"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/login_forgot_password"
+        app:layout_constraintEnd_toEndOf="@id/tilPassword"
+        app:layout_constraintTop_toBottomOf="@id/tilPassword" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnSignIn"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:minHeight="56dp"
+        android:text="@string/login_sign_in"
+        app:layout_constraintEnd_toEndOf="@id/tilEmail"
+        app:layout_constraintStart_toStartOf="@id/tilEmail"
+        app:layout_constraintTop_toBottomOf="@id/btnForgotPassword" />
+
+    <!-- Packed horizontal chain: tvNoAccount <-> btnCreateAccount -->
+    <TextView
+        android:id="@+id/tvNoAccount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/login_no_account"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBaseline_toBaselineOf="@id/btnCreateAccount"
+        app:layout_constraintEnd_toStartOf="@id/btnCreateAccount"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/guideFormStart" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnCreateAccount"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:text="@string/login_create_account"
+        app:layout_constraintEnd_toEndOf="@id/guideFormEnd"
+        app:layout_constraintStart_toEndOf="@id/tvNoAccount"
+        app:layout_constraintTop_toBottomOf="@id/btnSignIn" />
+
+    <TextView
+        android:id="@+id/tvFooter"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_xl"
+        android:gravity="center"
+        android:text="@string/login_footer"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/guideFormEnd"
+        app:layout_constraintStart_toStartOf="@id/guideFormStart" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

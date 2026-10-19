@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Bottom navigation of the Trip Detail screen: one tab per module. -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/nav_itinerary"
+        android:icon="@drawable/ic_list"
+        android:title="@string/nav_itinerary" />
+    <item
+        android:id="@+id/nav_weather"
+        android:icon="@drawable/ic_cloud"
+        android:title="@string/nav_weather" />
+    <item
+        android:id="@+id/nav_expenses"
+        android:icon="@drawable/ic_wallet"
+        android:title="@string/nav_expenses" />
+</menu>

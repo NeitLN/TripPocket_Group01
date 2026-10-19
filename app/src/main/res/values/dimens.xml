@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Spacing scale (4dp grid). Layouts only use these names, never raw dp,
+         so one change here re-spaces every screen. -->
+    <dimen name="space_xxs">2dp</dimen>
+    <dimen name="space_xs">4dp</dimen>
+    <dimen name="space_sm">8dp</dimen>
+    <dimen name="space_md">12dp</dimen>
+    <dimen name="space_lg">16dp</dimen>
+    <dimen name="space_xl">24dp</dimen>
+    <dimen name="space_xxl">32dp</dimen>
+
+    <!-- Screen edge margin; grows on tablets (values-sw600dp). -->
+    <dimen name="screen_margin">16dp</dimen>
+
+    <!-- Readable content width: lists and forms stop growing past this
+         (used with layout_constraintWidth_max). -->
+    <dimen name="content_max_width">720dp</dimen>
+    <dimen name="form_max_width">480dp</dimen>
+
+    <!-- Components -->
+    <dimen name="card_corner_radius">16dp</dimen>
+    <dimen name="card_elevation">1dp</dimen>
+    <dimen name="icon_size_sm">16dp</dimen>
+    <dimen name="icon_size_md">24dp</dimen>
+    <dimen name="icon_badge_size">48dp</dimen>
+    <dimen name="avatar_size">40dp</dimen>
+    <dimen name="logo_size">72dp</dimen>
+    <dimen name="empty_icon_size">96dp</dimen>
+    <dimen name="timeline_divider_width">2dp</dimen>
+    <dimen name="fab_clearance">88dp</dimen>
+    <dimen name="results_max_height">240dp</dimen>
+
+    <!-- Guideline positions (fractions of the parent).
+         Phones keep a narrow 8% gutter; values-sw600dp pulls the form
+         to the middle half of a tablet screen. -->
+    <item name="guide_form_start" format="float" type="dimen">0.08</item>
+    <item name="guide_form_end" format="float" type="dimen">0.92</item>
+    <item name="guide_login_top" format="float" type="dimen">0.10</item>
+</resources>

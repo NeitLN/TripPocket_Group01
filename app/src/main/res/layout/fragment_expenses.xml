@@ -1,0 +1,253 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Screen 5 - Expenses, Balances & Budget (portrait).
+
+    Budget summary is a flat panel: vSummaryPanel (a View with a rounded
+    background) is drawn behind sibling texts; its bottom follows
+    spaceSummaryBottom, which follows the category values. No nested card.
+
+    - Spent total + "of X planned": packed horizontal chain on the baseline.
+    - Food / Stay / Transport labels: spread_inside horizontal chain across
+      the panel; each value is start-aligned to its own label, so the three
+      columns re-space themselves on any width.
+    - MaterialButtonToggleGroup switches the list between expenses and
+      member balances + suggested payments (same RecyclerView).
+    - Landscape: layout-land/fragment_expenses.xml puts the summary in a left
+      column and the list in a right column.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.expenses.ExpensesFragment">
+
+    <!-- ===== Budget summary panel (flat) ===== -->
+    <View
+        android:id="@+id/vSummaryPanel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_md"
+        android:background="@drawable/bg_summary_panel"
+        app:layout_constraintBottom_toBottomOf="@id/spaceSummaryBottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/content_max_width" />
+
+    <TextView
+        android:id="@+id/tvSpentLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        android:text="@string/expenses_spent_label"
+        android:textAppearance="@style/TextAppearance.TripPocket.Overline"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
+        app:layout_constraintTop_toTopOf="@id/vSummaryPanel" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnShare"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:layout_marginEnd="@dimen/space_xs"
+        android:contentDescription="@string/expenses_share"
+        app:icon="@drawable/ic_share"
+        app:iconTint="?attr/colorOnPrimaryContainer"
+        app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
+        app:layout_constraintTop_toTopOf="@id/vSummaryPanel" />
+
+    <!-- Packed chain on one baseline: total -> planned -->
+    <TextView
+        android:id="@+id/tvSpentTotal"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceHeadlineMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintEnd_toStartOf="@id/tvPlanned"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/tvSpentLabel"
+        app:layout_constraintTop_toBottomOf="@id/tvSpentLabel"
+        tools:text="2,150,000 ₫" />
+
+    <TextView
+        android:id="@+id/tvPlanned"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_sm"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintBaseline_toBaselineOf="@id/tvSpentTotal"
+        app:layout_constraintEnd_toEndOf="@id/btnShare"
+        app:layout_constraintStart_toEndOf="@id/tvSpentTotal"
+        tools:text="of 2,950,000 ₫ planned" />
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressBudget"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_md"
+        android:max="100"
+        app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
+        app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
+        app:layout_constraintTop_toBottomOf="@id/tvSpentTotal"
+        app:trackCornerRadius="4dp"
+        app:trackThickness="8dp"
+        tools:progress="73" />
+
+    <!-- spread_inside chain: Food | Stay | Transport -->
+    <TextView
+        android:id="@+id/tvFoodLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        android:text="@string/expenses_category_food"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintEnd_toStartOf="@id/tvStayLabel"
+        app:layout_constraintHorizontal_chainStyle="spread_inside"
+        app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
+        app:layout_constraintTop_toBottomOf="@id/progressBudget" />
+
+    <TextView
+        android:id="@+id/tvStayLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/expenses_category_stay"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintEnd_toStartOf="@id/tvTransportLabel"
+        app:layout_constraintStart_toEndOf="@id/tvFoodLabel"
+        app:layout_constraintTop_toTopOf="@id/tvFoodLabel" />
+
+    <TextView
+        android:id="@+id/tvTransportLabel"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/space_xxl"
+        android:text="@string/expenses_category_transport"
+        android:textAppearance="?attr/textAppearanceLabelMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
+        app:layout_constraintStart_toEndOf="@id/tvStayLabel"
+        app:layout_constraintTop_toTopOf="@id/tvFoodLabel" />
+
+    <TextView
+        android:id="@+id/tvFoodValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.TripPocket.Money"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintStart_toStartOf="@id/tvFoodLabel"
+        app:layout_constraintTop_toBottomOf="@id/tvFoodLabel"
+        tools:text="440,000" />
+
+    <TextView
+        android:id="@+id/tvStayValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.TripPocket.Money"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintStart_toStartOf="@id/tvStayLabel"
+        app:layout_constraintTop_toBottomOf="@id/tvStayLabel"
+        tools:text="1,500,000" />
+
+    <TextView
+        android:id="@+id/tvTransportValue"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.TripPocket.Money"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintStart_toStartOf="@id/tvTransportLabel"
+        app:layout_constraintTop_toBottomOf="@id/tvTransportLabel"
+        tools:text="210,000" />
+
+    <Space
+        android:id="@+id/spaceSummaryBottom"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/space_lg"
+        app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
+        app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
+        app:layout_constraintTop_toBottomOf="@id/tvFoodValue" />
+
+    <!-- ===== List mode switch ===== -->
+    <com.google.android.material.button.MaterialButtonToggleGroup
+        android:id="@+id/toggleMode"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_md"
+        app:checkedButton="@id/btnModeExpenses"
+        app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
+        app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
+        app:layout_constraintTop_toBottomOf="@id/vSummaryPanel"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnModeExpenses"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/expenses_tab_list" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnModeBalances"
+            style="?attr/materialButtonOutlinedStyle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="@string/expenses_tab_balances" />
+    </com.google.android.material.button.MaterialButtonToggleGroup>
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvExpenses"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_sm"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/fab_clearance"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toggleMode"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:itemCount="4"
+        tools:listitem="@layout/item_expense" />
+
+    <!-- Empty state -->
+    <TextView
+        android:id="@+id/tvEmptyExpenses"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_xxl"
+        android:gravity="center"
+        android:text="@string/expenses_empty_body"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/toggleMode" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabAddExpense"
+        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/screen_margin"
+        android:text="@string/expenses_add"
+        app:icon="@drawable/ic_add"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

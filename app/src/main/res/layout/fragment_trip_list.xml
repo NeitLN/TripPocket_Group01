@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Screen 2 - Trip List.
+    - The RecyclerView fills the space between the summary line and the
+      bottom (0dp = match constraints) and stops at @dimen/content_max_width,
+      so on a tablet the list stays readable and centered.
+    - Column count comes from @integer/trip_grid_span: 1 on phones, 2 in
+      landscape and on tablets, 3 on landscape tablets.
+    - The empty state (icon + title + body) is a packed vertical chain,
+      toggled as one unit through a ConstraintLayout Group.
+    - The Extended FAB is anchored bottom/end; the list gets bottom padding
+      (@dimen/fab_clearance) with clipToPadding=false so the last card can
+      scroll above it.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.trips.TripListFragment">
+
+    <TextView
+        android:id="@+id/tvSummary"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:text="3 trips · 1 waiting for backup" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvTrips"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_sm"
+        android:clipToPadding="false"
+        android:paddingHorizontal="@dimen/space_sm"
+        android:paddingBottom="@dimen/fab_clearance"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvSummary"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_trip" />
+
+    <!-- Empty state: packed vertical chain centered in the screen -->
+    <ImageView
+        android:id="@+id/ivEmpty"
+        android:layout_width="@dimen/empty_icon_size"
+        android:layout_height="@dimen/empty_icon_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:contentDescription="@null"
+        android:padding="@dimen/space_xl"
+        android:src="@drawable/ic_luggage"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:tint="?attr/colorOnPrimaryContainer" />
+
+    <TextView
+        android:id="@+id/tvEmptyTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:text="@string/trips_empty_title"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyBody"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivEmpty" />
+
+    <TextView
+        android:id="@+id/tvEmptyBody"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_xxl"
+        android:layout_marginTop="@dimen/space_sm"
+        android:gravity="center"
+        android:text="@string/trips_empty_body"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvEmptyTitle"
+        app:layout_constraintWidth_max="@dimen/form_max_width" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="ivEmpty,tvEmptyTitle,tvEmptyBody" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabNewTrip"
+        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/screen_margin"
+        android:text="@string/trips_new"
+        app:icon="@drawable/ic_add"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

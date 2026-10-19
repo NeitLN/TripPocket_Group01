@@ -1,0 +1,66 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One Geocoding search result in the Weather search dropdown.
+    The whole row is the flat ConstraintLayout itself (no card), with a
+    ripple background and a 56dp minimum height for an easy touch target.
+    Name and region end where the coordinates begin.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:background="?attr/selectableItemBackground"
+    android:minHeight="56dp"
+    android:paddingHorizontal="@dimen/space_lg"
+    android:paddingVertical="@dimen/space_sm"
+    tools:ignore="Overdraw">
+
+    <ImageView
+        android:id="@+id/ivPin"
+        android:layout_width="@dimen/icon_size_md"
+        android:layout_height="@dimen/icon_size_md"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_place"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorPrimary" />
+
+    <TextView
+        android:id="@+id/tvResultName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        app:layout_constraintBottom_toTopOf="@id/tvResultRegion"
+        app:layout_constraintEnd_toStartOf="@id/tvResultCoords"
+        app:layout_constraintStart_toEndOf="@id/ivPin"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Đà Lạt" />
+
+    <TextView
+        android:id="@+id/tvResultRegion"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/tvResultName"
+        app:layout_constraintStart_toStartOf="@id/tvResultName"
+        app:layout_constraintTop_toBottomOf="@id/tvResultName"
+        tools:text="Lâm Đồng, Vietnam" />
+
+    <TextView
+        android:id="@+id/tvResultCoords"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="11.94, 108.44" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

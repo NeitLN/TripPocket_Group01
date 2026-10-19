@@ -1,0 +1,92 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Expense row (Screen 5, "Expenses" mode).
+    barrierAmountStart (direction=start) sits at the left edge of the wider of
+    the amount and the date. Title and meta end there, so "1,500,000 ₫" and
+    "300,000 ₫" rows both keep the text clear of the money column.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardExpense"
+    style="@style/Widget.Material3.CardView.Outlined"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/screen_margin"
+    android:layout_marginVertical="@dimen/space_xs"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="@dimen/card_corner_radius">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/space_lg">
+
+        <ImageView
+            android:id="@+id/ivCategory"
+            android:layout_width="@dimen/avatar_size"
+            android:layout_height="@dimen/avatar_size"
+            android:background="@drawable/bg_circle_tertiary_container"
+            android:contentDescription="@null"
+            android:padding="@dimen/space_sm"
+            android:src="@drawable/ic_restaurant"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnTertiaryContainer" />
+
+        <TextView
+            android:id="@+id/tvExpenseAmount"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.TripPocket.Money"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="300,000 ₫" />
+
+        <TextView
+            android:id="@+id/tvExpenseDate"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvExpenseAmount"
+            tools:text="24 Oct" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrierAmountStart"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="start"
+            app:constraint_referenced_ids="tvExpenseAmount,tvExpenseDate" />
+
+        <TextView
+            android:id="@+id/tvExpenseTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/space_md"
+            android:ellipsize="end"
+            android:maxLines="1"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            app:layout_constraintEnd_toStartOf="@id/barrierAmountStart"
+            app:layout_constraintStart_toEndOf="@id/ivCategory"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Dinner: lẩu gà lá é" />
+
+        <TextView
+            android:id="@+id/tvExpenseMeta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="@id/tvExpenseTitle"
+            app:layout_constraintStart_toStartOf="@id/tvExpenseTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvExpenseTitle"
+            tools:text="Paid by An · split 3 ways" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

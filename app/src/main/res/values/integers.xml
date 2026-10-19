@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Number of columns in the trip list (GridLayoutManager span). -->
+    <integer name="trip_grid_span">1</integer>
+</resources>

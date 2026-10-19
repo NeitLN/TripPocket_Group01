@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One day of the 16-day forecast (Screen 4).
+    Columns that must line up from row to row:
+    - barrierDateEnd (direction=end) sits after the wider of "Sat" / "24 Oct",
+      and the optional "Day 1" badge starts there.
+    - guideCondition (vertical Guideline at 42%) fixes the start of the
+      weather icon column, so icons align in every row whether or not the
+      row has a "Day 1" badge, on both phones and tablets.
+    - groupForecastValues hides icon / rain / temperatures together when a
+      trip day is beyond the 16-day range and "Forecast not available yet"
+      is shown instead.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="56dp"
+    android:paddingHorizontal="@dimen/space_sm"
+    android:paddingVertical="@dimen/space_sm">
+
+    <androidx.constraintlayout.widget.Guideline
+        android:id="@+id/guideCondition"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        app:layout_constraintGuide_percent="0.42" />
+
+    <TextView
+        android:id="@+id/tvDayName"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceTitleSmall"
+        app:layout_constraintBottom_toTopOf="@id/tvDate"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Sat" />
+
+    <TextView
+        android:id="@+id/tvDate"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvDayName"
+        tools:text="24 Oct" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierDateEnd"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="end"
+        app:constraint_referenced_ids="tvDayName,tvDate" />
+
+    <TextView
+        android:id="@+id/tvTripDay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:background="@drawable/bg_summary_panel"
+        android:paddingHorizontal="@dimen/space_sm"
+        android:paddingVertical="@dimen/space_xxs"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/barrierDateEnd"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Day 1" />
+
+    <ImageView
+        android:id="@+id/ivCondition"
+        android:layout_width="@dimen/icon_size_md"
+        android:layout_height="@dimen/icon_size_md"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_sunny"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="@id/guideCondition"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tint="?attr/colorSecondary" />
+
+    <TextView
+        android:id="@+id/tvRain"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_sm"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toEndOf="@id/ivCondition"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Rain 20%" />
+
+    <TextView
+        android:id="@+id/tvTempRange"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.TripPocket.Money"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="24° / 15°" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupForecastValues"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="ivCondition,tvRain,tvTempRange" />
+
+    <TextView
+        android:id="@+id/tvNotAvailable"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/weather_not_available"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textStyle="italic"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="@id/guideCondition"
+        app:layout_constraintTop_toTopOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

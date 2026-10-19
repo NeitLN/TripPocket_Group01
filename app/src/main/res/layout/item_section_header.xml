@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Section title inside a list, e.g. "Suggested payments" under the balances. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tvSectionTitle"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/screen_margin"
+    android:paddingTop="@dimen/space_lg"
+    android:paddingBottom="@dimen/space_xs"
+    android:textAppearance="@style/TextAppearance.TripPocket.Overline"
+    android:textColor="?attr/colorOnSurfaceVariant"
+    tools:text="Suggested payments" />

@@ -1,0 +1,175 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Screen 3 - Day-by-day Itinerary.
+    - TabLayout (scrollable) lists the trip days; a 10-day trip simply scrolls.
+    - Day header: the date title ends at the start of the "Packing" button.
+    - barrierTitle (direction=bottom) sits under the taller of the date and
+      the button, so the weather row below never collides with the button.
+    - Weather + estimated cost form a packed horizontal chain (bias 0) across
+      the full width: the cost always follows the weather text.
+    - barrierHeader (direction=bottom) sits under the weather row; the list
+      and the empty state start below it, whatever font size is used.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.itinerary.ItineraryFragment">
+
+    <com.google.android.material.tabs.TabLayout
+        android:id="@+id/tabDays"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:tabGravity="start"
+        app:tabMode="scrollable" />
+
+    <TextView
+        android:id="@+id/tvDayDate"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_lg"
+        android:layout_marginEnd="@dimen/space_sm"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        app:layout_constraintEnd_toStartOf="@id/btnChecklist"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tabDays"
+        tools:text="Saturday, 24 Oct" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnChecklist"
+        style="@style/Widget.Material3.Button.TonalButton.Icon"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/screen_margin"
+        app:icon="@drawable/ic_checklist"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvDayDate"
+        tools:text="Packing 5/12" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="tvDayDate,btnChecklist" />
+
+    <!-- Packed horizontal chain: weather -> estimated cost -->
+    <TextView
+        android:id="@+id/tvDayWeather"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xxs"
+        android:drawablePadding="@dimen/space_xs"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toStartOf="@id/tvDayCost"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/tvDayDate"
+        app:layout_constraintTop_toBottomOf="@id/barrierTitle"
+        tools:text="22° / 14° · Rain 20%" />
+
+    <TextView
+        android:id="@+id/tvDayCost"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:textAppearance="?attr/textAppearanceLabelLarge"
+        android:textColor="?attr/colorTertiary"
+        app:layout_constraintBaseline_toBaselineOf="@id/tvDayWeather"
+        app:layout_constraintEnd_toEndOf="@id/btnChecklist"
+        app:layout_constraintStart_toEndOf="@id/tvDayWeather"
+        tools:text="Est. 900,000 ₫" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:barrierMargin="@dimen/space_md"
+        app:constraint_referenced_ids="tvDayWeather,tvDayCost" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvActivities"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/fab_clearance"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barrierHeader"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:itemCount="4"
+        tools:listitem="@layout/item_activity" />
+
+    <!-- Empty state for a day without activities -->
+    <ImageView
+        android:id="@+id/ivEmptyDay"
+        android:layout_width="@dimen/empty_icon_size"
+        android:layout_height="@dimen/empty_icon_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:contentDescription="@null"
+        android:padding="@dimen/space_xl"
+        android:src="@drawable/ic_event"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyDayTitle"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barrierHeader"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:tint="?attr/colorOnPrimaryContainer" />
+
+    <TextView
+        android:id="@+id/tvEmptyDayTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:text="@string/itinerary_empty_title"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyDayBody"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/ivEmptyDay" />
+
+    <TextView
+        android:id="@+id/tvEmptyDayBody"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_xxl"
+        android:layout_marginTop="@dimen/space_sm"
+        android:layout_marginBottom="@dimen/fab_clearance"
+        android:gravity="center"
+        android:text="@string/itinerary_empty_body"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvEmptyDayTitle"
+        app:layout_constraintWidth_max="@dimen/form_max_width" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupEmptyDay"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="ivEmptyDay,tvEmptyDayTitle,tvEmptyDayBody" />
+
+    <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
+        android:id="@+id/fabAddActivity"
+        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_margin="@dimen/screen_margin"
+        android:text="@string/itinerary_add"
+        app:icon="@drawable/ic_add"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

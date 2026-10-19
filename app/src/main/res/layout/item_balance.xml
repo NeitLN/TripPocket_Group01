@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Member balance row (Screen 5, "Balances" mode). A flat row, no card.
+    barrierBalanceStart (direction=start) is placed at the wider of the
+    signed amount and its status word ("gets back" / "owes"), and the name
+    and paid/share detail end there.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/screen_margin"
+    android:paddingVertical="@dimen/space_md">
+
+    <TextView
+        android:id="@+id/tvAvatar"
+        android:layout_width="@dimen/avatar_size"
+        android:layout_height="@dimen/avatar_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:gravity="center"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="B" />
+
+    <TextView
+        android:id="@+id/tvBalanceAmount"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="@style/TextAppearance.TripPocket.Money"
+        android:textColor="@color/balance_positive"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="+780,000 ₫" />
+
+    <TextView
+        android:id="@+id/tvBalanceStatus"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvBalanceAmount"
+        tools:text="gets back" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierBalanceStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="tvBalanceAmount,tvBalanceStatus" />
+
+    <TextView
+        android:id="@+id/tvMemberName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        app:layout_constraintEnd_toStartOf="@id/barrierBalanceStart"
+        app:layout_constraintStart_toEndOf="@id/tvAvatar"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="Bình" />
+
+    <TextView
+        android:id="@+id/tvBalanceDetail"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tvMemberName"
+        app:layout_constraintStart_toStartOf="@id/tvMemberName"
+        app:layout_constraintTop_toBottomOf="@id/tvMemberName"
+        tools:text="Paid 1,500,000 ₫ · share 720,000 ₫" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

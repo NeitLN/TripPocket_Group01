@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Itinerary activity row (Screen 3).
+    Time column on the left, a thin timeline line, then the details.
+    - barrierTimeEnd (direction=end) is placed after the wider of the time
+      text and the reminder icon. The timeline line starts at the barrier, so
+      "07:00" and "17:30" rows line up even with a larger system font.
+    - The title ends where the cost begins (constraintEnd_toStartOf), so a
+      long title wraps instead of running under the price.
+    - The note is optional: when it is GONE the card simply gets shorter.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardActivity"
+    style="@style/Widget.Material3.CardView.Outlined"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/screen_margin"
+    android:layout_marginVertical="@dimen/space_xs"
+    android:clickable="true"
+    android:focusable="true"
+    app:cardCornerRadius="@dimen/card_corner_radius">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/space_lg">
+
+        <TextView
+            android:id="@+id/tvTime"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="@style/TextAppearance.TripPocket.Money"
+            android:textColor="?attr/colorPrimary"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="07:00" />
+
+        <ImageView
+            android:id="@+id/ivReminder"
+            android:layout_width="@dimen/icon_size_sm"
+            android:layout_height="@dimen/icon_size_sm"
+            android:layout_marginTop="@dimen/space_xs"
+            android:contentDescription="@string/content_desc_reminder"
+            android:src="@drawable/ic_alarm"
+            app:layout_constraintStart_toStartOf="@id/tvTime"
+            app:layout_constraintTop_toBottomOf="@id/tvTime"
+            app:tint="?attr/colorTertiary" />
+
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/barrierTimeEnd"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="end"
+            app:constraint_referenced_ids="tvTime,ivReminder" />
+
+        <View
+            android:id="@+id/vTimeline"
+            android:layout_width="@dimen/timeline_divider_width"
+            android:layout_height="0dp"
+            android:layout_marginStart="@dimen/space_md"
+            android:background="?attr/colorOutlineVariant"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintStart_toEndOf="@id/barrierTimeEnd"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:id="@+id/tvActivityTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/space_md"
+            android:textAppearance="?attr/textAppearanceTitleMedium"
+            app:layout_constraintEnd_toStartOf="@id/tvActivityCost"
+            app:layout_constraintStart_toEndOf="@id/vTimeline"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="Dinner: lẩu gà lá é" />
+
+        <TextView
+            android:id="@+id/tvActivityCost"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorTertiary"
+            app:layout_constraintBaseline_toBaselineOf="@id/tvActivityTitle"
+            app:layout_constraintEnd_toEndOf="parent"
+            tools:text="300,000 ₫" />
+
+        <TextView
+            android:id="@+id/tvActivityPlace"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/tvActivityTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvActivityTitle"
+            tools:text="Tao Ngộ, 5 Đường 3/4" />
+
+        <TextView
+            android:id="@+id/tvActivityNote"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:ellipsize="end"
+            android:maxLines="2"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/tvActivityTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvActivityPlace"
+            tools:text="Book a table for 3 before 18:00." />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

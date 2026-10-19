@@ -1,0 +1,335 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Screen 4 - Saved Places & Weather.
+
+    Flat "panel" technique: the rounded "today" panel is a plain View
+    (vTodayPanel) drawn BEHIND its texts. The texts are siblings constrained to
+    the panel's edges, and the panel's bottom is tied to spaceTodayBottom,
+    which sits under barrierToday (the lowest of icon / temperature / rain).
+    Result: a card look with zero nested layouts.
+
+    Other constraints:
+    - Last updated + "Offline copy" badge: packed horizontal chain, bias 0.
+    - barrierForecastTop (direction=bottom) sits under the panel OR under the
+      error row when it is visible, so the forecast list moves down only when
+      there is an error to show.
+    - Search results (rvResults / tvNoResults) are declared last and have
+      elevation, so they float over the screen like a dropdown. Their height
+      is wrap_content capped by layout_constraintHeight_max.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.weather.WeatherFragment">
+
+    <!-- Search: error state is used when the Geocoding call fails. -->
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilSearch"
+        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_md"
+        android:hint="@string/weather_search_hint"
+        app:endIconMode="clear_text"
+        app:errorEnabled="true"
+        app:helperText="@string/weather_search_helper"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        app:startIconDrawable="@drawable/ic_search">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etSearch"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionSearch"
+            android:inputType="textCapWords" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <TextView
+        android:id="@+id/tvSavedLabel"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:text="@string/weather_saved_places"
+        android:textAppearance="@style/TextAppearance.TripPocket.Overline"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tilSearch" />
+
+    <!-- Chips are created from the saved places at runtime; the two below are
+         only here so the layout preview shows realistic content. -->
+    <com.google.android.material.chip.ChipGroup
+        android:id="@+id/chipGroupPlaces"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tvSavedLabel"
+        app:selectionRequired="true"
+        app:singleSelection="true">
+
+        <com.google.android.material.chip.Chip
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:checked="true"
+            android:text="Đà Lạt"
+            tools:ignore="HardcodedText" />
+
+        <com.google.android.material.chip.Chip
+            style="@style/Widget.Material3.Chip.Filter"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Langbiang"
+            tools:ignore="HardcodedText" />
+    </com.google.android.material.chip.ChipGroup>
+
+    <!-- Shown instead of the panel + forecast when the trip has no saved place. -->
+    <TextView
+        android:id="@+id/tvNoPlaces"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xl"
+        android:gravity="center"
+        android:text="@string/weather_no_saved_places"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/chipGroupPlaces" />
+
+    <!-- ===== Today panel (flat) ===== -->
+    <View
+        android:id="@+id/vTodayPanel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_md"
+        android:background="@drawable/bg_today_panel"
+        app:layout_constraintBottom_toBottomOf="@id/spaceTodayBottom"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/chipGroupPlaces" />
+
+    <TextView
+        android:id="@+id/tvPlaceName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        app:layout_constraintEnd_toStartOf="@id/btnRefresh"
+        app:layout_constraintStart_toStartOf="@id/vTodayPanel"
+        app:layout_constraintTop_toTopOf="@id/vTodayPanel"
+        tools:text="Đà Lạt, Vietnam" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRefresh"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:layout_marginEnd="@dimen/space_xs"
+        android:contentDescription="@string/weather_refresh"
+        app:icon="@drawable/ic_refresh"
+        app:iconTint="?attr/colorOnSecondaryContainer"
+        app:layout_constraintEnd_toEndOf="@id/vTodayPanel"
+        app:layout_constraintTop_toTopOf="@id/vTodayPanel" />
+
+    <!-- Packed chain: "Last updated ..." -> "Offline copy" -->
+    <TextView
+        android:id="@+id/tvLastUpdated"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toStartOf="@id/tvOfflineBadge"
+        app:layout_constraintHorizontal_bias="0"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/tvPlaceName"
+        app:layout_constraintTop_toBottomOf="@id/tvPlaceName"
+        tools:text="Last updated 16 Oct, 14:05" />
+
+    <TextView
+        android:id="@+id/tvOfflineBadge"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_sm"
+        android:background="@drawable/bg_summary_panel"
+        android:paddingHorizontal="@dimen/space_sm"
+        android:paddingVertical="@dimen/space_xxs"
+        android:text="@string/weather_offline_copy"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintBaseline_toBaselineOf="@id/tvLastUpdated"
+        app:layout_constraintEnd_toEndOf="@id/btnRefresh"
+        app:layout_constraintStart_toEndOf="@id/tvLastUpdated" />
+
+    <ImageView
+        android:id="@+id/ivTodayIcon"
+        android:layout_width="@dimen/icon_badge_size"
+        android:layout_height="@dimen/icon_badge_size"
+        android:layout_marginTop="@dimen/space_md"
+        android:contentDescription="@null"
+        android:src="@drawable/ic_sunny"
+        app:layout_constraintStart_toStartOf="@id/tvPlaceName"
+        app:layout_constraintTop_toBottomOf="@id/tvLastUpdated"
+        app:tint="?attr/colorOnSecondaryContainer" />
+
+    <TextView
+        android:id="@+id/tvTodayTemp"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_md"
+        android:textAppearance="?attr/textAppearanceDisplaySmall"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        app:layout_constraintBottom_toBottomOf="@id/ivTodayIcon"
+        app:layout_constraintStart_toEndOf="@id/ivTodayIcon"
+        app:layout_constraintTop_toTopOf="@id/ivTodayIcon"
+        tools:text="24°" />
+
+    <TextView
+        android:id="@+id/tvTodayCondition"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginEnd="@dimen/space_lg"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        app:layout_constraintEnd_toEndOf="@id/vTodayPanel"
+        app:layout_constraintStart_toEndOf="@id/tvTodayTemp"
+        app:layout_constraintTop_toTopOf="@id/tvTodayTemp"
+        tools:text="Partly cloudy · 15° low" />
+
+    <TextView
+        android:id="@+id/tvTodayRain"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        app:layout_constraintEnd_toEndOf="@id/tvTodayCondition"
+        app:layout_constraintStart_toStartOf="@id/tvTodayCondition"
+        app:layout_constraintTop_toBottomOf="@id/tvTodayCondition"
+        tools:text="Rain 20%" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierToday"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="ivTodayIcon,tvTodayTemp,tvTodayRain" />
+
+    <Space
+        android:id="@+id/spaceTodayBottom"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/space_lg"
+        app:layout_constraintEnd_toEndOf="@id/vTodayPanel"
+        app:layout_constraintStart_toStartOf="@id/vTodayPanel"
+        app:layout_constraintTop_toBottomOf="@id/barrierToday" />
+
+    <!-- ===== Forecast error row (place kept, only the forecast failed) ===== -->
+    <TextView
+        android:id="@+id/tvForecastError"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_sm"
+        android:text="@string/weather_forecast_error"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorError"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/btnRetry"
+        app:layout_constraintStart_toStartOf="@id/vTodayPanel"
+        app:layout_constraintTop_toBottomOf="@id/vTodayPanel"
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRetry"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/weather_retry"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/tvForecastError"
+        app:layout_constraintEnd_toEndOf="@id/vTodayPanel"
+        app:layout_constraintTop_toTopOf="@id/tvForecastError"
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierForecastTop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:barrierMargin="@dimen/space_sm"
+        app:constraint_referenced_ids="vTodayPanel,tvForecastError,btnRetry" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvForecast"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:clipToPadding="false"
+        app:layout_constraintBottom_toTopOf="@id/tvAttribution"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/barrierForecastTop"
+        tools:itemCount="8"
+        tools:listitem="@layout/item_forecast_day" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupForecast"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:constraint_referenced_ids="vTodayPanel,tvPlaceName,btnRefresh,tvLastUpdated,ivTodayIcon,tvTodayTemp,tvTodayCondition,tvTodayRain,rvForecast" />
+
+    <TextView
+        android:id="@+id/tvAttribution"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="@dimen/space_sm"
+        android:text="@string/weather_attribution"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent" />
+
+    <!-- ===== Search dropdown (declared last = drawn on top) ===== -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvResults"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerHigh"
+        android:elevation="6dp"
+        android:visibility="gone"
+        app:layout_constrainedHeight="true"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintHeight_max="@dimen/results_max_height"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tilSearch"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_place_result" />
+
+    <TextView
+        android:id="@+id/tvNoResults"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerHigh"
+        android:elevation="6dp"
+        android:padding="@dimen/space_lg"
+        android:text="@string/weather_no_results"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tilSearch" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
