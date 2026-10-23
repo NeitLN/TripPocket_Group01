@@ -1,7 +1,13 @@
-package vn.edu.vlu.trippocket.data
+package vn.edu.vlu.trippocket.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import vn.edu.vlu.trippocket.data.local.MockData
+import vn.edu.vlu.trippocket.data.model.Expense
+import vn.edu.vlu.trippocket.data.model.ExpenseCategory
+import vn.edu.vlu.trippocket.data.model.Settlement
+import vn.edu.vlu.trippocket.data.model.SplitType
+import vn.edu.vlu.trippocket.data.model.TripMember
 
 class ExpenseCalculatorTest {
 

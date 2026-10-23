@@ -6,16 +6,14 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.MockData
-import vn.edu.vlu.trippocket.data.Trip
 import vn.edu.vlu.trippocket.databinding.ItemTripBinding
 import vn.edu.vlu.trippocket.util.Format
 import java.time.LocalDate
 import java.time.temporal.ChronoUnit
 
 class TripAdapter(
-    private val onClick: (Trip) -> Unit,
-) : ListAdapter<Trip, TripAdapter.ViewHolder>(DIFF) {
+    private val onClick: (TripCard) -> Unit,
+) : ListAdapter<TripCard, TripAdapter.ViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(
         ItemTripBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -26,8 +24,9 @@ class TripAdapter(
     inner class ViewHolder(private val binding: ItemTripBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(trip: Trip) {
+        fun bind(card: TripCard) {
             val context = binding.root.context
+            val trip = card.trip
             binding.tvTripName.text = trip.name
             binding.tvDestination.text = trip.destination
             binding.tvDates.text = Format.dateRange(trip.startDate, trip.endDate)
@@ -45,20 +44,19 @@ class TripAdapter(
                 else -> context.getString(R.string.trip_ongoing)
             }
 
-            val memberCount = MockData.membersOf(trip.tripId).size
-            binding.tvMembers.text =
-                context.resources.getQuantityString(R.plurals.trip_members, memberCount, memberCount)
-            binding.tvSpent.text =
-                context.getString(R.string.trip_spent, Format.vnd(MockData.spentTotal(trip.tripId)))
+            binding.tvMembers.text = context.resources.getQuantityString(
+                R.plurals.trip_members, card.memberCount, card.memberCount
+            )
+            binding.tvSpent.text = context.getString(R.string.trip_spent, Format.vnd(card.spent))
 
-            binding.cardTrip.setOnClickListener { onClick(trip) }
+            binding.cardTrip.setOnClickListener { onClick(card) }
         }
     }
 
     private companion object {
-        val DIFF = object : DiffUtil.ItemCallback<Trip>() {
-            override fun areItemsTheSame(old: Trip, new: Trip) = old.tripId == new.tripId
-            override fun areContentsTheSame(old: Trip, new: Trip) = old == new
+        val DIFF = object : DiffUtil.ItemCallback<TripCard>() {
+            override fun areItemsTheSame(old: TripCard, new: TripCard) = old.trip.tripId == new.trip.tripId
+            override fun areContentsTheSame(old: TripCard, new: TripCard) = old == new
         }
     }
 }

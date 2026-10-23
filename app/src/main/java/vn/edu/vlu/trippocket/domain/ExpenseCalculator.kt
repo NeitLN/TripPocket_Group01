@@ -1,4 +1,8 @@
-package vn.edu.vlu.trippocket.data
+package vn.edu.vlu.trippocket.domain
+
+import vn.edu.vlu.trippocket.data.model.Expense
+import vn.edu.vlu.trippocket.data.model.Settlement
+import vn.edu.vlu.trippocket.data.model.TripMember
 
 /**
  * Plain Kotlin (no Android imports) so it can be unit-tested on the JVM.

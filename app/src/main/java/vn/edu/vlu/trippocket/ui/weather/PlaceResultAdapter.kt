@@ -6,7 +6,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.Place
+import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.databinding.ItemPlaceResultBinding
 
 class PlaceResultAdapter(

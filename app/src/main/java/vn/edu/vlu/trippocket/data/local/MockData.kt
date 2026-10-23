@@ -1,13 +1,26 @@
-package vn.edu.vlu.trippocket.data
+package vn.edu.vlu.trippocket.data.local
 
+import vn.edu.vlu.trippocket.data.model.Expense
+import vn.edu.vlu.trippocket.data.model.ExpenseCategory
+import vn.edu.vlu.trippocket.data.model.ForecastDay
+import vn.edu.vlu.trippocket.data.model.ItineraryActivity
+import vn.edu.vlu.trippocket.data.model.Place
+import vn.edu.vlu.trippocket.data.model.SplitType
+import vn.edu.vlu.trippocket.data.model.SyncStatus
+import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.model.TripMember
+import vn.edu.vlu.trippocket.data.model.WeatherCondition
+import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import java.text.Normalizer
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 
 /**
- * In-memory sample data for Milestone 1 (layouts only).
- * Milestone 2 replaces this object with Room DAOs and the Open-Meteo API.
+ * In-memory sample data, the only static data source of the app.
+ * Only the repositories in data/repository read it; the screens get it
+ * through their ViewModels. Later milestones replace it with Room DAOs
+ * and the Open-Meteo API.
  *
  * The Đà Lạt trip follows the demo scenario in the proposal: three members,
  * An pays 300,000 ₫ for a dinner shared by three, so each share is 100,000 ₫.

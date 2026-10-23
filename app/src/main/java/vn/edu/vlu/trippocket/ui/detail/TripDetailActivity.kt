@@ -4,10 +4,16 @@ import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.os.bundleOf
 import androidx.fragment.app.Fragment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.MockData
 import vn.edu.vlu.trippocket.databinding.ActivityTripDetailBinding
 import vn.edu.vlu.trippocket.ui.expenses.ExpensesFragment
 import vn.edu.vlu.trippocket.ui.itinerary.ItineraryFragment
@@ -22,7 +28,7 @@ import vn.edu.vlu.trippocket.util.applySystemBarPadding
 class TripDetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTripDetailBinding
-    private lateinit var tripId: String
+    private val viewModel: TripDetailViewModel by viewModels { TripDetailViewModel.Factory }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -32,22 +38,26 @@ class TripDetailActivity : AppCompatActivity() {
         // BottomNavigationView pads itself for the gesture/navigation bar.
         binding.root.applySystemBarPadding(bottom = false)
 
-        val trip = intent.getStringExtra(EXTRA_TRIP_ID)?.let(MockData::trip)
-        if (trip == null) {
+        if (viewModel.trip.value == null) {
             finish()
             return
         }
-        tripId = trip.tripId
-        binding.toolbar.title = trip.name
-        binding.toolbar.subtitle = Format.dateRange(trip.startDate, trip.endDate)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-
         binding.bottomNav.setOnItemSelectedListener { item ->
             show(item.itemId)
             true
         }
         // On rotation the FragmentManager restores the current tab by itself.
         if (savedInstanceState == null) show(R.id.nav_itinerary)
+
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.trip.filterNotNull().collect { trip ->
+                    binding.toolbar.title = trip.name
+                    binding.toolbar.subtitle = Format.dateRange(trip.startDate, trip.endDate)
+                }
+            }
+        }
     }
 
     private fun show(menuId: Int) {
@@ -56,21 +66,15 @@ class TripDetailActivity : AppCompatActivity() {
             R.id.nav_expenses -> ExpensesFragment()
             else -> ItineraryFragment()
         }
-        fragment.arguments = Bundle().apply { putString(ARG_TRIP_ID, tripId) }
+        // Each module's ViewModel reads the id back from its SavedStateHandle.
+        fragment.arguments = bundleOf(ARG_TRIP_ID to viewModel.tripId)
         supportFragmentManager.beginTransaction()
             .replace(R.id.detailContainer, fragment)
             .commit()
     }
 
     companion object {
-        const val ARG_TRIP_ID = "trip_id"
-        private const val EXTRA_TRIP_ID = "extra_trip_id"
-
         fun newIntent(context: Context, tripId: String): Intent =
-            Intent(context, TripDetailActivity::class.java).putExtra(EXTRA_TRIP_ID, tripId)
+            Intent(context, TripDetailActivity::class.java).putExtra(ARG_TRIP_ID, tripId)
     }
 }
-
-/** Trip id passed to every module fragment by [TripDetailActivity]. */
-val Fragment.tripId: String
-    get() = requireArguments().getString(TripDetailActivity.ARG_TRIP_ID).orEmpty()

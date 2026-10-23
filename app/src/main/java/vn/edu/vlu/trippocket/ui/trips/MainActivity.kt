@@ -3,6 +3,7 @@ package vn.edu.vlu.trippocket.ui.trips
 import android.content.Intent
 import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.ActivityMainBinding
@@ -14,6 +15,9 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityMainBinding
 
+    // Same instance as TripListFragment's activityViewModels().
+    private val tripListViewModel: TripListViewModel by viewModels { TripListViewModel.Factory }
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -24,7 +28,7 @@ class MainActivity : AppCompatActivity() {
         binding.toolbar.setOnMenuItemClickListener { item ->
             when (item.itemId) {
                 R.id.action_toggle_empty -> {
-                    tripList()?.toggleEmptyPreview()
+                    tripListViewModel.toggleEmptyPreview()
                     true
                 }
                 R.id.action_sign_out -> {
@@ -36,7 +40,4 @@ class MainActivity : AppCompatActivity() {
             }
         }
     }
-
-    private fun tripList() =
-        supportFragmentManager.findFragmentById(R.id.fragmentContainer) as? TripListFragment
 }

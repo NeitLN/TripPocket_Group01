@@ -1,33 +1,45 @@
 package vn.edu.vlu.trippocket.ui.trips
 
 import android.os.Bundle
+import android.view.LayoutInflater
 import android.view.View
+import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
+import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.MockData
-import vn.edu.vlu.trippocket.data.SyncStatus
 import vn.edu.vlu.trippocket.databinding.FragmentTripListBinding
 import vn.edu.vlu.trippocket.ui.detail.TripDetailActivity
 
 /** Screen 2: the user's trips. */
-class TripListFragment : Fragment(R.layout.fragment_trip_list) {
+class TripListFragment : Fragment() {
 
     private var _binding: FragmentTripListBinding? = null
     private val binding get() = _binding!!
 
-    private val adapter = TripAdapter { trip ->
-        startActivity(TripDetailActivity.newIntent(requireContext(), trip.tripId))
+    private val viewModel: TripListViewModel by activityViewModels { TripListViewModel.Factory }
+
+    override fun onCreateView(
+        inflater: LayoutInflater,
+        container: ViewGroup?,
+        savedInstanceState: Bundle?,
+    ): View {
+        _binding = FragmentTripListBinding.inflate(inflater, container, false)
+        return binding.root
     }
-    private var showEmptyPreview = false
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        _binding = FragmentTripListBinding.bind(view)
-        showEmptyPreview = savedInstanceState?.getBoolean(KEY_EMPTY) ?: false
+        val adapter = TripAdapter { card ->
+            startActivity(TripDetailActivity.newIntent(requireContext(), card.trip.tripId))
+        }
 
         // 1 column on phones, 2 in landscape / on tablets (res/values*/integers.xml).
         binding.rvTrips.layoutManager =
@@ -45,39 +57,29 @@ class TripListFragment : Fragment(R.layout.fragment_trip_list) {
                 .setAnchorView(it)
                 .show()
         }
-        render()
+
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                viewModel.uiState.collect { state ->
+                    adapter.submitList(state.trips)
+                    render(state)
+                }
+            }
+        }
     }
 
-    fun toggleEmptyPreview() {
-        showEmptyPreview = !showEmptyPreview
-        render()
-    }
-
-    private fun render() {
-        val trips = if (showEmptyPreview) emptyList() else MockData.trips
-        adapter.submitList(trips)
-        binding.rvTrips.isVisible = trips.isNotEmpty()
-        binding.groupEmpty.isVisible = trips.isEmpty()
-        binding.tvSummary.isVisible = trips.isNotEmpty()
+    private fun render(state: TripListUiState) {
+        val hasTrips = state.trips.isNotEmpty()
+        binding.rvTrips.isVisible = hasTrips
+        binding.groupEmpty.isVisible = !hasTrips
+        binding.tvSummary.isVisible = hasTrips
         binding.tvSummary.text = resources.getQuantityString(
-            R.plurals.trips_summary,
-            trips.size,
-            trips.size,
-            trips.count { it.syncStatus != SyncStatus.SYNCED },
+            R.plurals.trips_summary, state.trips.size, state.trips.size, state.unsyncedCount
         )
-    }
-
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        outState.putBoolean(KEY_EMPTY, showEmptyPreview)
     }
 
     override fun onDestroyView() {
         super.onDestroyView()
         _binding = null
-    }
-
-    private companion object {
-        const val KEY_EMPTY = "show_empty_preview"
     }
 }

@@ -7,31 +7,8 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.ForecastDay
-import vn.edu.vlu.trippocket.data.Trip
 import vn.edu.vlu.trippocket.databinding.ItemForecastDayBinding
 import vn.edu.vlu.trippocket.util.Format
-import java.time.LocalDate
-
-/** One forecast row; [forecast] is null for a trip day beyond the 16-day range. */
-data class ForecastRow(val date: LocalDate, val tripDay: Int?, val forecast: ForecastDay?) {
-    companion object {
-        fun build(forecast: List<ForecastDay>, trip: Trip): List<ForecastRow> {
-            fun tripDayOf(date: LocalDate): Int? =
-                if (date < trip.startDate || date > trip.endDate) null
-                else (date.toEpochDay() - trip.startDate.toEpochDay()).toInt() + 1
-
-            val rows = forecast.map { ForecastRow(it.date, tripDayOf(it.date), it) }
-            // Trip days after the last forecast day: "Forecast not available yet".
-            val lastDate = forecast.last().date
-            val missing = (0 until trip.dayCount)
-                .map(trip::dateOfDay)
-                .filter { it > lastDate }
-                .map { ForecastRow(it, tripDayOf(it), null) }
-            return rows + missing
-        }
-    }
-}
 
 class ForecastAdapter : ListAdapter<ForecastRow, ForecastAdapter.ViewHolder>(DIFF) {
 

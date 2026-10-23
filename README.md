@@ -1,4 +1,4 @@
-# TripPocket: Milestone 1 (Wireframes & Adaptive XML Layout)
+# TripPocket
 
 Group 01, Mobile Application Programming (261_72ITSE30603), Văn Lang University.
 
@@ -10,8 +10,40 @@ Group 01, Mobile Application Programming (261_72ITSE30603), Văn Lang University
 | Võ Hoàng Minh | 2474802010242 | Expenses & Budget |
 
 TripPocket is an offline-first trip planner: itinerary, packing list, weather for saved places and shared expenses.
-Milestone 1 covers the five core screens as flat ConstraintLayout XML layouts. The Kotlin code only binds mock
-data (`data/MockData.kt`) so every layout state can be run; Room, Retrofit and Firebase come in later milestones.
+Milestone 1 covers the five core screens as flat ConstraintLayout XML layouts. The app still runs on mock
+data (`data/local/MockData.kt`) so every layout state can be shown; Room, Retrofit and Firebase come in later
+milestones. The code follows Model – View – ViewModel (see [Architecture](#architecture-mvvm)).
+
+## Architecture (MVVM)
+
+```
+vn.edu.vlu.trippocket
+├── data                      Model
+│   ├── model                 Trip, TripMember, ItineraryActivity, Expense, Place, ForecastDay, ...
+│   ├── local                 MockData: the only static data source (Room DAOs later)
+│   └── repository            TripRepository, WeatherRepository: what the ViewModels call
+├── domain                    ExpenseCalculator, LoginValidator: pure Kotlin rules, unit-tested
+├── ui                        View + ViewModel, one package per screen
+│   ├── login                 LoginActivity, LoginViewModel
+│   ├── trips                 MainActivity, TripListFragment, TripAdapter, TripListViewModel
+│   ├── detail                TripDetailActivity, TripDetailViewModel, TripArgs
+│   ├── itinerary             ItineraryFragment, ActivityAdapter, ItineraryViewModel
+│   ├── weather               WeatherFragment, PlaceResultAdapter, ForecastAdapter, WeatherViewModel
+│   └── expenses              ExpensesFragment, ExpenseAdapters, ExpensesViewModel
+└── util                      Format, Insets
+```
+
+| Rule | How it is done |
+|---|---|
+| No `findViewById` | View Binding in every Activity, Fragment and Adapter, including the inflated weather chip (`ViewPlaceChipBinding`). |
+| Static data in the ViewModel layer | Only the repositories read `MockData`. Each ViewModel turns it into a `XxxUiState` data class exposed as a `StateFlow`; adapters receive ready-made rows (`TripCard`, `ExpenseRow`, `MemberBalance`, `SettlementRow`, `ForecastRow`). |
+| ViewModels hold no View / Activity / Fragment / Context | Text that needs resources is exposed as `@StringRes` ids or raw values and formatted by the View. The trip id comes from `SavedStateHandle` (intent extras / fragment arguments). `ViewModelTest` runs every ViewModel on the plain JVM. |
+| Lifecycle-aware observation | Fragments: `viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED)`. Activities: `repeatOnLifecycle` on the activity's lifecycle. |
+| No leaked bindings | Fragments inflate in `onCreateView` and set `_binding = null` in `onDestroyView`; adapters are created per view, not kept in fields. |
+
+UI state that must survive rotation (selected day, Expenses/Balances mode, empty-state preview) is kept in
+`SavedStateHandle`. MainActivity and TripListFragment share one `TripListViewModel` (`activityViewModels()`)
+so the overflow menu no longer looks the fragment up.
 
 ## Screens and layout files
 
@@ -55,4 +87,4 @@ Open the folder in Android Studio and run the `app` configuration, or:
 ```
 
 Unit tests: `ExpenseCalculatorTest` (equal split with leftover dong, the 300,000 VND demo from the proposal,
-balances sum to zero) and `LoginValidatorTest`.
+balances sum to zero), `LoginValidatorTest` and `ViewModelTest` (every screen's ViewModel on the plain JVM).

@@ -1,4 +1,4 @@
-package vn.edu.vlu.trippocket.ui.login
+package vn.edu.vlu.trippocket.domain
 
 import androidx.annotation.StringRes
 import vn.edu.vlu.trippocket.R

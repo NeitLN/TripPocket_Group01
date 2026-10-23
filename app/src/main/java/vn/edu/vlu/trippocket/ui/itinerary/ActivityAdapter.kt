@@ -7,7 +7,7 @@ import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.ItineraryActivity
+import vn.edu.vlu.trippocket.data.model.ItineraryActivity
 import vn.edu.vlu.trippocket.databinding.ItemActivityBinding
 import vn.edu.vlu.trippocket.util.Format
 

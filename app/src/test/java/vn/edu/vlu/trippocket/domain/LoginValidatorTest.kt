@@ -1,4 +1,4 @@
-package vn.edu.vlu.trippocket.ui.login
+package vn.edu.vlu.trippocket.domain
 
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull

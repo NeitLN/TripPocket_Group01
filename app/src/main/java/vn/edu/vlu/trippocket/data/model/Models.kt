@@ -1,4 +1,4 @@
-package vn.edu.vlu.trippocket.data
+package vn.edu.vlu.trippocket.data.model
 
 import androidx.annotation.DrawableRes
 import androidx.annotation.StringRes
