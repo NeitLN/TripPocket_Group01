@@ -2,17 +2,21 @@
 
 Group 01, Mobile Application Programming (261_72ITSE30603), Văn Lang University.
 
-| Member | Student ID | Screen |
-|---|---|---|
-| Võ Việt Tiến (leader) | 2474802010391 | Login, Trip List |
-| Đỗ Quốc Bảo | 2474802015084 | Itinerary |
-| Bùi Duy Anh | 2474802010525 | Weather & Saved Places |
-| Võ Hoàng Minh | 2474802010242 | Expenses & Budget |
+## Task assignment (Milestone 2)
+
+| | Võ Việt Tiến (leader) | Đỗ Quốc Bảo | Bùi Duy Anh | Võ Hoàng Minh |
+|---|---|---|---|---|
+| Student ID | 2474802010391 | 2474802015084 | 2474802010525 | 2474802010242 |
+| Screen | Login, Trip List | Itinerary | Weather & Saved Places | Expenses & Budget |
+| ViewModel | `LoginViewModel`, `TripListViewModel`, `TripDetailViewModel` | `ItineraryViewModel` | `WeatherViewModel` | `ExpensesViewModel` |
+| Model / domain | `TripRepository`, `LoginValidator` | `TripRepository` (itinerary queries) | `WeatherRepository` | `ExpenseCalculator` |
+| View Binding | `LoginActivity`, `MainActivity`, `TripDetailActivity`, `TripListFragment`, `TripAdapter` | `ItineraryFragment`, `ActivityAdapter` | `WeatherFragment`, `PlaceResultAdapter`, `ForecastAdapter`, `view_place_chip` | `ExpensesFragment`, `ExpenseAdapters` |
 
 TripPocket is an offline-first trip planner: itinerary, packing list, weather for saved places and shared expenses.
-Milestone 1 covers the five core screens as flat ConstraintLayout XML layouts. The app still runs on mock
-data (`data/local/MockData.kt`) so every layout state can be shown; Room, Retrofit and Firebase come in later
-milestones. The code follows Model – View – ViewModel (see [Architecture](#architecture-mvvm)).
+Milestone 1 built the five core screens as flat ConstraintLayout XML layouts. Milestone 2 refactors the source
+code to Model – View – ViewModel with View Binding (see [Architecture](#architecture-mvvm)). The app still runs on
+mock data (`data/local/MockData.kt`) so every layout state can be shown; Room, Retrofit and Firebase come in later
+milestones.
 
 ## Architecture (MVVM)
 
