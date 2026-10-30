@@ -9,6 +9,22 @@
     <fragment
         android:id="@+id/expensesFragment"
         android:name="vn.edu.vlu.trippocket.ui.expenses.ExpensesFragment"
-        android:label="@string/nav_expenses" />
+        android:label="@string/nav_expenses">
+        <action
+            android:id="@+id/action_expenses_to_form"
+            app:destination="@id/expenseFormFragment" />
+    </fragment>
+
+    <!-- E2: add (no expenseId) or edit (expenseId of the row). -->
+    <fragment
+        android:id="@+id/expenseFormFragment"
+        android:name="vn.edu.vlu.trippocket.ui.expenses.ExpenseFormFragment"
+        android:label="@string/expense_form_add">
+        <argument
+            android:name="expenseId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
 
 </navigation>
