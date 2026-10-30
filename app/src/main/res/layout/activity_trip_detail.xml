@@ -2,7 +2,7 @@
 <!--
     Trip Detail host: top app bar + fragment area + bottom navigation.
     The fragment area is constrained between the toolbar and the bottom bar
-    (0dp height), so each module fragment (Itinerary / Weather / Expenses)
+    (0dp height), so each module fragment (Itinerary / Checklist / Weather / Expenses)
     always gets exactly the space left over on any screen height.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -25,8 +25,11 @@
         tools:subtitle="24 Oct - 27 Oct 2026"
         tools:title="Đà Lạt Getaway" />
 
+    <!-- NavHostFragment without app:navGraph: TripDetailActivity sets nav_trip_detail
+         once the trip is known to belong to the signed-in account. -->
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/detailContainer"
+        android:name="androidx.navigation.fragment.NavHostFragment"
         android:layout_width="0dp"
         android:layout_height="0dp"
         app:layout_constraintBottom_toTopOf="@id/bottomNav"

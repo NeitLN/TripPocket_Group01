@@ -45,6 +45,7 @@
 
     <!-- Trip detail / bottom navigation -->
     <string name="nav_itinerary">Itinerary</string>
+    <string name="nav_checklist">Checklist</string>
     <string name="nav_weather">Weather</string>
     <string name="nav_expenses">Expenses</string>
     <string name="content_desc_back">Back</string>

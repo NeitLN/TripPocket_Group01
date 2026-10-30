@@ -1,5 +1,6 @@
 package vn.edu.vlu.trippocket.ui.itinerary
 
+import vn.edu.vlu.trippocket.appContainer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -11,7 +12,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.ItineraryActivity
-import vn.edu.vlu.trippocket.data.repository.TripRepository
+import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.LocalDate
@@ -33,7 +34,7 @@ data class ItineraryUiState(
 /** Screen 3: day-by-day itinerary. */
 class ItineraryViewModel(
     private val savedStateHandle: SavedStateHandle,
-    private val tripRepository: TripRepository,
+    private val tripRepository: SampleTripRepository,
     weatherRepository: WeatherRepository,
 ) : ViewModel() {
 
@@ -73,7 +74,7 @@ class ItineraryViewModel(
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                ItineraryViewModel(createSavedStateHandle(), TripRepository(), WeatherRepository())
+                ItineraryViewModel(createSavedStateHandle(), appContainer().sampleTripRepository, appContainer().weatherRepository)
             }
         }
     }

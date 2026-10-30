@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owner: Bảo. Add this module's screens here. The trip id is not a nav argument:
+     use tripViewModels { ... } (ui/detail/TripArgs.kt). -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_checklist"
+    app:startDestination="@id/checklistFragment">
+
+    <fragment
+        android:id="@+id/checklistFragment"
+        android:name="vn.edu.vlu.trippocket.ui.checklist.ChecklistFragment"
+        android:label="@string/nav_checklist" />
+
+</navigation>

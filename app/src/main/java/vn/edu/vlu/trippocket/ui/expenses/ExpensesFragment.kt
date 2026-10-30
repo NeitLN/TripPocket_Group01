@@ -7,7 +7,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -26,7 +26,7 @@ class ExpensesFragment : Fragment() {
     private var _binding: FragmentExpensesBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: ExpensesViewModel by viewModels { ExpensesViewModel.Factory }
+    private val viewModel: ExpensesViewModel by tripViewModels { ExpensesViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,

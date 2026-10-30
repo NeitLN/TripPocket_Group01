@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owner: Tiến. Only includes the module graphs; each module adds its own screens
+     (forms, dialogs) to its own nav_<module>.xml. -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_trip_detail"
+    app:startDestination="@id/nav_itinerary">
+
+    <include app:graph="@navigation/nav_itinerary" />
+    <include app:graph="@navigation/nav_checklist" />
+    <include app:graph="@navigation/nav_weather" />
+    <include app:graph="@navigation/nav_expenses" />
+
+</navigation>

@@ -1,5 +1,6 @@
 package vn.edu.vlu.trippocket.ui.expenses
 
+import vn.edu.vlu.trippocket.appContainer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -13,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import vn.edu.vlu.trippocket.data.model.Expense
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.TripMember
-import vn.edu.vlu.trippocket.data.repository.TripRepository
+import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import vn.edu.vlu.trippocket.util.Format
@@ -46,7 +47,7 @@ data class ExpensesUiState(
 /** Screen 5: budget summary, expenses, member balances and suggested payments. */
 class ExpensesViewModel(
     private val savedStateHandle: SavedStateHandle,
-    repository: TripRepository,
+    repository: SampleTripRepository,
 ) : ViewModel() {
 
     private val trip = repository.trip(savedStateHandle[ARG_TRIP_ID] ?: "")
@@ -111,7 +112,7 @@ class ExpensesViewModel(
         private const val KEY_BALANCES = "show_balances"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer { ExpensesViewModel(createSavedStateHandle(), TripRepository()) }
+            initializer { ExpensesViewModel(createSavedStateHandle(), appContainer().sampleTripRepository) }
         }
     }
 }

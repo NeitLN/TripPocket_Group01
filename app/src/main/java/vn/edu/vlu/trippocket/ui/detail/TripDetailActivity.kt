@@ -6,29 +6,28 @@ import android.os.Bundle
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.os.bundleOf
-import androidx.fragment.app.Fragment
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
-import kotlinx.coroutines.flow.filterNotNull
+import androidx.navigation.NavController
+import androidx.navigation.fragment.NavHostFragment
+import androidx.navigation.ui.setupWithNavController
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.ActivityTripDetailBinding
-import vn.edu.vlu.trippocket.ui.expenses.ExpensesFragment
-import vn.edu.vlu.trippocket.ui.itinerary.ItineraryFragment
-import vn.edu.vlu.trippocket.ui.weather.WeatherFragment
 import vn.edu.vlu.trippocket.util.Format
 import vn.edu.vlu.trippocket.util.applySystemBarPadding
 
 /**
- * Trip detail: one bottom-navigation tab per module
- * (Screen 3 Itinerary, Screen 4 Weather, Screen 5 Expenses).
+ * Trip detail: one bottom-navigation tab per module. Each tab is a nested graph owned by
+ * its module (res/navigation/nav_<module>.xml), included in nav_trip_detail.xml.
  */
 class TripDetailActivity : AppCompatActivity() {
 
     private lateinit var binding: ActivityTripDetailBinding
     private val viewModel: TripDetailViewModel by viewModels { TripDetailViewModel.Factory }
+    private lateinit var navController: NavController
+    private var graphSet = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -37,40 +36,36 @@ class TripDetailActivity : AppCompatActivity() {
         setContentView(binding.root)
         // BottomNavigationView pads itself for the gesture/navigation bar.
         binding.root.applySystemBarPadding(bottom = false)
-
-        if (viewModel.trip.value == null) {
-            finish()
-            return
-        }
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
-        binding.bottomNav.setOnItemSelectedListener { item ->
-            show(item.itemId)
-            true
-        }
-        // On rotation the FragmentManager restores the current tab by itself.
-        if (savedInstanceState == null) show(R.id.nav_itinerary)
+
+        navController = (supportFragmentManager.findFragmentById(R.id.detailContainer) as NavHostFragment).navController
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
-                viewModel.trip.filterNotNull().collect { trip ->
-                    binding.toolbar.title = trip.name
-                    binding.toolbar.subtitle = Format.dateRange(trip.startDate, trip.endDate)
+                viewModel.gate.collect { gate ->
+                    when (gate) {
+                        TripGate.Loading -> Unit
+                        TripGate.NotFound -> finish()
+                        is TripGate.Ready -> {
+                            binding.toolbar.title = gate.trip.name
+                            binding.toolbar.subtitle = Format.dateRange(gate.trip.startDate, gate.trip.endDate)
+                            showTabs()
+                        }
+                    }
                 }
             }
         }
     }
 
-    private fun show(menuId: Int) {
-        val fragment: Fragment = when (menuId) {
-            R.id.nav_weather -> WeatherFragment()
-            R.id.nav_expenses -> ExpensesFragment()
-            else -> ItineraryFragment()
-        }
-        // Each module's ViewModel reads the id back from its SavedStateHandle.
-        fragment.arguments = bundleOf(ARG_TRIP_ID to viewModel.tripId)
-        supportFragmentManager.beginTransaction()
-            .replace(R.id.detailContainer, fragment)
-            .commit()
+    /**
+     * The tabs only start once the trip is known to belong to the signed-in account. After
+     * recreation, setting the graph again restores the saved back stack of every tab.
+     */
+    private fun showTabs() {
+        if (graphSet) return
+        graphSet = true
+        navController.setGraph(R.navigation.nav_trip_detail)
+        binding.bottomNav.setupWithNavController(navController)
     }
 
     companion object {

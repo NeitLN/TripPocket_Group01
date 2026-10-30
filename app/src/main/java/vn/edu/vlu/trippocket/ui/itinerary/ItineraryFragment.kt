@@ -6,7 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -24,7 +24,7 @@ class ItineraryFragment : Fragment() {
     private var _binding: FragmentItineraryBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: ItineraryViewModel by viewModels { ItineraryViewModel.Factory }
+    private val viewModel: ItineraryViewModel by tripViewModels { ItineraryViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,
