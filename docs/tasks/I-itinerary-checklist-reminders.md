@@ -1,7 +1,11 @@
 # I — Itinerary, Checklist & Reminders
-Feature: I1–I5 · Giao cho: Đỗ Quốc Bảo · Nhánh: `feature/bao-<feature>`
+Feature: I1–I5 · Chủ module: Đỗ Quốc Bảo · Nhánh: `feature/bao-<feature>`
 Phụ thuộc: F0 (chặn: bắt đầu phần Room); W3 (chặn: tích hợp phần thời tiết từng ngày); A1 (chặn: tích hợp I5)
 Người tích hợp: Tiến · Review lượt đầu: Minh
+
+> **Xoay vòng (xem ROADMAP "Xoay vòng"):** mỗi tính năng dưới đây ghi rõ **người làm**. Người làm tự commit trên
+> nhánh `feature/<tên>-<ID>` bằng tài khoản của mình; chủ module review lượt đầu, Tiến duyệt cuối. Làm ở module
+> người khác thì hỏi chủ module về contract trước khi code; được sửa file cần cho tính năng đó.
 
 Đọc trước: proposal 3.2, 4.2, 6.1, 6.2; `docs/ARCHITECTURE.md` (thời gian, khuôn ghi, thứ tự hoạt động, tài khoản).
 
@@ -33,17 +37,17 @@ Người tích hợp: Tiến · Review lượt đầu: Minh
 - Phác chữ ký `ItineraryRepository` (gồm `estimatedTotal(tripId)` cho Minh); layout form, checklist.
 - CN: viết query `ActivityDao`/`ChecklistDao`; gửi đoạn manifest cho receiver.
 
-## I1 — Lịch trình (T3 03/11)
+## I1 — Lịch trình (T3 03/11) — **người làm: I1: Bảo**
 - Đọc Flow, ghi theo khuôn `withTransaction` + `touch`. Form: title, place, time, cost, note, nhắc trước (bỏ trống được).
 - Thời tiết từng ngày lấy qua contract của Duy Anh (`WeatherRepository`).
 - Đủ 200 → nút Add tắt, hiện "200/200 activities"; repository kiểm lại trong transaction.
 - [ ] CRUD offline; hoạt động thứ 201 không được ghi và revision giữ nguyên
 
-## I2 — Checklist (T4 04/11) · I3 — Kéo thả (T4 04/11)
+## I2 — Checklist (T2 02/11) · I3 — Kéo thả (T6 06/11) — **người làm: I2: Tiến · I3: Duy Anh**
 - [ ] Checklist: thêm/tick/sửa/xoá, tối đa 100, mở lại app vẫn đúng
 - [ ] Kéo thả: lưu trong một transaction, tăng revision một lần; đổi giờ thì sắp lại theo giờ
 
-## I4 — Reminder (alarm thật T3 03/11, xong T5 05/11)
+## I4 — Reminder (alarm thật T3 03/11, xong T5 05/11) — **người làm: I4: Bảo**
 - Có quyền exact (`canScheduleExactAlarms()`) → `setExactAndAllowWhileIdle`; không có → `setAndAllowWhileIdle` và
   báo có thể trễ. Trên Android 14+, cài mới thì mặc định **không** có quyền exact, nên inexact là đường thường gặp.
 - `POST_NOTIFICATIONS`: nếu bị từ chối thì hiện trạng thái bị chặn. PendingIntent immutable, request code ổn định
@@ -52,7 +56,7 @@ Người tích hợp: Tiến · Review lượt đầu: Minh
 - [ ] Có quyền exact: nhắc gần đúng giờ. Không có quyền: nhắc trong khung inexact (≤ khoảng 1 giờ)
 - [ ] Sửa/xoá hoạt động → đổi/huỷ nhắc
 
-## I5 — Reconciler (T6 06/11)
+## I5 — Reconciler (T6 06/11) — **người làm: I5: Minh**
 - `ReminderReconciler.reconcile(uid?)`: huỷ alarm cũ, chỉ đặt alarm **sắp tới** của uid đang đăng nhập, tính từ múi
   giờ hiện tại. Receiver cho `BOOT_COMPLETED`, `TIMEZONE_CHANGED`, `TIME_SET`, dùng `goAsync` và giới hạn thời gian
   chạy. A gọi reconciler khi đăng nhập, đăng xuất, restore, đổi ngày chuyến.
