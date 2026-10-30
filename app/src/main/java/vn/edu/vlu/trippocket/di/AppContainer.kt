@@ -42,15 +42,6 @@ class AppContainer(context: Context) {
 
     val tripRepository: TripRepository by lazy { TripRepository(database.tripDao(), authRepository) }
 
-    /** Replaced by the AlarmManager scheduler in I4. */
-    val reminderScheduler: ReminderScheduler = object : ReminderScheduler {
-        override fun schedule(reminder: ScheduledReminder) = Unit
-        override fun cancel(activityId: String) = Unit
-    }
-
-    /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
-    val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
-
     /** Mock data for the module screens until they move to Room. */
     val sampleTripRepository = SampleTripRepository()
     val weatherRepository = WeatherRepository()
@@ -60,6 +51,15 @@ class AppContainer(context: Context) {
 
     /** Retrofit for https://api.open-meteo.com/ (daily forecast). */
     val forecastRetrofit: Retrofit by lazy { retrofit("https://api.open-meteo.com/") }
+
+    /** Replaced by the AlarmManager scheduler in I4. */
+    val reminderScheduler: ReminderScheduler = object : ReminderScheduler {
+        override fun schedule(reminder: ScheduledReminder) = Unit
+        override fun cancel(activityId: String) = Unit
+    }
+
+    /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
+    val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
 
     private val okHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()
