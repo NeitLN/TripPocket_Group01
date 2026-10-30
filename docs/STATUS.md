@@ -2,8 +2,9 @@
 Cập nhật: T6 30/10/2026 (tối)
 
 ## Đang ở đâu
-- Mốc hiện tại: M0. F0 đang làm trên `feature/tien-foundation` (đã push). **Gate F0 PASS** (bằng chứng ở dưới và
-  trong `docs/tasks/F0-foundation.md`). Chưa merge vào `develop`.
+- Mốc hiện tại: M0 xong. F0 + bộ nhận diện đã merge vào `develop` ngày 31/10 (fast-forward tới `4fe6fea`);
+  gate trên `develop`: `testDebugUnitTest lintDebug assembleDebug` PASS, 24 test.
+- Phân việc: chủ module + xoay vòng, mỗi người có tính năng ở cả 4 module (ROADMAP "Xoay vòng").
 - Đã có: Room đủ 8 bảng + DAO khung, `TripWriter`/`TripChangeTracker`, `Limits`, `AppContainer`, Retrofit cho 2 host
   Open-Meteo, danh sách chuyến đọc từ Room, TripDetail chạy trên Navigation với 4 tab (thêm Checklist), manifest đủ
   quyền + receiver stub, `allowBackup=false`, model/string/test tách theo module, `TripSnapshot`.
@@ -17,7 +18,7 @@ Cập nhật: T6 30/10/2026 (tối)
   sáng, tối, chữ 200%, launcher: PASS, không crash. Review độc lập: lượt đầu "fix" (3 lỗi), sửa xong, lượt chấm lại
   "ship" (chỉ phạm vi 3 lỗi đó).
 - Chưa làm: chuyển cảnh container transform từ thẻ chuyến sang Trip Detail; chưa chụp icon monochrome (Android 13+).
-- Merge: sau khi `feature/tien-foundation` vào `develop`, merge tiếp nhánh này.
+- Đã merge vào `develop` cùng F0.
 
 ## Quyết định đang chờ (Tiến)
 | Câu hỏi | Đề xuất | Việc bị chặn | Phải chốt trước |
