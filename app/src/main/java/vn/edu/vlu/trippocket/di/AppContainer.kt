@@ -14,6 +14,9 @@ import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.reminder.ReminderReconciler
+import vn.edu.vlu.trippocket.reminder.ReminderScheduler
+import vn.edu.vlu.trippocket.reminder.ScheduledReminder
 import vn.edu.vlu.trippocket.work.BackupScheduler
 
 /**
@@ -38,6 +41,15 @@ class AppContainer(context: Context) {
     val authRepository: AuthRepository = DevAuthRepository()
 
     val tripRepository: TripRepository by lazy { TripRepository(database.tripDao(), authRepository) }
+
+    /** Replaced by the AlarmManager scheduler in I4. */
+    val reminderScheduler: ReminderScheduler = object : ReminderScheduler {
+        override fun schedule(reminder: ScheduledReminder) = Unit
+        override fun cancel(activityId: String) = Unit
+    }
+
+    /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
+    val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
 
     /** Mock data for the module screens until they move to Room. */
     val sampleTripRepository = SampleTripRepository()
