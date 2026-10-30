@@ -17,7 +17,7 @@ Mức rủi ro dùng cho `spec-driven-dev`: Mini / Standard / Full.
 
 | ID | Người | Mô tả (mục proposal) | Phụ thuộc | Kiểm chấp nhận | Rủi ro | Hạn | Trạng thái |
 |---|---|---|---|---|---|---|---|
-| F0 | Tiến | Nền dùng chung (phiếu `F0-foundation.md`) | — | Gate F0 | Full | T7 31/10 contract, CN 01/11 gate | đề xuất |
+| F0 | Tiến | Nền dùng chung (phiếu `F0-foundation.md`) | — | Gate F0 | Full | T7 31/10 contract, CN 01/11 gate | đang làm: gate PASS trên nhánh, chờ chốt contract + merge |
 | A1 | Tiến | Login/Register Firebase, đăng xuất có huỷ phiên (3.1, 6.2) | F0 | Đăng ký → đăng nhập → mở lại app vẫn đăng nhập; A → B → A thấy đúng dữ liệu | Standard | T2 02/11 | đề xuất |
 | A2 | Tiến | Trip CRUD, lọc `ownerUid`, xoá mềm, cổng NotFound (3.1) | F0, A1 | Tạo/sửa/xoá offline; B không mở được chuyến của A | Standard | T3 03/11 | đề xuất |
 | A3 | Tiến | Backup theo giao thức trong ARCHITECTURE (6.2) | A2, rules | Lần upload thật đầu tiên T3 03/11; đầy đủ: sửa ngay trước khi worker kết thúc → vẫn đồng bộ; A→B→A với dữ liệu PENDING và chuyến đã xoá | Full | T4 04/11, test tài khoản T6 06/11 | đề xuất |

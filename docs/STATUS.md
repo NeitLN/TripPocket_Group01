@@ -1,35 +1,36 @@
 # STATUS
-Cập nhật: T6 30/10/2026
+Cập nhật: T6 30/10/2026 (tối)
 
 ## Đang ở đâu
-- Hiện tại: Milestone 2 xong (MVVM + ViewBinding, 5 màn hình chạy trên `MockData`). Chưa có Room, Retrofit, Firebase,
-  Navigation, nhánh `develop`.
-- Mong muốn: đủ 100% proposal, demo 11–13/11 (`docs/PROJECT.md`, `docs/ROADMAP.md`).
-- Phải giữ nguyên: quy ước MVVM của Milestone 2 (README), các test hiện có.
-- Chưa biết: ngày demo chính xác; giờ rảnh của từng người (lịch đang giả định làm cả cuối tuần); KSP/Robolectric có
-  chạy với AGP 9.4/SDK 37 không (spike F0).
-- Mốc hiện tại: M0. Docs kế hoạch + phiếu việc (`docs/tasks/`) đã được rà soát độc lập qua 3 vòng; **chưa commit,
-  chờ Tiến duyệt**.
+- Mốc hiện tại: M0. F0 đang làm trên `feature/tien-foundation` (đã push). **Gate F0 PASS** (bằng chứng ở dưới và
+  trong `docs/tasks/F0-foundation.md`). Chưa merge vào `develop`.
+- Đã có: Room đủ 8 bảng + DAO khung, `TripWriter`/`TripChangeTracker`, `Limits`, `AppContainer`, Retrofit cho 2 host
+  Open-Meteo, danh sách chuyến đọc từ Room, TripDetail chạy trên Navigation với 4 tab (thêm Checklist), manifest đủ
+  quyền + receiver stub, `allowBackup=false`, model/string/test tách theo module, `TripSnapshot`.
+- Tạm thời: `DevAuthRepository` (luôn là `dev-user`, seed chuyến mẫu ở bản debug) cho tới A1; các màn Itinerary,
+  Weather, Expenses vẫn đọc MockData qua `SampleTripRepository` cho tới khi từng người chuyển sang Room.
 
 ## Quyết định đang chờ (Tiến)
 | Câu hỏi | Đề xuất | Việc bị chặn | Phải chốt trước |
 |---|---|---|---|
-| 6 quyết định "chờ duyệt" trong ROADMAP/ARCHITECTURE | Như trong file | F0, I1, A3 | T7 31/10 |
-| CI GitHub Actions (test/lint/build trên PR vào `develop`) | Có; soạn sẵn, duyệt rồi mới ghi file | — | T7 31/10 |
-| Giờ rảnh mỗi người, có làm cuối tuần không | — | Lịch theo ngày | T7 31/10 |
+| File CI `.github/workflows/ci.yml` (đã soạn, chưa ghi) | Duyệt | Hàng rào PR | T7 31/10 |
+| Chữ ký 3 repository của Bảo/Duy Anh/Minh | Họp T7 | Phần Room của I/W/E | T7 31/10 |
 | Ngày demo chính xác | — | Lịch W3 | T2 02/11 |
 
 ## Bước tiếp theo
-1. Tiến duyệt docs → commit docs lên `main`, tạo `develop`.
+1. Tiến duyệt CI → ghi file, đặt quyền thực thi cho `gradlew` (git đang lưu là 100644).
 2. Tiến tạo Firebase + deploy rules (RUNBOOK), gửi `google-services.json` cho nhóm.
-3. F0 trên `feature/tien-foundation`: spike KSP + Robolectric **trước tiên**.
-4. Gửi `docs/tasks/<module>.md` cho Bảo, Duy Anh, Minh: làm phần "Làm ngay T6–CN"; họp ngắn T7 31/10 để chốt contract.
+3. Gửi 3 phiếu `docs/tasks/{I,W,E}-*.md` cho các bạn; họp T7 31/10 chốt chữ ký repository.
+4. Review + merge `feature/tien-foundation` → `develop` (T7), rồi bắt đầu A1.
 
 ## Bộ kiểm nhanh (chạy đầu mỗi session)
 - `./gradlew testDebugUnitTest lintDebug assembleDebug`
 - Máy Tiến (đường dẫn có dấu): `subst T: "<repo>"`, `JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`,
-  `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, rồi chạy Gradle từ `T:\` (RUNBOOK).
+  `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, chạy Gradle từ `T:\` (RUNBOOK).
 
 ## Bằng chứng gần nhất
-- `testDebugUnitTest` trên `24a3efb` (cây làm việc chỉ thêm docs), máy Tiến, JDK của Android Studio: **PASS**
-  (cảnh báo deprecated `bundleOf` ở `TripDetailActivity.kt:70`, F0 sẽ bỏ). `lintDebug`, `assembleDebug`: NOT RUN.
+- `feature/tien-foundation`, máy Tiến, 30/10: `testDebugUnitTest lintDebug assembleDebug` **PASS**, 16/16 test,
+  lint chỉ có thông báo phiên bản (`AndroidGradlePluginVersion`, `GradleDependency`, `NewerVersionAvailable`).
+- Emulator Pixel_7 API 34, bản debug: danh sách 3 chuyến từ Room; 4 tab mở được; xoay màn hình giữ tab; process death
+  ở tab Weather → khôi phục đúng chuyến; logcat crash buffer trống. **PASS**.
+- Chưa kiểm: build có `google-services.json` (chưa có Firebase project) — NOT RUN.

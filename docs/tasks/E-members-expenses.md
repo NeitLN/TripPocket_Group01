@@ -10,6 +10,20 @@ và settlement; giữ nguyên các test hiện có.
 `data/repository/ExpenseRepository.kt`, `data/local/dao/{TripMemberDao,ExpenseDao}.kt`, `data/model/ExpenseModels.kt`,
 `nav_expenses.xml`, `values/strings_expenses.xml`, test của module, fixture A5.
 
+## Có sẵn từ F0 (dùng luôn, đừng tạo lại)
+- Entity của bạn trong `data/local/entity/`, DAO khung (`observeByTrip`, `countByTrip`, insert/update/delete) trong
+  `data/local/dao/`: thêm query bạn cần vào DAO của mình.
+- Ghi dữ liệu: `container.tripWriter.write(tripId) { ... }` (xem `TripWriter.kt` và `TripWriterTest.kt`).
+- Giới hạn: `domain/Limits.kt` (`Limits.check(count, Limits.MAX_...)`).
+- ViewModel trong màn chi tiết chuyến: `by tripViewModels { XViewModel.Factory }`; factory lấy repository qua
+  `appContainer()` (xem `TripListViewModel.Factory`). Repository mới của bạn: gửi Tiến dòng cần thêm vào `AppContainer`.
+- Màn của bạn hiện vẫn đọc `SampleTripRepository` (MockData). Chuyển sang repository Room của bạn rồi bỏ dùng nó.
+- Test DAO/Room: theo mẫu `data/local/TestDatabase.kt` (Robolectric, in-memory) và `ui/trips/TripListViewModelTest.kt`.
+- File của bạn: `data/model/<Module>Models.kt`, `values/strings_<module>.xml`, `navigation/nav_<module>.xml`,
+  test trong `app/src/test/.../ui/<module>/`.
+- `ExpenseDao` đã có `observeSharesByTrip`, `countUsingMember` (để chặn xoá thành viên), `insertShares`, `deleteShares`.
+- Khoá ngoại `RESTRICT` chặn xoá thành viên đang được dùng ở tầng DB; repository vẫn phải kiểm trước để hiện lý do.
+
 ## Làm ngay T6–CN
 - `validateCustomSplit(amount, shares)` + test; test proposal 6.4: chia tuỳ chỉnh lệch tổng bị từ chối, settlement
   đưa mọi balance về 0 (1 người, nhiều người, số lẻ).

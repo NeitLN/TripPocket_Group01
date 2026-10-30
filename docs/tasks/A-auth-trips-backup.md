@@ -7,7 +7,7 @@ Phụ thuộc: F0 (chặn: bắt đầu) · Người tích hợp: Tiến
 ## Sở hữu
 `ui/login/*`, `ui/trips/*`, `ui/detail/*`, `data/remote/firebase/*`, `data/repository/{Auth,Trip,Backup}Repository.kt`,
 `data/local/dao/{TripDao,BackupDao}.kt`, `work/*`, `domain/LoginValidator.kt`, `firestore.rules`,
-`values/strings_trips.xml`, cùng các file dùng chung trong ARCHITECTURE.
+`values/strings.xml`, cùng các file dùng chung trong ARCHITECTURE.
 
 ## A1 — Login/Register (T2 02/11)
 - Register dùng lại `LoginValidator`; `AuthRepository`: signIn, register, signOut, `currentUid`; lỗi Firebase đổi

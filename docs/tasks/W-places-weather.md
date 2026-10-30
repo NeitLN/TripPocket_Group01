@@ -11,6 +11,21 @@ Code hiện tại có hai lỗi cần sửa khi chuyển sang dữ liệu thật
 `data/local/dao/{SavedPlaceDao,WeatherCacheDao}.kt`, `data/model/WeatherModels.kt`, `nav_weather.xml`,
 `values/strings_weather.xml`, test của module.
 
+## Có sẵn từ F0 (dùng luôn, đừng tạo lại)
+- Entity của bạn trong `data/local/entity/`, DAO khung (`observeByTrip`, `countByTrip`, insert/update/delete) trong
+  `data/local/dao/`: thêm query bạn cần vào DAO của mình.
+- Ghi dữ liệu: `container.tripWriter.write(tripId) { ... }` (xem `TripWriter.kt` và `TripWriterTest.kt`).
+- Giới hạn: `domain/Limits.kt` (`Limits.check(count, Limits.MAX_...)`).
+- ViewModel trong màn chi tiết chuyến: `by tripViewModels { XViewModel.Factory }`; factory lấy repository qua
+  `appContainer()` (xem `TripListViewModel.Factory`). Repository mới của bạn: gửi Tiến dòng cần thêm vào `AppContainer`.
+- Màn của bạn hiện vẫn đọc `SampleTripRepository` (MockData). Chuyển sang repository Room của bạn rồi bỏ dùng nó.
+- Test DAO/Room: theo mẫu `data/local/TestDatabase.kt` (Robolectric, in-memory) và `ui/trips/TripListViewModelTest.kt`.
+- File của bạn: `data/model/<Module>Models.kt`, `values/strings_<module>.xml`, `navigation/nav_<module>.xml`,
+  test trong `app/src/test/.../ui/<module>/`.
+- `container.geocodingRetrofit` và `container.forecastRetrofit` đã tạo sẵn (OkHttp + Gson, log ở bản debug): chỉ cần
+  `retrofit.create(YourApi::class.java)`.
+- `WeatherCacheDao.upsert` ghi thẳng, không qua TripWriter (cache không nằm trong backup).
+
 ## Làm ngay T6–CN
 - DTO geocoding/forecast + mapping, test với JSON mẫu thật.
 - Tách **kết quả tìm kiếm** (chưa có id) khỏi **địa điểm đã lưu** (UUID, note).

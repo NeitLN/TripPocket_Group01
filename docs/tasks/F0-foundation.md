@@ -19,7 +19,8 @@ Dựng mọi contract mà 4 module cùng dùng, cộng **một lát dọc thật
   (`exportSchema = true`) với accessor cho mọi DAO; DAO khung của từng module (chỉ có chữ ký, chủ module tự viết query).
 - `TripChangeTracker` + **ví dụ chạy được**: `TripDao`/`TripRepository` dạng Flow, theo đúng khuôn ghi trong
   ARCHITECTURE; test cả ca thành công lẫn rollback.
-- `domain/Limits.kt`; interface `BackupScheduler` (bản thật ở A3, bản fake cho test); data class snapshot (mapper ở A3).
+- `domain/Limits.kt`; interface `BackupScheduler` (bản thật ở A3, bản fake cho test); `TripWriter` (khuôn ghi);
+  data class snapshot `data/remote/firebase/TripSnapshot.kt` (mapper ở A3).
 - Chữ ký (interface) của 4 repository, factory nhận repository từ `AppContainer`, `AuthRepository.currentUid`.
 
 ## CN 01/11 — gate (merge)
@@ -35,12 +36,20 @@ Dựng mọi contract mà 4 module cùng dùng, cộng **một lát dọc thật
   `RECEIVE_BOOT_COMPLETED`, `android:allowBackup="false"`, `android:name=".TripPocketApp"`, receiver stub của Bảo
   (boot, đổi múi giờ, đổi giờ).
 
-## Gate (tiêu chí chấp nhận)
-- [ ] `./gradlew testDebugUnitTest lintDebug assembleDebug` → PASS, test cũ vẫn xanh
-- [ ] DAO test: ghi bảng con → trip PENDING, revision +1 (đúng một lần); vượt giới hạn → rollback, revision giữ nguyên
-- [ ] DAO test: không thấy chuyến của `ownerUid` khác; chuyến `isDeleted` bị ẩn; xoá payer/participant bị chặn
-- [ ] Máy **không có** `google-services.json` vẫn build và chạy test được
-- [ ] Cả 4 tab mở được; xoay màn hình và "Don't keep activities" không mất `trip_id`
+## Gate (tiêu chí chấp nhận) — kết quả 30/10 trên `feature/tien-foundation`
+- [x] `./gradlew testDebugUnitTest lintDebug assembleDebug` → PASS (16 test, lint chỉ còn thông báo phiên bản mới)
+- [x] DAO test: ghi bảng con → PENDING, revision +1 đúng một lần; vượt giới hạn → rollback (`TripWriterTest`)
+- [x] DAO test: không thấy chuyến của owner khác; chuyến đã xoá bị ẩn; xoá payer/participant bị chặn; purge chạy
+- [x] Build và test chạy được khi **không có** `google-services.json` (máy Tiến chưa có file này)
+- [x] Emulator Pixel 7 API 34: 4 tab mở được, xoay màn hình giữ tab, process death ở tab Weather → khôi phục đúng chuyến
+
+Spike: KSP 2.3.12 + Room 2.8.5 chạy với AGP 9.4.1 (Kotlin 2.2.10). Robolectric 4.17 chạy với API 35. Firebase BoM
+phải ở 34.19.0: bản 35.x được biên dịch bằng Kotlin 2.4, compiler đi kèm AGP không đọc được.
+
+Còn lại trước khi merge vào `develop` (T7 31/10):
+- [ ] Chốt với nhóm chữ ký `ItineraryRepository`, `WeatherRepository`, `ExpenseRepository` (buổi họp T7)
+- [ ] CI GitHub Actions (chờ Tiến xem file)
+- [ ] Tiến review và merge `feature/tien-foundation` → `develop`
 
 ## Ngoài phạm vi
 Logic nghiệp vụ và query DAO của từng module (chủ module tự viết từ CN 01/11).

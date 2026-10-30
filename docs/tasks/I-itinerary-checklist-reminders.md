@@ -10,6 +10,21 @@ Người tích hợp: Tiến · Review lượt đầu: Minh
 `data/local/dao/{ActivityDao,ChecklistDao}.kt`, `data/model/ItineraryModels.kt`, `nav_itinerary.xml`,
 `nav_checklist.xml`, `values/strings_itinerary.xml`, test của module. Cần sửa Manifest thì gửi đúng đoạn cần sửa cho Tiến.
 
+## Có sẵn từ F0 (dùng luôn, đừng tạo lại)
+- Entity của bạn trong `data/local/entity/`, DAO khung (`observeByTrip`, `countByTrip`, insert/update/delete) trong
+  `data/local/dao/`: thêm query bạn cần vào DAO của mình.
+- Ghi dữ liệu: `container.tripWriter.write(tripId) { ... }` (xem `TripWriter.kt` và `TripWriterTest.kt`).
+- Giới hạn: `domain/Limits.kt` (`Limits.check(count, Limits.MAX_...)`).
+- ViewModel trong màn chi tiết chuyến: `by tripViewModels { XViewModel.Factory }`; factory lấy repository qua
+  `appContainer()` (xem `TripListViewModel.Factory`). Repository mới của bạn: gửi Tiến dòng cần thêm vào `AppContainer`.
+- Màn của bạn hiện vẫn đọc `SampleTripRepository` (MockData). Chuyển sang repository Room của bạn rồi bỏ dùng nó.
+- Test DAO/Room: theo mẫu `data/local/TestDatabase.kt` (Robolectric, in-memory) và `ui/trips/TripListViewModelTest.kt`.
+- File của bạn: `data/model/<Module>Models.kt`, `values/strings_<module>.xml`, `navigation/nav_<module>.xml`,
+  test trong `app/src/test/.../ui/<module>/`.
+- Tab Checklist đã có màn tạm `ui/checklist/ChecklistFragment` + `fragment_checklist.xml`: thay bằng màn thật ở I2.
+- `reminder/ReminderReceiver`, `reminder/BootReceiver` đã khai báo trong Manifest (boot, đổi múi giờ, đổi giờ):
+  viết nội dung ở I4/I5. `ActivityEntity.startTime` là phút trong ngày (Int).
+
 ## Làm ngay T6–CN
 - `domain/ReminderTime.kt`: `triggerAtMillis(startDateEpochDay, dayIndex, startMinuteOfDay, minutesBefore, zoneId)`;
   test cả ca qua nửa đêm và ca đổi múi giờ.

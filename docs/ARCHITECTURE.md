@@ -41,8 +41,11 @@ Quy tắc:
 - File dùng chung, **chỉ Tiến sửa**: `gradle/libs.versions.toml`, `app/build.gradle.kts`, `AndroidManifest.xml`,
   `AppDatabase.kt`, `entity/*`, `nav_trip_detail.xml`, `menu_trip_detail.xml`, `AppContainer.kt`. Cần thay đổi ở đó
   thì gửi kèm **đúng đoạn cần sửa** trong PR, Tiến ghép vào lần merge kế tiếp.
-- Mỗi module có file string riêng: `values/strings_<module>.xml`. F0 chuyển các chuỗi hiện có sang file của module
-  tương ứng **một lần**, giữ nguyên tên. `strings.xml` gốc chỉ giữ chuỗi dùng chung.
+- Mỗi module có file string riêng: `strings_itinerary.xml` (Bảo), `strings_weather.xml` (Duy Anh),
+  `strings_expenses.xml` (Minh). `strings.xml` gốc giữ chuỗi dùng chung và chuỗi của login/danh sách chuyến (Tiến).
+- **Lớp tạm thời (F0), sẽ bị xoá:** `SampleTripRepository` (MockData cho các màn chưa lên Room) và
+  `DevAuthRepository` (luôn đăng nhập là `dev-user`, có seed chuyến mẫu ở bản debug). Module nào chuyển sang Room thì
+  bỏ dùng `SampleTripRepository`; A1 thay `DevAuthRepository` bằng Firebase.
 
 ## Dữ liệu (Room, proposal 4.2)
 - Đủ 8 entity của proposal được tạo trong F0. Đổi field sau đó phải qua Tiến.
@@ -51,7 +54,9 @@ Quy tắc:
   không coi `null` lúc đầu là lỗi.
 - **Tiền:** `Long` VND.
 - **ID:** UUID string do client tạo.
-- **Khoá ngoại:** bảng con → Trip `CASCADE`. `Expense.payerId` và `ExpenseShare.memberId` → TripMember `RESTRICT`.
+- **Khoá ngoại:** bảng con → Trip `CASCADE`. `Expense.payerId` và `ExpenseShare.memberId` → TripMember `RESTRICT`
+  kiểm tra ngay từng câu lệnh. **Không dùng khoá deferred**: commit thất bại sẽ để transaction SQLite treo và hỏng
+  kết nối. Xoá hẳn một chuyến thì dùng `TripDao.purge` (xoá chi phí trước, rồi tới chuyến).
   Repository kiểm thêm rằng mọi thành viên được dùng đều thuộc đúng chuyến của chi phí.
 - **Giới hạn (proposal 6.2):** hằng số nằm trong `domain/Limits.kt`. Form kiểm trước; repository kiểm lại trong
   cùng transaction với lệnh insert.
@@ -65,17 +70,15 @@ Quy tắc:
   restore, đăng nhập/đăng xuất (xem `ReminderReconciler`).
 
 ### Ghi bảng con và đánh dấu backup
-Mọi thao tác ghi theo **một khuôn duy nhất**, mỗi thao tác logic chỉ tăng revision **đúng một lần** (kể cả khi
-sửa chi phí kèm toàn bộ shares, hoặc kéo thả nhiều dòng):
+Mọi thao tác ghi đi qua **`TripWriter.write`** (`data/local/TripWriter.kt`), mỗi thao tác logic chỉ tăng revision
+**đúng một lần** (kể cả khi sửa chi phí kèm toàn bộ shares, hoặc kéo thả nhiều dòng):
 ```kotlin
-db.withTransaction {
-    limits/ownership check   // vượt giới hạn -> ném lỗi, transaction rollback, revision giữ nguyên
-    mutate rows
-    tripChangeTracker.touch(tripId)   // PENDING, localRevision + 1, updatedAt = now (một câu SQL)
-}
-backupScheduler.request(uid)          // gọi SAU khi transaction đã commit
+tripWriter.write(tripId) {                                   // một transaction
+    Limits.check(activityDao.countByTrip(tripId), Limits.MAX_ACTIVITIES)  // ném lỗi -> rollback, revision giữ nguyên
+    activityDao.insert(row)
+}                                                            // rồi touch(tripId); backup được yêu cầu SAU commit
 ```
-F0 có ví dụ chạy được và test cả ca thành công lẫn ca rollback.
+Test: `data/local/TripWriterTest.kt`. Riêng `WeatherCache` không nằm trong backup nên ghi thẳng, không qua TripWriter.
 
 ### Thứ tự hoạt động trong ngày
 `orderIndex` là thứ tự hiển thị. Khi tạo mới hoặc đổi giờ/ngày của một hoạt động: sắp lại ngày đó theo giờ (sắp
@@ -110,8 +113,10 @@ fallback.
   đầu thật: `nav_itinerary.xml`, `nav_checklist.xml` (Bảo), `nav_weather.xml` (Duy Anh), `nav_expenses.xml` (Minh).
   ID của menu bottom nav trùng ID của graph con.
 - `trip_id` nằm trong **`TripDetailViewModel` dùng chung cho cả Activity** (lấy từ intent, lưu trong
-  `SavedStateHandle`). Fragment lấy ViewModel này qua `activityViewModels()`, rồi truyền `tripId` vào factory của
-  ViewModel module mình. Form nhận id của bản ghi đang sửa (vd `activityId`) qua nav argument của graph con.
+  `SavedStateHandle`). Mọi ViewModel trong màn chi tiết chuyến khai báo bằng
+  `by tripViewModels { XViewModel.Factory }` (`ui/detail/TripArgs.kt`): helper này đặt `trip_id` vào
+  `SavedStateHandle` của ViewModel, sống sót qua xoay màn hình và process death (đã kiểm trên emulator). Form nhận id
+  của bản ghi đang sửa (vd `activityId`) qua nav argument của graph con.
 - `TripDetailViewModel` có trạng thái Loading / Ready / NotFound; module chỉ tải dữ liệu khi đã Ready.
 
 ## Remote
@@ -127,8 +132,9 @@ fallback.
 - `ListAdapter` + `DiffUtil`.
 
 ## Test
-- DAO test chạy bằng **Robolectric** với `@Config(sdk = [35])`, nằm trong `testDebugUnitTest`, nên máy nào cũng chạy
-  được mà không cần emulator. Nếu spike F0 thất bại thì chuyển sang instrumented (`connectedDebugAndroidTest`).
+- DAO test chạy bằng **Robolectric** (API 35, cấu hình trong `app/src/test/resources/robolectric.properties`, dùng
+  `TestApp` không có Firebase), nằm trong `testDebugUnitTest`, nên máy nào cũng chạy được mà không cần emulator.
+  Mẫu: `data/local/TestDatabase.kt` (DB in-memory) và `ui/trips/TripListViewModelTest.kt` (ViewModel trên Room).
 - DAO test phải chạy code Room đã sinh ra thật: kiểm rollback, revision và khoá ngoại.
 
 ## Git và review
