@@ -10,6 +10,15 @@ Cập nhật: T6 30/10/2026 (tối)
 - Tạm thời: `DevAuthRepository` (luôn là `dev-user`, seed chuyến mẫu ở bản debug) cho tới A1; các màn Itinerary,
   Weather, Expenses vẫn đọc MockData qua `SampleTripRepository` cho tới khi từng người chuyển sang Room.
 
+## Nhận diện "sticker" (nhánh `feature/tien-brand`, tách từ `feature/tien-foundation`)
+- Logo + icon app, theme sáng/tối, font Be Vietnam Pro, Login và Trip List mới. Quy tắc cho cả nhóm: `DESIGN.md`;
+  file logo cho slide/báo cáo: `docs/brand/`.
+- Bằng chứng 31/10: `testDebugUnitTest lintDebug assembleDebug` PASS (24 test); emulator Pixel 7 API 34 ở theme
+  sáng, tối, chữ 200%, launcher: PASS, không crash. Review độc lập: lượt đầu "fix" (3 lỗi), sửa xong, lượt chấm lại
+  "ship" (chỉ phạm vi 3 lỗi đó).
+- Chưa làm: chuyển cảnh container transform từ thẻ chuyến sang Trip Detail; chưa chụp icon monochrome (Android 13+).
+- Merge: sau khi `feature/tien-foundation` vào `develop`, merge tiếp nhánh này.
+
 ## Quyết định đang chờ (Tiến)
 | Câu hỏi | Đề xuất | Việc bị chặn | Phải chốt trước |
 |---|---|---|---|
