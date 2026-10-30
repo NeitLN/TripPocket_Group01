@@ -10,7 +10,7 @@ import java.time.LocalDate
 enum class SyncStatus(@param:StringRes val labelRes: Int, @param:DrawableRes val iconRes: Int) {
     SYNCED(R.string.sync_synced, R.drawable.ic_cloud_done),
     PENDING(R.string.sync_pending, R.drawable.ic_cloud_upload),
-    FAILED(R.string.sync_failed, R.drawable.ic_cloud),
+    FAILED(R.string.sync_failed, R.drawable.ic_cloud_alert),
 }
 
 data class Trip(

@@ -1,16 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Screen 2 - Trip List.
-    - The RecyclerView fills the space between the summary line and the
-      bottom (0dp = match constraints) and stops at @dimen/content_max_width,
-      so on a tablet the list stays readable and centered.
-    - Column count comes from @integer/trip_grid_span: 1 on phones, 2 in
-      landscape and on tablets, 3 on landscape tablets.
-    - The empty state (icon + title + body) is a packed vertical chain,
-      toggled as one unit through a ConstraintLayout Group.
-    - The Extended FAB is anchored bottom/end; the list gets bottom padding
-      (@dimen/fab_clearance) with clipToPadding=false so the last card can
-      scroll above it.
+    Screen 2 - Trip List, sticker identity (DESIGN.md).
+    - "My trips" in Be Vietnam Pro Black with "trips" on the lime sticker highlight (set in code),
+      then the trip count, then the grouped list.
+    - The RecyclerView stops at @dimen/content_max_width so tablets stay readable; the column
+      count comes from @integer/trip_grid_span and group labels span every column.
+    - The lime "New trip" FAB is the one loud action; the list keeps @dimen/fab_clearance at
+      the bottom so the last card scrolls above it.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -20,23 +16,38 @@
     tools:context=".ui.trips.TripListFragment">
 
     <TextView
-        android:id="@+id/tvSummary"
+        android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/screen_margin"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_marginHorizontal="@dimen/title_inset"
+        android:layout_marginTop="@dimen/space_sm"
+        android:accessibilityHeading="true"
+        tools:targetApi="28"
+        android:text="@string/trips_title"
+        android:textAppearance="@style/TextAppearance.TripPocket.ScreenTitle"
+        android:textColor="?attr/colorOnSurface"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_max="@dimen/content_max_width"
-        tools:text="3 trips · 1 waiting for backup" />
+        app:layout_constraintWidth_max="@dimen/content_max_width" />
+
+    <TextView
+        android:id="@+id/tvSummary"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="@id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvTitle"
+        tools:text="3 trips" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTrips"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:layout_marginTop="@dimen/space_sm"
+        android:layout_marginTop="@dimen/space_xs"
         android:clipToPadding="false"
         android:paddingHorizontal="@dimen/space_sm"
         android:paddingBottom="@dimen/fab_clearance"
@@ -48,21 +59,18 @@
         tools:itemCount="3"
         tools:listitem="@layout/item_trip" />
 
-    <!-- Empty state: packed vertical chain centered in the screen -->
+    <!-- Empty state: the pocket, a title and one line of guidance; the FAB is the action. -->
     <ImageView
         android:id="@+id/ivEmpty"
         android:layout_width="@dimen/empty_icon_size"
         android:layout_height="@dimen/empty_icon_size"
-        android:background="@drawable/bg_circle_primary_container"
         android:contentDescription="@null"
-        android:padding="@dimen/space_xl"
-        android:src="@drawable/ic_luggage"
+        android:src="@drawable/ic_logo_pocket"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvEmptyTitle"
@@ -70,7 +78,7 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_lg"
         android:text="@string/trips_empty_title"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textAppearance="?attr/textAppearanceHeadlineSmall"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyBody"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -101,7 +109,7 @@
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabNewTrip"
-        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
+        style="@style/Widget.TripPocket.ExtendedFab.Lime"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/screen_margin"

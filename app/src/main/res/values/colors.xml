@@ -1,37 +1,66 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Material 3 color roles, generated around a teal seed (#0B6E69).
-         The theme maps these to ?attr/colorPrimary, ?attr/colorSurface, ...
-         so layouts never hard-code a hex value. -->
-    <color name="md_primary">#006A65</color>
+    <!-- Sticker identity, light scheme (DESIGN.md). Dark values live in values-night/colors.xml.
+         The theme maps these to ?attr/colorPrimary, ?attr/colorSurface, ... so layouts never
+         hard-code a hex value. Actionable violet is #573AD6; the brighter #7C5CFF is sticker art only. -->
+    <color name="md_primary">#573AD6</color>
     <color name="md_on_primary">#FFFFFF</color>
-    <color name="md_primary_container">#9FF2EA</color>
-    <color name="md_on_primary_container">#00201E</color>
-    <color name="md_secondary">#4A6360</color>
+    <color name="md_primary_container">#E6DEFF</color>
+    <color name="md_on_primary_container">#21105D</color>
+    <color name="md_secondary">#62577C</color>
     <color name="md_on_secondary">#FFFFFF</color>
-    <color name="md_secondary_container">#CCE8E4</color>
-    <color name="md_on_secondary_container">#051F1D</color>
-    <color name="md_tertiary">#8B5000</color>
+    <color name="md_secondary_container">#E9DDFB</color>
+    <color name="md_on_secondary_container">#211632</color>
+    <color name="md_tertiary">#4F6500</color>
     <color name="md_on_tertiary">#FFFFFF</color>
-    <color name="md_tertiary_container">#FFDCBE</color>
-    <color name="md_on_tertiary_container">#2C1600</color>
-    <color name="md_error">#BA1A1A</color>
+    <color name="md_tertiary_container">#C6F432</color>
+    <color name="md_on_tertiary_container">#1B2400</color>
+    <color name="md_error">#AD1743</color>
     <color name="md_on_error">#FFFFFF</color>
-    <color name="md_error_container">#FFDAD6</color>
-    <color name="md_on_error_container">#410002</color>
-    <color name="md_background">#F7FAF8</color>
-    <color name="md_on_background">#191C1C</color>
-    <color name="md_surface">#F7FAF8</color>
-    <color name="md_on_surface">#191C1C</color>
-    <color name="md_surface_variant">#DAE5E2</color>
-    <color name="md_on_surface_variant">#3F4947</color>
-    <color name="md_surface_container_low">#F1F4F2</color>
-    <color name="md_surface_container">#EBEFEC</color>
-    <color name="md_surface_container_high">#E5E9E7</color>
-    <color name="md_outline">#6F7977</color>
-    <color name="md_outline_variant">#BEC9C6</color>
+    <color name="md_error_container">#FFD9E1</color>
+    <color name="md_on_error_container">#400014</color>
+    <color name="md_background">#F7F5FF</color>
+    <color name="md_on_background">#1B1B1F</color>
+    <color name="md_surface">#F7F5FF</color>
+    <color name="md_on_surface">#1B1B1F</color>
+    <color name="md_surface_variant">#E7E0F1</color>
+    <color name="md_on_surface_variant">#4D465B</color>
+    <color name="md_surface_container_lowest">#FFFFFF</color>
+    <color name="md_surface_container_low">#F2EEFC</color>
+    <color name="md_surface_container">#ECE7F7</color>
+    <color name="md_surface_container_high">#E6E0F1</color>
+    <color name="md_surface_container_highest">#DFD8EB</color>
+    <color name="md_surface_bright">#F7F5FF</color>
+    <color name="md_surface_dim">#D8D1E4</color>
+    <color name="md_outline">#786D89</color>
+    <color name="md_outline_variant">#C9BED7</color>
+    <color name="md_inverse_surface">#322C40</color>
+    <color name="md_inverse_on_surface">#F7F0FF</color>
+    <color name="md_inverse_primary">#CBBEFF</color>
 
-    <!-- Semantic colors for money: a member who is owed money vs. one who owes. -->
+    <!-- Brand tokens outside the Material roles. -->
+    <color name="trip_card_surface">#FFFFFF</color>
+    <color name="brand_lime">#C6F432</color>
+    <color name="on_brand_lime">#1B1B1F</color>
+    <color name="sticker_border">#FFFFFF</color>
+
+    <!-- Trip sticker fills and their lettering: identical in both themes, never a status. -->
+    <color name="sticker_violet">#7C5CFF</color>
+    <color name="on_sticker_violet">#090414</color>
+    <color name="sticker_lime">#C6F432</color>
+    <color name="on_sticker_lime">#1B1B1F</color>
+    <color name="sticker_pink">#FF5FA2</color>
+    <color name="on_sticker_pink">#1B1B1F</color>
+    <color name="sticker_sky">#83D9FF</color>
+    <color name="on_sticker_sky">#1B1B1F</color>
+    <color name="sticker_apricot">#FFC38A</color>
+    <color name="on_sticker_apricot">#1B1B1F</color>
+
+    <!-- Launcher icon (fixed, not themed). -->
+    <color name="ic_launcher_background">#C6F432</color>
+
+    <!-- Semantic colors for money: a member who is owed money vs. one who owes. Always paired
+         with explicit "owes" / "is owed" wording. -->
     <color name="balance_positive">#1B6D2F</color>
-    <color name="balance_negative">#BA1A1A</color>
+    <color name="balance_negative">#AD1743</color>
 </resources>

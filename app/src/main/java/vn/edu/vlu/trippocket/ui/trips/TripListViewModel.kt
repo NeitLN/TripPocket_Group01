@@ -16,13 +16,24 @@ import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
+import vn.edu.vlu.trippocket.domain.TripGroup
+import vn.edu.vlu.trippocket.domain.TripGrouping
+import java.time.LocalDate
 
 /** A trip with the totals its card shows, so the adapter never reads the repository. */
 data class TripCard(val trip: Trip, val memberCount: Int, val spent: Long)
 
+/** One row of the grouped list: a group label or a trip card. */
+sealed interface TripListRow {
+    data class Header(val group: TripGroup) : TripListRow
+    data class Item(val card: TripCard) : TripListRow
+}
+
 data class TripListUiState(
     val loading: Boolean = true,
     val trips: List<TripCard> = emptyList(),
+    /** [trips] split into Happening now / Upcoming / Past, ready for the adapter. */
+    val rows: List<TripListRow> = emptyList(),
     /** Trips that are not synced yet (pending or failed). */
     val unsyncedCount: Int = 0,
 )
@@ -36,6 +47,7 @@ class TripListViewModel(
     tripRepository: TripRepository,
     // Member count and spent total move to Minh's ExpenseRepository with E1/E2.
     private val sampleRepository: SampleTripRepository,
+    private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
 
     val uiState: StateFlow<TripListUiState> = combine(
@@ -46,6 +58,8 @@ class TripListViewModel(
         TripListUiState(
             loading = false,
             trips = cards,
+            rows = TripGrouping.group(cards, today(), { it.trip.startDate }, { it.trip.endDate })
+                .flatMap { (group, members) -> listOf(TripListRow.Header(group)) + members.map(TripListRow::Item) },
             unsyncedCount = cards.count { it.trip.syncStatus != SyncStatus.SYNCED },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TripListUiState())

@@ -6,6 +6,9 @@ import android.view.inputmethod.EditorInfo
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
@@ -29,6 +32,7 @@ class LoginActivity : AppCompatActivity() {
         binding = ActivityLoginBinding.inflate(layoutInflater)
         setContentView(binding.root)
         binding.root.applySystemBarPadding()
+        showSampleStickers()
 
         binding.etEmail.doAfterTextChanged { viewModel.onEmailChanged() }
         binding.etPassword.doAfterTextChanged { viewModel.onPasswordChanged() }
@@ -42,7 +46,6 @@ class LoginActivity : AppCompatActivity() {
             }
         }
         binding.btnSignIn.setOnClickListener { attemptSignIn() }
-        binding.btnForgotPassword.setOnClickListener { showNotYetAvailable() }
         binding.btnCreateAccount.setOnClickListener { showNotYetAvailable() }
 
         lifecycleScope.launch {
@@ -74,7 +77,33 @@ class LoginActivity : AppCompatActivity() {
         }
     }
 
+    /**
+     * Three decorative sample stickers (DESIGN.md). They step aside when the keyboard is open or
+     * the font is very large, so the form is never squeezed.
+     */
+    private fun showSampleStickers() {
+        val samples = listOf(
+            Triple(binding.sticker1, "Đà Lạt", -7f),
+            Triple(binding.sticker2, "Hội An", 5f),
+            Triple(binding.sticker3, "Phú Quốc", -3f),
+        )
+        for ((view, destination, tilt) in samples) {
+            view.bind(destination, destination)
+            view.rotation = tilt
+        }
+        val largeFont = resources.configuration.fontScale >= LARGE_FONT_SCALE
+        binding.clusterStickers.isVisible = !largeFont
+        ViewCompat.setOnApplyWindowInsetsListener(binding.clusterStickers) { view, insets ->
+            view.isVisible = !largeFont && !insets.isVisible(WindowInsetsCompat.Type.ime())
+            insets
+        }
+    }
+
     private fun showNotYetAvailable() {
         Snackbar.make(binding.root, R.string.msg_not_in_milestone1, Snackbar.LENGTH_SHORT).show()
+    }
+
+    private companion object {
+        const val LARGE_FONT_SCALE = 1.3f
     }
 }

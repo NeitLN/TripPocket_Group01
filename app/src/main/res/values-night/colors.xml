@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sticker identity, dark scheme: deep ink-violet surfaces, lime stays lime.
+         Only roles that change at night are listed; the rest come from values/colors.xml. -->
+    <color name="md_primary">#CBBEFF</color>
+    <color name="md_on_primary">#2C1676</color>
+    <color name="md_primary_container">#4328A8</color>
+    <color name="md_on_primary_container">#E6DEFF</color>
+    <color name="md_secondary">#CDC1E0</color>
+    <color name="md_on_secondary">#362B49</color>
+    <color name="md_secondary_container">#4D4162</color>
+    <color name="md_on_secondary_container">#E9DDFB</color>
+    <color name="md_tertiary">#C6F432</color>
+    <color name="md_on_tertiary">#263500</color>
+    <color name="md_tertiary_container">#3A4C00</color>
+    <color name="md_on_tertiary_container">#DDFB8B</color>
+    <color name="md_error">#FFB1C2</color>
+    <color name="md_on_error">#60001E</color>
+    <color name="md_error_container">#87002D</color>
+    <color name="md_on_error_container">#FFD9E1</color>
+    <color name="md_background">#141023</color>
+    <color name="md_on_background">#EEE8FA</color>
+    <color name="md_surface">#141023</color>
+    <color name="md_on_surface">#EEE8FA</color>
+    <color name="md_surface_variant">#463C58</color>
+    <color name="md_on_surface_variant">#CCC2DA</color>
+    <color name="md_surface_container_lowest">#0E0A19</color>
+    <color name="md_surface_container_low">#1D182D</color>
+    <color name="md_surface_container">#231E35</color>
+    <color name="md_surface_container_high">#2E2742</color>
+    <color name="md_surface_container_highest">#39314F</color>
+    <color name="md_surface_bright">#403755</color>
+    <color name="md_surface_dim">#141023</color>
+    <color name="md_outline">#9E92AE</color>
+    <color name="md_outline_variant">#4C425F</color>
+    <color name="md_inverse_surface">#EEE8FA</color>
+    <color name="md_inverse_on_surface">#322C40</color>
+    <color name="md_inverse_primary">#573AD6</color>
+
+    <color name="trip_card_surface">#1D182D</color>
+
+    <color name="balance_positive">#8BD88E</color>
+    <color name="balance_negative">#FFB1C2</color>
+</resources>

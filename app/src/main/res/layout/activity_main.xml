@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Host for Screen 2 (Trip List). The activity only owns the top app bar;
-    the list itself lives in fragment_trip_list.xml so it can later move into
-    a Navigation graph without changing its layout.
+    Host for Screen 2 (Trip List). The flat surface-coloured app bar carries the TripPocket
+    lockup (pocket symbol + wordmark) and the overflow actions; the screen title "My trips"
+    lives in fragment_trip_list.xml.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -16,12 +16,37 @@
         android:id="@+id/toolbar"
         android:layout_width="0dp"
         android:layout_height="?attr/actionBarSize"
+        app:contentInsetStart="@dimen/space_lg"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:menu="@menu/menu_main"
-        app:title="@string/trips_title"
-        app:titleTextAppearance="?attr/textAppearanceTitleLarge" />
+        app:menu="@menu/menu_main">
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center_vertical|start"
+            android:contentDescription="@string/app_name"
+            android:focusable="true"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:layout_width="32dp"
+                android:layout_height="32dp"
+                android:importantForAccessibility="no"
+                android:src="@drawable/ic_logo_pocket" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_xs"
+                android:importantForAccessibility="no"
+                android:text="@string/app_name"
+                android:textAppearance="@style/TextAppearance.TripPocket.Wordmark"
+                android:textSize="20sp" />
+        </LinearLayout>
+    </com.google.android.material.appbar.MaterialToolbar>
 
     <androidx.fragment.app.FragmentContainerView
         android:id="@+id/fragmentContainer"

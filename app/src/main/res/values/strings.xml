@@ -2,15 +2,13 @@
     <string name="app_name">TripPocket</string>
 
     <!-- Login -->
-    <string name="login_tagline">Your whole trip, even without signal</string>
     <string name="login_email_hint">Email</string>
     <string name="login_password_hint">Password</string>
     <string name="login_password_helper">At least 8 characters, including a number</string>
-    <string name="login_forgot_password">Forgot password?</string>
     <string name="login_sign_in">Sign in</string>
     <string name="login_no_account">New to TripPocket?</string>
     <string name="login_create_account">Create an account</string>
-    <string name="login_footer">Trips are stored on this device and backed up when you are online.</string>
+    <string name="login_offline_note">Internet is required to sign in. Once signed in, your saved trips work offline.</string>
     <string name="error_email_empty">Enter your email address</string>
     <string name="error_email_invalid">This doesn\'t look like an email address</string>
     <string name="error_password_short">Use at least 8 characters</string>
@@ -19,11 +17,13 @@
 
     <!-- Trip list -->
     <string name="trips_title">My trips</string>
-    <plurals name="trips_summary">
-        <item quantity="one">%1$d trip · %2$d waiting for backup</item>
-        <item quantity="other">%1$d trips · %2$d waiting for backup</item>
-    </plurals>
     <string name="trips_new">New trip</string>
+    <plurals name="trips_count">
+        <item quantity="one">%1$d trip</item>
+        <item quantity="other">%1$d trips</item>
+    </plurals>
+    <string name="trips_group_upcoming">Upcoming</string>
+    <string name="trips_group_past">Past</string>
     <string name="trips_empty_title">No trips yet</string>
     <string name="trips_empty_body">Plan your first trip: itinerary, packing list, weather and shared costs in one place.</string>
     <string name="action_sign_out">Sign out</string>
@@ -31,17 +31,22 @@
     <string name="sync_synced">Backed up</string>
     <string name="sync_pending">Waiting for backup</string>
     <string name="sync_failed">Backup failed</string>
-    <plurals name="trip_starts_in">
-        <item quantity="one">Starts tomorrow</item>
-        <item quantity="other">Starts in %1$d days</item>
-    </plurals>
+    <string name="sync_saved_on_phone">Saved on this phone</string>
+    <string name="sync_retry">Retry</string>
     <string name="trip_ongoing">Happening now</string>
-    <string name="trip_finished">Finished</string>
     <plurals name="trip_members">
         <item quantity="one">%1$d member</item>
         <item quantity="other">%1$d members</item>
     </plurals>
     <string name="trip_spent">%1$s spent</string>
+    <plurals name="trip_days">
+        <item quantity="one">%1$d day</item>
+        <item quantity="other">%1$d days</item>
+    </plurals>
+    <!-- "20 Jun - 24 Jun 2027 · 5 days" -->
+    <string name="trip_dates_days">%1$s · %2$s</string>
+    <!-- "3 members · 2,150,000 ₫ spent" -->
+    <string name="trip_meta">%1$s · %2$s</string>
 
     <!-- Trip detail / bottom navigation -->
     <string name="nav_itinerary">Itinerary</string>
