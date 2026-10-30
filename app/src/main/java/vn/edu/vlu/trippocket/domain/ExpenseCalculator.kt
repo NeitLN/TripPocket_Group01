@@ -24,6 +24,18 @@ object ExpenseCalculator {
         }.toMap()
     }
 
+    /**
+     * Checks a custom split before it is saved (proposal 6.4): every share is 0 or more,
+     * at least one member takes part, and the shares add up to exactly [amount].
+     * Returns null when the split is valid.
+     */
+    fun validateCustomSplit(amount: Long, shares: Map<String, Long>): SplitError? = when {
+        shares.values.any { it < 0 } -> SplitError.NEGATIVE_SHARE
+        shares.values.none { it > 0 } -> SplitError.NO_PARTICIPANTS
+        shares.values.sum() != amount -> SplitError.SUM_MISMATCH
+        else -> null
+    }
+
     /** balance = amount paid - own share. The balances always sum to 0. */
     fun balances(members: List<TripMember>, expenses: List<Expense>): Map<String, Long> {
         val result = members.associate { it.memberId to 0L }.toMutableMap()
@@ -62,3 +74,6 @@ object ExpenseCalculator {
         return payments
     }
 }
+
+/** Why a split cannot be saved. */
+enum class SplitError { NEGATIVE_SHARE, NO_PARTICIPANTS, SUM_MISMATCH }
