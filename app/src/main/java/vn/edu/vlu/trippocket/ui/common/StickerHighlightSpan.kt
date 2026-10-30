@@ -7,6 +7,7 @@ import android.text.Spannable
 import android.text.SpannableString
 import android.text.style.ReplacementSpan
 import androidx.annotation.ColorInt
+import kotlin.math.ceil
 
 /**
  * Sets one word of a title on a horizontal lime sticker with a white die-cut border
@@ -25,8 +26,18 @@ class StickerHighlightSpan(
     private val rect = RectF()
     private val shape = Paint(Paint.ANTI_ALIAS_FLAG)
 
-    override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int =
-        (paint.measureText(text, start, end) + 2 * padX + 2 * borderWidth).toInt()
+    override fun getSize(paint: Paint, text: CharSequence, start: Int, end: Int, fm: Paint.FontMetricsInt?): Int {
+        if (fm != null) {
+            // Grow the line box by the border so the white edge and the lime bottom are not clipped.
+            paint.getFontMetricsInt(fm)
+            val extra = ceil(borderWidth).toInt() + 1
+            fm.ascent -= extra
+            fm.top -= extra
+            fm.descent += extra
+            fm.bottom += extra
+        }
+        return (paint.measureText(text, start, end) + 2 * padX + 2 * borderWidth).toInt()
+    }
 
     override fun draw(
         canvas: Canvas, text: CharSequence, start: Int, end: Int,

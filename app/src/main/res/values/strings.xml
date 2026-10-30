@@ -22,6 +22,11 @@
         <item quantity="one">%1$d trip</item>
         <item quantity="other">%1$d trips</item>
     </plurals>
+    <string name="trips_summary_waiting">%1$d waiting for backup</string>
+    <plurals name="trips_summary_failed">
+        <item quantity="one">%1$d backup failed</item>
+        <item quantity="other">%1$d backups failed</item>
+    </plurals>
     <string name="trips_group_upcoming">Upcoming</string>
     <string name="trips_group_past">Past</string>
     <string name="trips_empty_title">No trips yet</string>

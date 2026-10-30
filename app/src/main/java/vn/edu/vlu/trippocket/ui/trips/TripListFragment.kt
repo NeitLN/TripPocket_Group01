@@ -98,8 +98,17 @@ class TripListFragment : Fragment() {
         binding.rvTrips.isVisible = hasTrips
         binding.groupEmpty.isVisible = !state.loading && !hasTrips
         binding.tvSummary.isVisible = hasTrips
-        binding.tvSummary.text = resources.getQuantityString(R.plurals.trips_count, state.trips.size, state.trips.size)
+        binding.tvSummary.text = summary(state)
     }
+
+    /** "3 trips · 1 waiting for backup · 1 backup failed": zero counts are left out. */
+    private fun summary(state: TripListUiState): String = listOfNotNull(
+        resources.getQuantityString(R.plurals.trips_count, state.trips.size, state.trips.size),
+        state.pendingCount.takeIf { it > 0 }?.let { getString(R.string.trips_summary_waiting, it) },
+        state.failedCount.takeIf { it > 0 }?.let {
+            resources.getQuantityString(R.plurals.trips_summary_failed, it, it)
+        },
+    ).joinToString(" · ")
 
     private fun showNotYet(anchor: View) {
         Snackbar.make(anchor, R.string.msg_not_in_milestone1, Snackbar.LENGTH_SHORT)

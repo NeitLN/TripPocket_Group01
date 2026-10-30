@@ -36,6 +36,10 @@ data class TripListUiState(
     val rows: List<TripListRow> = emptyList(),
     /** Trips that are not synced yet (pending or failed). */
     val unsyncedCount: Int = 0,
+    /** Saved on this phone, waiting for the backup job. */
+    val pendingCount: Int = 0,
+    /** Saved on this phone, last backup attempt failed. */
+    val failedCount: Int = 0,
 )
 
 /**
@@ -61,6 +65,8 @@ class TripListViewModel(
             rows = TripGrouping.group(cards, today(), { it.trip.startDate }, { it.trip.endDate })
                 .flatMap { (group, members) -> listOf(TripListRow.Header(group)) + members.map(TripListRow::Item) },
             unsyncedCount = cards.count { it.trip.syncStatus != SyncStatus.SYNCED },
+            pendingCount = cards.count { it.trip.syncStatus == SyncStatus.PENDING },
+            failedCount = cards.count { it.trip.syncStatus == SyncStatus.FAILED },
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), TripListUiState())
 

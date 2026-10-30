@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
+import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -59,6 +60,17 @@ class TripListViewModelTest {
 
         viewModel.toggleEmptyPreview()
         assertTrue(viewModel.loaded(trips = 0).trips.isEmpty())
+    }
+
+    @Test
+    fun summaryCountsWaitingAndFailedBackups(): Unit = runBlocking {
+        t.db.tripDao().insert(t.trip("synced"))
+        t.db.tripDao().insert(t.trip("waiting").copy(syncStatus = SyncStatus.PENDING))
+        t.db.tripDao().insert(t.trip("failed").copy(syncStatus = SyncStatus.FAILED))
+
+        val state = viewModel().loaded(trips = 3)
+        assertEquals(1, state.pendingCount)
+        assertEquals(1, state.failedCount)
     }
 
     @Test
