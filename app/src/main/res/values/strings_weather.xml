@@ -39,4 +39,18 @@
     <string name="weather_place_note_long">The note is too long (at most 300 characters)</string>
     <string name="weather_place_not_found">This place is no longer in the trip</string>
     <string name="weather_coordinates">%1$.2f, %2$.2f</string>
+
+    <!-- Saved place options and dialogs (WP) -->
+    <string name="weather_place_action_rename">Rename place</string>
+    <string name="weather_place_action_note">Edit note</string>
+    <string name="weather_place_action_delete">Remove place</string>
+    <string name="weather_place_options_desc">Place options</string>
+    <string name="weather_place_rename_title">Rename %1$s</string>
+    <string name="weather_place_name_hint">Place name</string>
+    <string name="weather_place_note_title">Note for %1$s</string>
+    <string name="weather_place_note_hint">Add a note (e.g. key sights, tickets, packing tips)</string>
+    <string name="weather_place_delete_confirm_title">Remove %1$s?</string>
+    <string name="weather_place_delete_confirm_body">Its forecast and notes will be removed from this trip.</string>
+    <string name="weather_place_delete_confirm_action">Remove</string>
+    <string name="weather_save">Save</string>
 </resources>
