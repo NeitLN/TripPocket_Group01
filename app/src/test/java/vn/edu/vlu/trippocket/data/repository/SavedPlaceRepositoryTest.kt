@@ -1,5 +1,9 @@
 package vn.edu.vlu.trippocket.data.repository
 
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
@@ -145,5 +149,29 @@ class SavedPlaceRepositoryTest {
         )
         assertEquals(5, revision("t2"))
         assertEquals("Dalat", repository.observePlaces("t1").first().single().name)
+    }
+
+    /** WP: a double tap on Save must not insert the same coordinates twice. */
+    @Test
+    fun savingTheSameCoordinatesTwiceInARow_keepsOneRow() = runBlocking {
+        val first = repository.savePlace("t1", dalatVn)
+        val second = repository.savePlace("t1", dalatVn.copy(name = "Đà Lạt"))
+
+        assertEquals(first, second)
+        assertEquals(1, t.db.savedPlaceDao().countByTrip("t1"))
+    }
+
+    /** WP: both saves can pass the check outside the transaction; the one inside keeps it at one row. */
+    @Test
+    fun twoSavesAtTheSameTime_stillKeepOneRow() = runBlocking {
+        val ids = coroutineScope {
+            listOf(
+                async(Dispatchers.IO) { repository.savePlace("t1", dalatVn) },
+                async(Dispatchers.IO) { repository.savePlace("t1", dalatVn.copy(name = "Đà Lạt")) },
+            ).awaitAll()
+        }
+
+        assertEquals(1, t.db.savedPlaceDao().countByTrip("t1"))
+        assertEquals(1, ids.toSet().size)
     }
 }

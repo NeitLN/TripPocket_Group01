@@ -17,6 +17,7 @@ import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -26,6 +27,7 @@ import retrofit2.HttpException
 import retrofit2.Response
 import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TestDatabase
+import vn.edu.vlu.trippocket.data.local.entity.WeatherCacheEntity
 import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.SyncStatus
@@ -33,6 +35,7 @@ import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi.Companion.of
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
+import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
@@ -455,6 +458,113 @@ class WeatherViewModelTest {
         assertTrue(state.hasForecast)
         assertTrue(state.fromCache)
         assertFalse(state.loading)
+    }
+
+    @Test
+    fun renamingAPlace_savesIt_andSaysSo(): Unit = runTest {
+        val place = seedPlace()
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.size == 1 }
+
+        viewModel.renamePlace(place.placeId, "  Đà Lạt  ")
+
+        val state = viewModel.places.first { it.message is SaveMessage.Renamed }
+        assertEquals(SaveMessage.Renamed("Đà Lạt"), state.message)
+        assertEquals("Đà Lạt", savedPlaces.observePlaces(tripId).first().single().name)
+        assertEquals(7, revision())
+
+        viewModel.messageShown()
+        assertNull(viewModel.places.value.message)
+    }
+
+    @Test
+    fun aBlankOrTooLongName_isRefused_andKeepsTheOldOne(): Unit = runTest {
+        val place = seedPlace()
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.size == 1 }
+
+        viewModel.renamePlace(place.placeId, "   ")
+        assertEquals(
+            SaveMessage.Invalid(PlaceProblem.BLANK_NAME),
+            viewModel.places.first { it.message is SaveMessage.Invalid }.message,
+        )
+
+        viewModel.renamePlace(place.placeId, "a".repeat(Limits.MAX_TEXT + 1))
+        val state = viewModel.places.first { it.message == SaveMessage.Invalid(PlaceProblem.NAME_TOO_LONG) }
+        assertEquals(SaveMessage.Invalid(PlaceProblem.NAME_TOO_LONG), state.message)
+
+        assertEquals("Da Lat", savedPlaces.observePlaces(tripId).first().single().name)
+        assertEquals(6, revision())
+    }
+
+    @Test
+    fun theNote_isChecked_andShownForTheSelectedPlace(): Unit = runTest {
+        val place = seedPlace()
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.size == 1 }
+
+        viewModel.updatePlaceNote(place.placeId, "a".repeat(Limits.MAX_NOTE + 1))
+        assertEquals(
+            SaveMessage.Invalid(PlaceProblem.NOTE_TOO_LONG),
+            viewModel.places.first { it.message is SaveMessage.Invalid }.message,
+        )
+        assertEquals("", viewModel.places.value.selectedNote)
+
+        viewModel.updatePlaceNote(place.placeId, "  Mang áo ấm  ")
+        viewModel.places.first { it.message == SaveMessage.NoteSaved("Da Lat") }
+        val state = viewModel.places.first { it.selectedNote == "Mang áo ấm" }
+        assertEquals("Mang áo ấm", state.selectedNote)
+        assertEquals("Mang áo ấm", savedPlaces.observePlaces(tripId).first().single().note)
+        assertEquals(7, revision())
+    }
+
+    @Test
+    fun deletingTheSelectedPlace_selectsTheFirstRemaining_andDropsItsCache(): Unit = runTest {
+        val first = seedPlace(vietnam)
+        val second = seedPlace(oregon)
+        t.db.weatherCacheDao().upsert(WeatherCacheEntity(first.placeId, "{}", 1L))
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.size == 2 && it.selectedPlaceId == first.placeId }
+        viewModel.forecast.first { it.place?.placeId == first.placeId }
+
+        viewModel.deletePlace(first.placeId)
+
+        val state = viewModel.places.first {
+            it.message is SaveMessage.Deleted && it.places.size == 1 && it.selectedPlaceId == second.placeId
+        }
+        assertEquals(SaveMessage.Deleted("Da Lat"), state.message)
+        assertEquals(listOf(second.placeId), state.places.map { it.placeId })
+        assertEquals(second.placeId, state.selectedPlaceId)
+        assertNull(t.db.weatherCacheDao().observe(first.placeId).first())
+        assertEquals(8, revision())
+    }
+
+    @Test
+    fun deletingTheLastPlace_leavesTheScreenEmpty(): Unit = runTest {
+        val place = seedPlace()
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.size == 1 }
+        viewModel.forecast.first { it.place?.placeId == place.placeId }
+
+        viewModel.deletePlace(place.placeId)
+
+        val state = viewModel.places.first { it.message is SaveMessage.Deleted && it.places.isEmpty() }
+        assertTrue(state.places.isEmpty())
+        assertNull(state.selectedPlaceId)
+        assertTrue(viewModel.forecast.first { it.place == null }.rows.isEmpty())
+    }
+
+    @Test
+    fun editingAPlaceThatIsNotInTheTrip_isRefused(): Unit = runTest {
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.isEmpty() }
+
+        viewModel.renamePlace("missing", "Name")
+
+        assertEquals(
+            SaveMessage.Invalid(PlaceProblem.NOT_FOUND),
+            viewModel.places.first { it.message is SaveMessage.Invalid }.message,
+        )
     }
 
     private suspend fun revision() =

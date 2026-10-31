@@ -35,6 +35,8 @@ import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.repository.InvalidPlaceException
+import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
@@ -82,6 +84,18 @@ sealed interface SaveMessage {
 
     /** The write failed (invalid name, database error); nothing was added. */
     data object Failed : SaveMessage
+
+    /** The place now has [placeName] (WP). */
+    data class Renamed(val placeName: String) : SaveMessage
+
+    /** The note of [placeName] was saved (WP). */
+    data class NoteSaved(val placeName: String) : SaveMessage
+
+    /** [placeName] was removed from the trip, with its cached forecast (WP). */
+    data class Deleted(val placeName: String) : SaveMessage
+
+    /** The write was refused; [problem] says which field, so the dialog can mark it (WP). */
+    data class Invalid(val problem: PlaceProblem) : SaveMessage
 }
 
 data class SavedPlacesUiState(
@@ -91,6 +105,9 @@ data class SavedPlacesUiState(
 ) {
     /** The place whose forecast the screen shows. */
     val selected: SavedPlace? get() = places.firstOrNull { it.placeId == selectedPlaceId }
+
+    /** Note of [selected], for the place panel; empty when there is no place or no note. */
+    val selectedNote: String get() = selected?.note.orEmpty()
 }
 
 data class ForecastUiState(
@@ -287,6 +304,56 @@ class WeatherViewModel(
     fun selectPlace(placeId: String) {
         _places.update { state ->
             if (state.places.any { it.placeId == placeId }) state.copy(selectedPlaceId = placeId) else state
+        }
+    }
+
+    /** Renames a saved place (WP); one write, reported once through [SavedPlacesUiState.message]. */
+    fun renamePlace(placeId: String, name: String) {
+        val tripId = trip?.tripId ?: return
+        val newName = name.trim()
+        writePlace({ savedPlaceRepository.renamePlace(tripId, placeId, name) }) {
+            SaveMessage.Renamed(newName)
+        }
+    }
+
+    /** Saves the note of a saved place (WP); an empty note removes it. */
+    fun updatePlaceNote(placeId: String, note: String) {
+        val tripId = trip?.tripId ?: return
+        val placeName = _places.value.places.firstOrNull { it.placeId == placeId }?.name.orEmpty()
+        writePlace({ savedPlaceRepository.updateNote(tripId, placeId, note) }) {
+            SaveMessage.NoteSaved(placeName)
+        }
+    }
+
+    /**
+     * Removes a saved place and its cached forecast (WP). Removing the selected place makes the
+     * places flow pick the first remaining one, or none at all.
+     */
+    fun deletePlace(placeId: String) {
+        val tripId = trip?.tripId ?: return
+        val placeName = _places.value.places.firstOrNull { it.placeId == placeId }?.name.orEmpty()
+        writePlace({ savedPlaceRepository.deletePlace(tripId, placeId) }) {
+            SaveMessage.Deleted(placeName)
+        }
+    }
+
+    /**
+     * Runs one write on a saved place and reports the outcome once. A refused field keeps the
+     * old values and reports [SaveMessage.Invalid]; a database failure reports [SaveMessage.Failed].
+     */
+    private fun writePlace(block: suspend () -> Unit, onSuccess: () -> SaveMessage) {
+        viewModelScope.launch {
+            val message = try {
+                block()
+                onSuccess()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: InvalidPlaceException) {
+                SaveMessage.Invalid(e.problem)
+            } catch (e: Exception) {
+                SaveMessage.Failed
+            }
+            _places.update { it.copy(message = message) }
         }
     }
 

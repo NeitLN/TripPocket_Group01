@@ -31,5 +31,12 @@
     <string name="weather_place_exists">%1$s is already saved to this trip</string>
     <string name="weather_place_limit">This trip already has 30 places</string>
     <string name="weather_save_failed">Couldn\'t save the place. Try again.</string>
+    <string name="weather_place_renamed">%1$s renamed</string>
+    <string name="weather_place_note_saved">Note saved for %1$s</string>
+    <string name="weather_place_deleted">%1$s removed from this trip</string>
+    <string name="weather_place_name_blank">Enter a name for the place</string>
+    <string name="weather_place_name_long">The name is too long (at most 80 characters)</string>
+    <string name="weather_place_note_long">The note is too long (at most 300 characters)</string>
+    <string name="weather_place_not_found">This place is no longer in the trip</string>
     <string name="weather_coordinates">%1$.2f, %2$.2f</string>
 </resources>

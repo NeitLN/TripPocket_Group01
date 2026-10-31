@@ -18,6 +18,7 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.Place
+import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.databinding.FragmentWeatherBinding
 import vn.edu.vlu.trippocket.databinding.ViewPlaceChipBinding
 import vn.edu.vlu.trippocket.domain.WeatherError
@@ -142,6 +143,18 @@ class WeatherFragment : Fragment() {
         is SaveMessage.AlreadySaved -> getString(R.string.weather_place_exists, message.placeName)
         SaveMessage.LimitReached -> getString(R.string.weather_place_limit)
         SaveMessage.Failed -> getString(R.string.weather_save_failed)
+        is SaveMessage.Renamed -> getString(R.string.weather_place_renamed, message.placeName)
+        is SaveMessage.NoteSaved -> getString(R.string.weather_place_note_saved, message.placeName)
+        is SaveMessage.Deleted -> getString(R.string.weather_place_deleted, message.placeName)
+        is SaveMessage.Invalid -> getString(placeProblemMessage(message.problem))
+    }
+
+    /** WP: the sentence for a refused rename / note, so the dialog can say what to fix. */
+    private fun placeProblemMessage(problem: PlaceProblem): Int = when (problem) {
+        PlaceProblem.BLANK_NAME -> R.string.weather_place_name_blank
+        PlaceProblem.NAME_TOO_LONG -> R.string.weather_place_name_long
+        PlaceProblem.NOTE_TOO_LONG -> R.string.weather_place_note_long
+        PlaceProblem.NOT_FOUND -> R.string.weather_place_not_found
     }
 
     /** H: one sentence per kind of failure, for the search dropdown and the forecast error. */
