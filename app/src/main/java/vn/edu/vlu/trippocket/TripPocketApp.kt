@@ -26,6 +26,7 @@ class TripPocketApp : Application() {
                 val now = System.currentTimeMillis()
                 container.tripRepository.seedSampleTrips(DevAuthRepository.DEV_UID, now)
                 container.expenseRepository.seedSampleExpenses(now)
+                container.itineraryRepository.seedSampleActivities()
             }
         }
     }

@@ -15,3 +15,19 @@ data class ItineraryActivity(
     val note: String,
     val reminderMinutesBefore: Int?,
 )
+
+/**
+ * What the add/edit form writes (I1). The repository trims the texts, checks the limits and
+ * turns [startTime] into the minute of the day stored in Room.
+ */
+data class ActivityInput(
+    val dayIndex: Int,
+    val title: String,
+    val place: String,
+    val startTime: LocalTime,
+    /** VND; 0 = free. */
+    val estimatedCost: Long,
+    val note: String,
+    /** null = no reminder; I4 sets the alarm. */
+    val reminderMinutesBefore: Int? = null,
+)
