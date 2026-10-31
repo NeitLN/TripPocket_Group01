@@ -48,6 +48,15 @@
     <string name="itinerary_move_up">Move up</string>
     <string name="itinerary_move_down">Move down</string>
 
+    <!-- Reminders (I4) -->
+    <string name="reminder_channel_name">Activity reminders</string>
+    <string name="reminder_channel_description">A note before a planned activity starts</string>
+    <string name="reminder_notification_text">Starting soon. Tap to open the trip.</string>
+    <string name="reminder_status_may_be_late">Reminders may arrive up to about an hour late on this phone</string>
+    <string name="reminder_status_blocked">Notifications are off for TripPocket reminders, so this reminder will not show</string>
+    <string name="reminder_allow_notifications">Allow notifications</string>
+    <string name="reminder_open_settings">Open notification settings</string>
+
     <!-- Checklist (I2) -->
     <string name="checklist_title">Packing list</string>
     <string name="checklist_count">%1$d/%2$d packed</string>
@@ -62,7 +71,7 @@
     <string name="checklist_delete_item">Delete item</string>
     <string name="checklist_save">Save</string>
     <string name="checklist_cancel">Cancel</string>
-    <string name="checklist_deleted">"%1$s" deleted</string>
+    <string name="checklist_deleted">\"%1$s\" deleted</string>
     <string name="checklist_undo">Undo</string>
     <string name="checklist_error_blank">Type an item first.</string>
     <string name="checklist_error_too_long">Keep it under 80 characters.</string>
