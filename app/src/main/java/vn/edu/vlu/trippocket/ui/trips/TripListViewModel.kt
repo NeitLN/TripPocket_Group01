@@ -60,6 +60,8 @@ class TripListViewModel(
     private val today: () -> LocalDate = LocalDate::now,
     /** Rebuilds reminder alarms for an account; null cancels them all (ReminderReconciler, I5). */
     private val syncReminders: suspend (uid: String?) -> Unit = {},
+    /** "Retry backup" of a FAILED trip (A3): back to PENDING and queued again. */
+    private val retryBackup: suspend (tripId: String) -> Unit = {},
 ) : ViewModel() {
 
     val uiState: StateFlow<TripListUiState> = combine(
@@ -89,6 +91,10 @@ class TripListViewModel(
      * null and the list hides the trips; the rows stay in Room for the next sign-in.
      * Every reminder alarm of this phone is cancelled too, so the next account gets none of them.
      */
+    fun retryBackup(tripId: String) {
+        viewModelScope.launch { retryBackup.invoke(tripId) }
+    }
+
     fun signOut() {
         viewModelScope.launch {
             auth.signOut()
@@ -111,6 +117,7 @@ class TripListViewModel(
                     container.expenseRepository,
                     container.authRepository,
                     syncReminders = { uid -> container.reminderReconciler.reconcile(uid) },
+                    retryBackup = { tripId -> container.backupRepository.retry(tripId) },
                 )
             }
         }

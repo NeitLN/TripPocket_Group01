@@ -12,9 +12,12 @@ import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
+import vn.edu.vlu.trippocket.data.remote.firebase.FirestoreBackupRemote
+import vn.edu.vlu.trippocket.data.remote.firebase.NoBackupRemote
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
+import vn.edu.vlu.trippocket.data.repository.BackupRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
@@ -26,6 +29,7 @@ import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
 import vn.edu.vlu.trippocket.work.BackupScheduler
+import vn.edu.vlu.trippocket.work.WorkManagerBackupScheduler
 
 /**
  * Manual dependency injection: one instance of each repository for the whole app.
@@ -38,8 +42,22 @@ class AppContainer(context: Context) {
 
     val database: AppDatabase by lazy { AppDatabase.build(context) }
 
-    /** Replaced by the WorkManager scheduler in A3. */
-    val backupScheduler: BackupScheduler = BackupScheduler { }
+    /**
+     * Backup to Firestore (A3) on WorkManager. Builds without the Firebase config cannot back up,
+     * so their writes just stay PENDING.
+     */
+    val backupScheduler: BackupScheduler by lazy {
+        if (usesDevAuth) BackupScheduler { } else WorkManagerBackupScheduler(context)
+    }
+
+    val backupRepository: BackupRepository by lazy {
+        BackupRepository(
+            database,
+            if (usesDevAuth) NoBackupRemote else FirestoreBackupRemote.create(),
+            authRepository,
+            backupScheduler,
+        )
+    }
 
     val tripWriter: TripWriter by lazy {
         TripWriter(database, TripChangeTracker(database.tripDao()), backupScheduler)
