@@ -26,6 +26,7 @@ import vn.edu.vlu.trippocket.data.model.TripTotals
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import vn.edu.vlu.trippocket.domain.LimitExceededException
 import vn.edu.vlu.trippocket.domain.Limits
+import vn.edu.vlu.trippocket.domain.MemberProblem
 import java.time.LocalDate
 
 /** E2: an expense and its shares are saved together, once, or not at all. Owner: Minh. */
@@ -208,5 +209,112 @@ class ExpenseRepositoryTest {
         val totals = repository.observeTripTotals().first()
         assertEquals(TripTotals(memberCount = 3, spent = 300_001), totals["t1"])
         assertEquals(TripTotals(memberCount = 1, spent = 0), totals["t2"])
+    }
+
+    @Test
+    fun addMember_appendsAtTheEnd_andBumpsRevisionOnce() = runBlocking {
+        val id = repository.addMember("t1", "  Dũng  ")
+
+        val members = repository.observeMembers("t1").first()
+        assertEquals(listOf("a", "b", "c", id), members.map { it.memberId })
+        assertEquals("Dũng", members.last().name)
+        assertEquals(3, members.last().orderIndex)
+        assertEquals(6, trip().localRevision)
+        assertEquals(SyncStatus.PENDING, trip().syncStatus)
+        assertEquals(listOf(OWNER), t.backupRequests)
+    }
+
+    @Test
+    fun the16thMember_isBlocked_andRevisionStays() = runBlocking {
+        val dao = t.db.tripMemberDao()
+        repeat(Limits.MAX_MEMBERS - 3) { i ->
+            dao.insert(TripMemberEntity("seed$i", "t1", "Member $i", 3 + i))
+        }
+        assertEquals(Limits.MAX_MEMBERS, dao.countByTrip("t1"))
+
+        val e = assertRejected<InvalidMemberException> { repository.addMember("t1", "One too many") }
+
+        assertEquals(MemberProblem.LIMIT, e.problem)
+        assertEquals(Limits.MAX_MEMBERS, dao.countByTrip("t1"))
+        assertEquals(5, trip().localRevision)
+        assertEquals(SyncStatus.SYNCED, trip().syncStatus)
+        assertTrue(t.backupRequests.isEmpty())
+    }
+
+    @Test
+    fun blankOrTooLongMemberName_isRejected_beforeAnythingIsWritten() = runBlocking {
+        assertEquals(
+            MemberProblem.BLANK_NAME,
+            assertRejected<InvalidMemberException> { repository.addMember("t1", "   ") }.problem,
+        )
+        assertEquals(
+            MemberProblem.NAME_TOO_LONG,
+            assertRejected<InvalidMemberException> {
+                repository.addMember("t1", "a".repeat(Limits.MAX_TEXT + 1))
+            }.problem,
+        )
+        assertEquals(3, repository.observeMembers("t1").first().size)
+        assertEquals(5, trip().localRevision)
+        assertTrue(t.backupRequests.isEmpty())
+    }
+
+    @Test
+    fun renameMember_trimsTheName_andKeepsTheFixedOrder() = runBlocking {
+        repository.renameMember("t1", "b", "  Bình  ")
+
+        val member = repository.observeMembers("t1").first().single { it.memberId == "b" }
+        assertEquals("Bình", member.name)
+        assertEquals(1, member.orderIndex)
+        assertEquals(6, trip().localRevision)
+
+        assertEquals(
+            MemberProblem.BLANK_NAME,
+            assertRejected<InvalidMemberException> { repository.renameMember("t1", "b", " ") }.problem,
+        )
+        assertEquals(
+            MemberProblem.NAME_TOO_LONG,
+            assertRejected<InvalidMemberException> {
+                repository.renameMember("t1", "b", "a".repeat(Limits.MAX_TEXT + 1))
+            }.problem,
+        )
+        assertEquals(6, trip().localRevision)
+    }
+
+    @Test
+    fun editingAMemberOfAnotherTrip_isRejected() = runBlocking {
+        assertEquals(
+            MemberProblem.NOT_FOUND,
+            assertRejected<InvalidMemberException> { repository.renameMember("t2", "a", "Mine now") }.problem,
+        )
+        assertEquals(
+            MemberProblem.NOT_FOUND,
+            assertRejected<InvalidMemberException> { repository.deleteMember("t2", "a") }.problem,
+        )
+        assertEquals(5, trip("t2").localRevision)
+        assertEquals("A", repository.observeMembers("t1").first().first().name)
+    }
+
+    @Test
+    fun deletingAPayerOrParticipant_isBlocked_butAnUnusedMemberIsDeleted() = runBlocking {
+        repository.addExpense("t1", input(300_000, ExpenseCalculator.splitEqually(300_000, members)))
+        val afterExpense = trip().localRevision
+
+        // "a" pays; "c" only has a share. Both are in use, so neither can be removed.
+        assertEquals(
+            MemberProblem.IN_USE,
+            assertRejected<InvalidMemberException> { repository.deleteMember("t1", "a") }.problem,
+        )
+        assertEquals(
+            MemberProblem.IN_USE,
+            assertRejected<InvalidMemberException> { repository.deleteMember("t1", "c") }.problem,
+        )
+        assertEquals(3, repository.observeMembers("t1").first().size)
+        assertEquals(afterExpense, trip().localRevision)
+
+        val unused = repository.addMember("t1", "Dũng")
+        repository.deleteMember("t1", unused)
+
+        assertEquals(listOf("a", "b", "c"), repository.observeMembers("t1").first().map { it.memberId })
+        assertEquals(afterExpense + 2, trip().localRevision)
     }
 }

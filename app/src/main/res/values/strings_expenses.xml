@@ -15,6 +15,15 @@
     <string name="members_rename">Rename %1$s</string>
     <string name="members_remove">Remove %1$s</string>
     <string name="members_name_hint">Name</string>
+    <string name="expenses_members_button">Members (%1$d)</string>
+    <string name="members_delete_confirm_title">Remove %1$s?</string>
+    <string name="members_delete_confirm_body">They haven\'t paid or shared any expense, so no amounts change.</string>
+    <string name="members_delete_confirm_action">Remove</string>
+    <string name="members_error_name_empty">Enter a name</string>
+    <string name="members_error_name_too_long">Name must be 80 characters or less</string>
+    <string name="members_error_limit">This trip already has 15 members</string>
+    <string name="members_error_in_use">Someone who paid or shares an expense cannot be removed.</string>
+    <string name="members_error_not_found">Member was not found.</string>
 
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>

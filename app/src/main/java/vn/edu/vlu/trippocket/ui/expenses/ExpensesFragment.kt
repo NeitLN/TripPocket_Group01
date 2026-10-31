@@ -59,6 +59,7 @@ class ExpensesFragment : Fragment() {
             if (isChecked) viewModel.showBalances(checkedId == R.id.btnModeBalances)
         }
         binding.btnShare.setOnClickListener { shareSummary() }
+        binding.btnMembers.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_members) }
         binding.fabAddExpense.setOnClickListener { fab ->
             val state = viewModel.uiState.value
             when {
@@ -88,6 +89,7 @@ class ExpensesFragment : Fragment() {
 
     private fun render(state: ExpensesUiState) {
         binding.toggleMode.check(if (state.showBalances) R.id.btnModeBalances else R.id.btnModeExpenses)
+        binding.btnMembers.text = getString(R.string.expenses_members_button, state.memberCount)
         val empty = !state.loading && state.expenses.isEmpty()
         binding.rvExpenses.isVisible = !empty
         binding.tvEmptyExpenses.isVisible = empty

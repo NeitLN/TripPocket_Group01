@@ -17,6 +17,8 @@ import vn.edu.vlu.trippocket.data.model.TripMember
 import vn.edu.vlu.trippocket.data.model.TripTotals
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import vn.edu.vlu.trippocket.domain.Limits
+import vn.edu.vlu.trippocket.domain.MemberNameRule
+import vn.edu.vlu.trippocket.domain.MemberProblem
 import java.time.LocalDate
 import java.util.UUID
 
@@ -25,6 +27,11 @@ class InvalidExpenseException(val problem: ExpenseProblem) :
     IllegalArgumentException("Invalid expense: $problem")
 
 enum class ExpenseProblem { BLANK_TITLE, TITLE_TOO_LONG, AMOUNT_NOT_POSITIVE, SPLIT, MEMBER_NOT_IN_TRIP, NOT_FOUND }
+
+/** Why the repository refused to save or remove a member; the whole write is rolled back. */
+class InvalidMemberException(val problem: MemberProblem) :
+    IllegalArgumentException("Invalid member: $problem")
+
 
 /**
  * Members and expenses of a trip (proposal 3.4), read from Room. Owner: Minh.
@@ -90,6 +97,53 @@ class ExpenseRepository(
         tripWriter.write(tripId) {
             if (expenseDao.deleteById(tripId, expenseId) == 0) throw InvalidExpenseException(ExpenseProblem.NOT_FOUND)
         }
+    }
+
+    /**
+     * E1: adds a member at the end of the fixed order (max + 1) and returns its id.
+     * The name is checked before the transaction; the 15-member cap inside it. Throws
+     * [InvalidMemberException] with [MemberProblem.LIMIT] for the 16th member.
+     */
+    suspend fun addMember(tripId: String, name: String): String {
+        val cleanName = checkedMemberName(name)
+        val memberId = newId()
+        tripWriter.write(tripId) {
+            // Inside the transaction: a rejected add rolls back and keeps the revision.
+            if (memberDao.countByTrip(tripId) >= Limits.MAX_MEMBERS) {
+                throw InvalidMemberException(MemberProblem.LIMIT)
+            }
+            val orderIndex = (memberDao.maxOrderIndex(tripId) ?: -1) + 1
+            memberDao.insert(TripMemberEntity(memberId, tripId, cleanName, orderIndex))
+        }
+        return memberId
+    }
+
+    /** E1: trims the new name and keeps the member's fixed [TripMemberEntity.orderIndex]. */
+    suspend fun renameMember(tripId: String, memberId: String, name: String) {
+        val cleanName = checkedMemberName(name)
+        tripWriter.write(tripId) {
+            val row = memberDao.get(tripId, memberId) ?: throw InvalidMemberException(MemberProblem.NOT_FOUND)
+            memberDao.update(row.copy(name = cleanName))
+        }
+    }
+
+    /**
+     * E1: removes a member who is not used by any expense. A member who paid or shares an
+     * expense is rejected with [MemberProblem.IN_USE] so the screen can give the reason; the
+     * RESTRICT foreign key is the last line of defence.
+     */
+    suspend fun deleteMember(tripId: String, memberId: String) {
+        tripWriter.write(tripId) {
+            val row = memberDao.get(tripId, memberId) ?: throw InvalidMemberException(MemberProblem.NOT_FOUND)
+            if (expenseDao.countUsingMember(memberId) > 0) throw InvalidMemberException(MemberProblem.IN_USE)
+            memberDao.delete(row)
+        }
+    }
+
+    /** Runs before the transaction; a bad name never starts a write. */
+    private fun checkedMemberName(name: String): String {
+        MemberNameRule.validate(name)?.let { throw InvalidMemberException(it) }
+        return MemberNameRule.clean(name)
     }
 
     /**
