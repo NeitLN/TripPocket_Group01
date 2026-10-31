@@ -1,6 +1,8 @@
 package vn.edu.vlu.trippocket.di
 
 import android.content.Context
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,6 +11,7 @@ import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
+import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
@@ -42,8 +45,20 @@ class AppContainer(context: Context) {
         TripWriter(database, TripChangeTracker(database.tripDao()), backupScheduler)
     }
 
-    /** Replaced by the Firebase Auth repository in A1. */
-    val authRepository: AuthRepository = DevAuthRepository()
+    /**
+     * Firebase Auth (A1) when the app was built with `app/google-services.json`, so Firebase
+     * initialised itself at start-up. Without the file (CI, a fresh clone) the app keeps the
+     * offline stand-in, always signed in as DevAuthRepository.DEV_UID.
+     */
+    val authRepository: AuthRepository =
+        if (FirebaseApp.getApps(context).isNotEmpty()) {
+            FirebaseAuthRepository(FirebaseAuth.getInstance())
+        } else {
+            DevAuthRepository()
+        }
+
+    /** True when sign-in is the offline stand-in; the sample trips belong to it. */
+    val usesDevAuth: Boolean get() = authRepository is DevAuthRepository
 
     val tripRepository: TripRepository by lazy {
         TripRepository(

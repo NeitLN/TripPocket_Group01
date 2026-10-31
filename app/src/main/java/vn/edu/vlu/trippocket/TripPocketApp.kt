@@ -21,7 +21,9 @@ class TripPocketApp : Application() {
     override fun onCreate() {
         super.onCreate()
         container = AppContainer(this)
-        if (BuildConfig.DEBUG) {
+        // Sample trips belong to the offline stand-in account only; a real Firebase account
+        // starts with an empty list, like a real user.
+        if (BuildConfig.DEBUG && container.usesDevAuth) {
             appScope.launch {
                 val now = System.currentTimeMillis()
                 container.tripRepository.seedSampleTrips(DevAuthRepository.DEV_UID, now)
