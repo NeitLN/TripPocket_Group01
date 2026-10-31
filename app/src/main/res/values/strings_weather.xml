@@ -1,11 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Weather strings. Owner: Duy Anh. -->
 <resources>
+    <string name="weather_title">Trip weather</string>
     <string name="weather_search_hint">Search a city</string>
     <string name="weather_search_helper">Results from Open-Meteo Geocoding</string>
+    <string name="weather_search_try_again">Try again</string>
     <string name="weather_no_results">No places found</string>
     <string name="weather_error_network">Can\'t reach Open-Meteo. Check your connection and try again.</string>
     <string name="weather_saved_places">Saved places</string>
+    <string name="weather_empty_places_title">No places in your pocket yet</string>
+    <string name="weather_empty_places_body">Save a city to keep its 16-day forecast, even offline.</string>
+    <string name="weather_empty_search_button">Search a city</string>
     <string name="weather_last_updated">Last updated %1$s</string>
     <string name="weather_offline_copy">Offline copy</string>
     <string name="weather_rain_chance">Rain %1$d%%</string>
@@ -13,7 +18,6 @@
     <string name="weather_temp_range">%1$d° / %2$d°</string>
     <string name="weather_trip_day">Day %1$d</string>
     <string name="weather_not_available">Forecast not available yet</string>
-    <string name="weather_no_saved_places">No saved places yet. Search a city above to add it to this trip and see its forecast.</string>
     <string name="weather_forecast_error">Couldn\'t load the forecast. The place is saved.</string>
     <string name="weather_place_title">%1$s, %2$s</string>
     <string name="weather_condition_low">%1$s · %2$d° low</string>
@@ -21,5 +25,8 @@
     <string name="weather_retry">Retry</string>
     <string name="weather_refresh">Refresh forecast</string>
     <string name="weather_saved_toast">%1$s saved to this trip</string>
+    <string name="weather_place_exists">%1$s is already saved to this trip</string>
+    <string name="weather_place_limit">This trip already has 30 places</string>
+    <string name="weather_save_failed">Couldn\'t save the place. Try again.</string>
     <string name="weather_coordinates">%1$.2f, %2$.2f</string>
 </resources>

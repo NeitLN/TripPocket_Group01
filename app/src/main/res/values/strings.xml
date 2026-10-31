@@ -15,6 +15,16 @@
     <string name="error_password_no_digit">Add at least one number</string>
     <string name="msg_not_in_milestone1">Available in a later milestone</string>
 
+    <!-- Register & Auth Errors (A1) -->
+    <string name="register_confirm_password_hint">Confirm password</string>
+    <string name="register_have_account">Already have an account?</string>
+    <string name="error_password_mismatch">Passwords do not match</string>
+    <string name="error_auth_invalid_credentials">Incorrect email or password</string>
+    <string name="error_auth_email_in_use">An account with this email already exists</string>
+    <string name="error_auth_network">Can\'t connect. Check your internet connection and try again.</string>
+    <string name="error_auth_too_many_requests">Too many unsuccessful attempts. Please try again later.</string>
+    <string name="error_auth_generic">Something went wrong. Please try again.</string>
+
     <!-- Trip list -->
     <string name="trips_title">My trips</string>
     <string name="trips_new">New trip</string>
@@ -32,6 +42,9 @@
     <string name="trips_empty_title">No trips yet</string>
     <string name="trips_empty_body">Plan your first trip: itinerary, packing list, weather and shared costs in one place.</string>
     <string name="action_sign_out">Sign out</string>
+    <string name="sign_out_dialog_title">Sign out?</string>
+    <string name="sign_out_dialog_message">Your trips stay on this phone. Sign in again to see them.</string>
+    <string name="action_cancel">Cancel</string>
     <string name="action_toggle_empty">Preview empty state</string>
     <string name="sync_synced">Backed up</string>
     <string name="sync_pending">Waiting for backup</string>
