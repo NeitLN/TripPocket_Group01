@@ -54,6 +54,12 @@ class ItineraryRepository(
      */
     fun estimatedTotal(tripId: String): Flow<Long> = activityDao.observeTotal(tripId)
 
+    /**
+     * The last day index that holds an activity, null for an empty itinerary. A2 reads it so a
+     * trip cannot be shortened under its activities.
+     */
+    suspend fun lastUsedDayIndex(tripId: String): Int? = activityDao.lastUsedDayIndex(tripId)
+
     /** null when the activity does not exist. */
     suspend fun getActivity(activityId: String): ItineraryActivity? =
         activityDao.get(activityId)?.let(::toModel)

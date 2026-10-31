@@ -20,7 +20,7 @@ import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 
 /** Trip list on a real (in-memory) Room database. Owner: Tiến. */
@@ -45,8 +45,8 @@ class TripListViewModelTest {
 
     private fun viewModel() = TripListViewModel(
         SavedStateHandle(),
-        TripRepository(t.db.tripDao(), auth),
-        SampleTripRepository(),
+        TripRepository(t.db.tripDao(), auth, t.writer),
+        ExpenseRepository(t.db.tripMemberDao(), t.db.expenseDao(), t.writer),
         auth,
         syncReminders = { reminderSyncs += it },
     )

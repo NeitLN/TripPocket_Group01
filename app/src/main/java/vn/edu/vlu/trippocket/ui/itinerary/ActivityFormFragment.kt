@@ -18,7 +18,6 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
-import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.databinding.FragmentActivityFormBinding
 import vn.edu.vlu.trippocket.domain.ActivityProblem
 import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
@@ -189,7 +188,7 @@ class ActivityFormFragment : Fragment() {
         binding.etNote.doAfterTextChanged { viewModel.onNoteChanged(it?.toString().orEmpty()) }
         binding.etReminder.doAfterTextChanged { viewModel.onReminderChanged(it?.toString().orEmpty()) }
 
-        val trip = (detailViewModel.gate.value as? TripGate.Ready)?.trip ?: MockData.trip(detailViewModel.tripId)
+        val trip = (detailViewModel.gate.value as? TripGate.Ready)?.trip
         val dayLabels = (0 until state.dayCount).map { i ->
             val date = trip?.dateOfDay(i)
             if (date != null) {

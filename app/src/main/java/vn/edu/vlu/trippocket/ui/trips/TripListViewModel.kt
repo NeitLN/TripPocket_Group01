@@ -17,8 +17,9 @@ import kotlinx.coroutines.withContext
 import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.model.TripTotals
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.domain.TripGroup
 import vn.edu.vlu.trippocket.domain.TripGrouping
@@ -53,8 +54,8 @@ data class TripListUiState(
 class TripListViewModel(
     private val savedStateHandle: SavedStateHandle,
     tripRepository: TripRepository,
-    // Member count and spent total move to Minh's ExpenseRepository with E1/E2.
-    private val sampleRepository: SampleTripRepository,
+    /** Member count and spent total of each card, from Room (A2). */
+    expenseRepository: ExpenseRepository,
     private val auth: AuthRepository,
     private val today: () -> LocalDate = LocalDate::now,
     /** Rebuilds reminder alarms for an account; null cancels them all (ReminderReconciler, I5). */
@@ -63,9 +64,10 @@ class TripListViewModel(
 
     val uiState: StateFlow<TripListUiState> = combine(
         tripRepository.observeTrips(),
+        expenseRepository.observeTripTotals(),
         savedStateHandle.getStateFlow(KEY_EMPTY, false),
-    ) { trips, showEmpty ->
-        val cards = if (showEmpty) emptyList() else trips.map(::toCard)
+    ) { trips, totals, showEmpty ->
+        val cards = if (showEmpty) emptyList() else trips.map { toCard(it, totals[it.tripId] ?: TripTotals()) }
         TripListUiState(
             loading = false,
             trips = cards,
@@ -95,11 +97,7 @@ class TripListViewModel(
         }
     }
 
-    private fun toCard(trip: Trip) = TripCard(
-        trip = trip,
-        memberCount = sampleRepository.members(trip.tripId).size,
-        spent = sampleRepository.spentTotal(trip.tripId),
-    )
+    private fun toCard(trip: Trip, totals: TripTotals) = TripCard(trip, totals.memberCount, totals.spent)
 
     companion object {
         private const val KEY_EMPTY = "show_empty_preview"
@@ -110,7 +108,7 @@ class TripListViewModel(
                 TripListViewModel(
                     createSavedStateHandle(),
                     container.tripRepository,
-                    container.sampleTripRepository,
+                    container.expenseRepository,
                     container.authRepository,
                     syncReminders = { uid -> container.reminderReconciler.reconcile(uid) },
                 )

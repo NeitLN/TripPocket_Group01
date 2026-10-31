@@ -45,7 +45,15 @@ class AppContainer(context: Context) {
     /** Replaced by the Firebase Auth repository in A1. */
     val authRepository: AuthRepository = DevAuthRepository()
 
-    val tripRepository: TripRepository by lazy { TripRepository(database.tripDao(), authRepository) }
+    val tripRepository: TripRepository by lazy {
+        TripRepository(
+            database.tripDao(),
+            authRepository,
+            tripWriter,
+            lastUsedDay = { tripId -> itineraryRepository.lastUsedDayIndex(tripId) },
+            syncReminders = { uid -> reminderReconciler.reconcile(uid) },
+        )
+    }
 
     val expenseRepository: ExpenseRepository by lazy {
         ExpenseRepository(database.tripMemberDao(), database.expenseDao(), tripWriter)

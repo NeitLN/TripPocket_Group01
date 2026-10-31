@@ -19,6 +19,10 @@ interface TripDao {
     @Query("SELECT * FROM trip WHERE tripId = :tripId AND ownerUid = :ownerUid AND isDeleted = 0")
     fun observeTrip(tripId: String, ownerUid: String): Flow<TripEntity?>
 
+    /** A2: the trip of [ownerUid] for the form; null when missing, deleted or not theirs. */
+    @Query("SELECT * FROM trip WHERE tripId = :tripId AND ownerUid = :ownerUid AND isDeleted = 0")
+    suspend fun get(tripId: String, ownerUid: String): TripEntity?
+
     @Query("SELECT ownerUid FROM trip WHERE tripId = :tripId")
     suspend fun ownerOf(tripId: String): String?
 
