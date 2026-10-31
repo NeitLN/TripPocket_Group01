@@ -14,6 +14,7 @@ import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
+import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -48,6 +49,11 @@ class AppContainer(context: Context) {
 
     val expenseRepository: ExpenseRepository by lazy {
         ExpenseRepository(database.tripMemberDao(), database.expenseDao(), tripWriter)
+    }
+
+    /** I1: the activities of a trip, in Room. */
+    val itineraryRepository: ItineraryRepository by lazy {
+        ItineraryRepository(database.activityDao(), tripWriter)
     }
 
     /** Mock data for the module screens until they move to Room. */

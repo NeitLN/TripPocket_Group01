@@ -36,6 +36,33 @@ interface ActivityDao {
     @Query("SELECT COUNT(*) FROM activity WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: String): Int
 
+    /** I1: one day of the itinerary, in display order. */
+    @Query("SELECT * FROM activity WHERE tripId = :tripId AND dayIndex = :dayIndex ORDER BY orderIndex")
+    fun observeDay(tripId: String, dayIndex: Int): Flow<List<ActivityEntity>>
+
+    /** I1: the same rows as a list, for renumbering inside a transaction. */
+    @Query("SELECT * FROM activity WHERE tripId = :tripId AND dayIndex = :dayIndex ORDER BY orderIndex")
+    suspend fun dayRows(tripId: String, dayIndex: Int): List<ActivityEntity>
+
+    /** I1: the planned cost of one day; 0 when the day is empty. */
+    @Query("SELECT COALESCE(SUM(estimatedCost), 0) FROM activity WHERE tripId = :tripId AND dayIndex = :dayIndex")
+    fun observeDayTotal(tripId: String, dayIndex: Int): Flow<Long>
+
+    /** I1: the planned budget of the trip, for E4 (Tiến/Minh). */
+    @Query("SELECT COALESCE(SUM(estimatedCost), 0) FROM activity WHERE tripId = :tripId")
+    fun observeTotal(tripId: String): Flow<Long>
+
+    /** I1: null when the activity does not exist. */
+    @Query("SELECT * FROM activity WHERE activityId = :activityId")
+    suspend fun get(activityId: String): ActivityEntity?
+
+    /** I1: number of days of the trip; null when the trip is missing or deleted. */
+    @Query("SELECT endDate - startDate + 1 FROM trip WHERE tripId = :tripId AND isDeleted = 0")
+    suspend fun tripDayCount(tripId: String): Int?
+
+    @Query("DELETE FROM activity WHERE tripId = :tripId AND activityId = :activityId")
+    suspend fun deleteById(tripId: String, activityId: String): Int
+
     /** I5: every activity with a reminder, of every account on this phone. */
     @Query(
         "SELECT activity.activityId, activity.tripId, trip.ownerUid, trip.isDeleted, trip.startDate, " +

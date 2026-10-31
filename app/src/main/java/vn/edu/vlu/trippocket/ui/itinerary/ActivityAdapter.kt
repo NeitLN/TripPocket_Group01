@@ -11,18 +11,24 @@ import vn.edu.vlu.trippocket.data.model.ItineraryActivity
 import vn.edu.vlu.trippocket.databinding.ItemActivityBinding
 import vn.edu.vlu.trippocket.util.Format
 
-class ActivityAdapter : ListAdapter<ItineraryActivity, ActivityAdapter.ViewHolder>(DIFF) {
+class ActivityAdapter(
+    private val onItemClick: (ItineraryActivity) -> Unit = {},
+) : ListAdapter<ItineraryActivity, ActivityAdapter.ViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(
-        ItemActivityBinding.inflate(LayoutInflater.from(parent.context), parent, false)
+        ItemActivityBinding.inflate(LayoutInflater.from(parent.context), parent, false),
+        onItemClick,
     )
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(getItem(position))
 
-    class ViewHolder(private val binding: ItemActivityBinding) :
-        RecyclerView.ViewHolder(binding.root) {
+    class ViewHolder(
+        private val binding: ItemActivityBinding,
+        private val onItemClick: (ItineraryActivity) -> Unit,
+    ) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(activity: ItineraryActivity) {
+            binding.root.setOnClickListener { onItemClick(activity) }
             binding.tvTime.text = activity.startTime.format(Format.time)
             binding.ivReminder.isVisible = activity.reminderMinutesBefore != null
             binding.tvActivityTitle.text = activity.title
