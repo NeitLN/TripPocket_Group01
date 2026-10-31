@@ -1,5 +1,7 @@
 package vn.edu.vlu.trippocket.data.repository
 
+import android.util.Log
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import vn.edu.vlu.trippocket.data.local.MockData
@@ -78,7 +80,7 @@ class ItineraryRepository(
             activityDao.insert(toEntity(activityId, tripId, input, orderIndex = nextOrderIndex(tripId, input.dayIndex)))
             reorderDay(tripId, input.dayIndex)
         }
-        syncReminder(activityId)
+        syncReminderAfterWrite(activityId)
         return activityId
     }
 
@@ -101,7 +103,7 @@ class ItineraryRepository(
             if (movedDay) reorderDay(tripId, old.dayIndex)
             if (movedDay || old.startTime != input.startTime.toMinuteOfDay()) reorderDay(tripId, input.dayIndex)
         }
-        syncReminder(activityId)
+        syncReminderAfterWrite(activityId)
     }
 
     /** Deletes the activity and closes the gap in its day's order. */
@@ -112,7 +114,22 @@ class ItineraryRepository(
             activityDao.deleteById(tripId, activityId)
             reorderDay(tripId, row.dayIndex)
         }
-        syncReminder(activityId)
+        syncReminderAfterWrite(activityId)
+    }
+
+    /**
+     * The write is already committed here, so a failed alarm update must not report the save as
+     * failed: it is logged, and ReminderReconciler sets the alarms again (boot, time zone,
+     * sign-in, restore). A cancellation is not a failure and is rethrown.
+     */
+    private suspend fun syncReminderAfterWrite(activityId: String) {
+        try {
+            syncReminder(activityId)
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            Log.w(TAG, "Reminder of $activityId not updated; the reconciler will set it again", e)
+        }
     }
 
     /**
@@ -296,6 +313,7 @@ class ItineraryRepository(
 
     private companion object {
         const val MINUTES_PER_DAY = 24 * 60
+        const val TAG = "ItineraryRepository"
     }
 }
 

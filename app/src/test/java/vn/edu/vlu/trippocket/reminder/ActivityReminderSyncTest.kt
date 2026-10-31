@@ -140,4 +140,19 @@ class ActivityReminderSyncTest {
 
         assertEquals(before, scheduler.scheduled.getValue(id))
     }
+
+    @Test
+    fun aFailingAlarmUpdate_doesNotFailTheSave() = runBlocking {
+        val failing = ItineraryRepository(t.db.activityDao(), t.writer, { "f${++nextId}" }) {
+            throw IllegalStateException("alarm service unavailable")
+        }
+
+        val id = failing.addActivity("t1", input())
+        failing.updateActivity("t1", id, input(title = "Lunch"))
+
+        // The rows are committed; the reconciler sets the alarm again later.
+        assertEquals("Lunch", t.db.activityDao().get(id)?.title)
+        failing.deleteActivity("t1", id)
+        assertEquals(null, t.db.activityDao().get(id))
+    }
 }

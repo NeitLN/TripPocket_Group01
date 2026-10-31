@@ -53,5 +53,7 @@
     <string name="reminder_channel_description">A note before a planned activity starts</string>
     <string name="reminder_notification_text">Starting soon. Tap to open the trip.</string>
     <string name="reminder_status_may_be_late">Reminders may arrive up to about an hour late on this phone</string>
-    <string name="reminder_status_blocked">Notifications are off for TripPocket, so this reminder will not show</string>
+    <string name="reminder_status_blocked">Notifications are off for TripPocket reminders, so this reminder will not show</string>
+    <string name="reminder_allow_notifications">Allow notifications</string>
+    <string name="reminder_open_settings">Open notification settings</string>
 </resources>

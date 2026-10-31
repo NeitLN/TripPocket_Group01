@@ -14,6 +14,8 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeoutOrNull
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.TripPocketApp
+import vn.edu.vlu.trippocket.data.local.dao.ActivityDao
+import vn.edu.vlu.trippocket.data.local.dao.ReminderCandidate
 import vn.edu.vlu.trippocket.ui.detail.TripDetailActivity
 import vn.edu.vlu.trippocket.ui.trips.MainActivity
 
@@ -35,9 +37,8 @@ class ReminderReceiver : BroadcastReceiver() {
             try {
                 withTimeoutOrNull(TIME_BUDGET_MS) {
                     val container = app.container
-                    val reminder = container.database.activityDao().reminderCandidate(activityId)
                     val uid = container.authRepository.currentUid.value
-                    if (reminder != null && !reminder.isDeleted && reminder.ownerUid == uid) {
+                    reminderToShow(container.database.activityDao(), activityId, uid)?.let { reminder ->
                         show(app, activityId, reminder.tripId, reminder.title)
                     }
                 }
@@ -77,6 +78,14 @@ class ReminderReceiver : BroadcastReceiver() {
         const val CHANNEL_ID = "activity_reminders"
         private const val NOTIFICATION_ID = 1
         private const val TIME_BUDGET_MS = 8_000L
+
+        /**
+         * The reminder to show for [activityId], or null when the activity has no reminder any
+         * more, its trip was deleted, or the trip belongs to another account than [uid] (null when
+         * nobody is signed in).
+         */
+        suspend fun reminderToShow(dao: ActivityDao, activityId: String, uid: String?): ReminderCandidate? =
+            dao.reminderCandidate(activityId)?.takeIf { !it.isDeleted && uid != null && it.ownerUid == uid }
 
         fun newIntent(context: Context, reminder: ScheduledReminder): Intent =
             AlarmReminderScheduler.matchingIntent(context, reminder.activityId)
