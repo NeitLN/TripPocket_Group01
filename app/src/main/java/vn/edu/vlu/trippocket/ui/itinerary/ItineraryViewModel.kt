@@ -24,6 +24,7 @@ import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.domain.DailyWeather
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.LocalDate
@@ -33,8 +34,13 @@ data class ItineraryUiState(
     val days: List<LocalDate> = emptyList(),
     val selectedDay: Int = 0,
     val activities: List<ItineraryActivity> = emptyList(),
-    /** Weather of the trip's first saved place on that date; null if not in the cached forecast. */
+    /**
+     * W5: weather of the trip's first saved place on that date, from the Room cache (works
+     * offline); null when the cache has no such day, shown as "Forecast not available yet".
+     */
     val forecast: ForecastDay? = null,
+    /** false: the trip has no saved place yet, so the screen says how to add one instead. */
+    val hasSavedPlace: Boolean = false,
     /** Planned cost of the selected day. */
     val estimatedCost: Long = 0,
     val checklistDone: Int = 0,
@@ -50,8 +56,9 @@ data class ItineraryUiState(
 
 /**
  * Screen 3, day by day. The trip (its days, so a trip created or re-dated in A2 shows the right
- * tabs) and the activities come from Room; the checklist count and the forecast stay on the
- * sample data until their own tasks (W5, I2) move them.
+ * tabs), the activities and the weather (W5: the cached forecast of the first saved place, via
+ * WeatherRepository.observeDailyWeather) come from Room; the checklist count stays on the
+ * sample data until I2 moves it.
  */
 class ItineraryViewModel(
     private val savedStateHandle: SavedStateHandle,
@@ -62,10 +69,6 @@ class ItineraryViewModel(
 ) : ViewModel() {
 
     private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
-
-    private val forecast: List<ForecastDay> = weatherRepository.savedPlaces(tripId).firstOrNull()
-        ?.let(weatherRepository::forecast)
-        .orEmpty()
 
     /** Days of the trip as last read from Room; 0 until the trip is loaded. */
     private var dayCount: Int = 0
@@ -82,13 +85,14 @@ class ItineraryViewModel(
         selectedDay,
         selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day) },
         itineraryRepository.observeActivities(tripId),
-    ) { trip, day, activities, all ->
+        weatherRepository.observeDailyWeather(tripId),
+    ) { trip, day, activities, all, weather ->
         dayCount = trip?.dayCount ?: 0
         if (trip == null) return@combine ItineraryUiState()
         // A trip made shorter (A2) or a restored tab past the end: fall back to the last day.
         val shown = day.coerceIn(0, dayCount - 1)
         if (shown != day) selectDay(shown)
-        state(trip, shown, if (shown == day) activities else emptyList(), all.size)
+        state(trip, shown, if (shown == day) activities else emptyList(), all.size, weather)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
 
     fun selectDay(dayIndex: Int) {
@@ -137,6 +141,7 @@ class ItineraryViewModel(
         dayIndex: Int,
         activities: List<ItineraryActivity>,
         activityCount: Int,
+        weather: DailyWeather,
     ): ItineraryUiState {
         val dates = (0 until trip.dayCount).map(trip::dateOfDay)
         val (done, total) = sampleRepository.checklist(trip.tripId)
@@ -144,7 +149,9 @@ class ItineraryViewModel(
             days = dates,
             selectedDay = dayIndex,
             activities = activities,
-            forecast = dates.getOrNull(dayIndex)?.let { date -> forecast.firstOrNull { it.date == date } },
+            // Exact date only (ForecastMatcher): a day outside the cache never shows another day.
+            forecast = (weather as? DailyWeather.Cached)?.let { cached -> dates.getOrNull(dayIndex)?.let(cached::on) },
+            hasSavedPlace = weather is DailyWeather.Cached,
             estimatedCost = activities.sumOf { it.estimatedCost },
             checklistDone = done,
             checklistTotal = total,
