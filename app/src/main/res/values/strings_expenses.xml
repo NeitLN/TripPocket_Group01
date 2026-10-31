@@ -1,6 +1,30 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Expenses strings. Owner: Minh. -->
 <resources>
+    <!-- Members screen (layouts for E1) -->
+    <string name="members_title">Trip members</string>
+    <plurals name="members_count">
+        <item quantity="one">%1$d of %2$d members</item>
+        <item quantity="other">%1$d of %2$d members</item>
+    </plurals>
+    <string name="members_add_hint">Add a member</string>
+    <string name="members_add">Add</string>
+    <string name="members_rule">Leftover dong from an equal split go to the first people in this list. Someone who paid or shares an expense cannot be removed.</string>
+    <string name="members_empty">No one here yet. Add the people on this trip to split costs.</string>
+    <string name="members_in_use">Paid or shares an expense</string>
+    <string name="members_rename">Rename %1$s</string>
+    <string name="members_remove">Remove %1$s</string>
+    <string name="members_name_hint">Name</string>
+    <string name="expenses_members_button">Members (%1$d)</string>
+    <string name="members_delete_confirm_title">Remove %1$s?</string>
+    <string name="members_delete_confirm_body">They haven\'t paid or shared any expense, so no amounts change.</string>
+    <string name="members_delete_confirm_action">Remove</string>
+    <string name="members_error_name_empty">Enter a name</string>
+    <string name="members_error_name_too_long">Name must be 80 characters or less</string>
+    <string name="members_error_limit">This trip already has 15 members</string>
+    <string name="members_error_in_use">Someone who paid or shares an expense cannot be removed.</string>
+    <string name="members_error_not_found">Member was not found.</string>
+
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>
     <string name="expenses_category_food">Food</string>
@@ -22,4 +46,38 @@
     <string name="expenses_settle_header">Suggested payments</string>
     <string name="expenses_settlement">%1$s pays %2$s</string>
     <string name="expenses_empty_body">Add the first cost and TripPocket will split it for you.</string>
+    <string name="expenses_need_members">Add the trip members first, then their expenses.</string>
+    <string name="expenses_limit_reached">This trip has reached the expense limit (%1$d).</string>
+
+    <!-- Expense form (E2) -->
+    <string name="expense_form_add">Add expense</string>
+    <string name="expense_form_edit">Edit expense</string>
+    <string name="expense_field_title">What was it for?</string>
+    <string name="expense_field_amount">Amount</string>
+    <string name="expense_currency_suffix">₫</string>
+    <string name="expense_field_payer">Paid by</string>
+    <string name="expense_field_category">Category</string>
+    <string name="expense_field_date">Date</string>
+    <string name="expense_field_split">Split</string>
+    <string name="expense_split_equal">Equally</string>
+    <string name="expense_split_custom">Custom amounts</string>
+    <string name="expense_share_hint">Share</string>
+    <string name="expense_split_equal_status">%1$s each, leftover dong go to the first in the list</string>
+    <string name="expense_split_remaining">%1$s left to assign</string>
+    <string name="expense_split_over">%1$s more than the amount</string>
+    <string name="expense_split_balanced">Shares add up to the amount</string>
+    <string name="expense_save">Save</string>
+    <string name="expense_delete">Delete expense</string>
+    <string name="expense_delete_confirm_title">Delete this expense?</string>
+    <string name="expense_delete_confirm_body">Balances and suggested payments will be worked out again without it.</string>
+    <string name="expense_delete_confirm_action">Delete</string>
+    <string name="expense_cancel">Cancel</string>
+    <string name="expense_error_title">Say what the money was for</string>
+    <string name="expense_error_amount">Enter an amount above 0</string>
+    <string name="expense_error_payer">Choose who paid</string>
+    <string name="expense_error_participants">Pick at least one person to split with</string>
+    <string name="expense_error_custom_sum">The shares must add up to the amount</string>
+    <string name="expense_error_custom_number">Enter each share as a whole number of dong</string>
+    <string name="expense_error_member">A member in this split is no longer in the trip</string>
+    <string name="expense_error_not_found">This expense was deleted</string>
 </resources>

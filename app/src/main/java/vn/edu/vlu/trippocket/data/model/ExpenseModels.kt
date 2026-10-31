@@ -38,3 +38,18 @@ data class Expense(
 )
 
 data class Settlement(val fromId: String, val toId: String, val amount: Long)
+
+/** A new or edited expense as the form sends it; [shares] are already split. */
+data class ExpenseInput(
+    val title: String,
+    val amount: Long,
+    val payerId: String,
+    val category: ExpenseCategory,
+    val splitType: SplitType,
+    val spentAt: LocalDate,
+    /** memberId -> share in VND; must add up to [amount]. */
+    val shares: Map<String, Long>,
+)
+
+/** What a trip card shows about members and money. */
+data class TripTotals(val memberCount: Int = 0, val spent: Long = 0)

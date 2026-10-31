@@ -1,0 +1,13 @@
+rules_version = '2';
+
+// TripPocket backup (proposal 6.3). One document per trip at users/{uid}/trips/{tripId};
+// a signed-in account can read and write only its own trips. Everything else is denied.
+// Published from the Firebase console (docs/RUNBOOK.md, Firebase step 5); keep this file
+// and the console in sync.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid}/trips/{tripId} {
+      allow read, write: if request.auth != null && request.auth.uid == uid;
+    }
+  }
+}
