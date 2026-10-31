@@ -20,6 +20,7 @@ import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.databinding.FragmentWeatherBinding
 import vn.edu.vlu.trippocket.databinding.ViewPlaceChipBinding
+import vn.edu.vlu.trippocket.domain.WeatherError
 import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
 import vn.edu.vlu.trippocket.ui.detail.TripGate
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
@@ -109,6 +110,9 @@ class WeatherFragment : Fragment() {
         binding.progressSearch.isVisible = state is SearchState.Loading
         binding.tvNoResults.isVisible = state is SearchState.Empty
         binding.layoutSearchError.isVisible = state is SearchState.Error
+        if (state is SearchState.Error) {
+            binding.tvSearchError.setText(errorMessage(state.error))
+        }
     }
 
     private fun renderPlaces(state: SavedPlacesUiState) {
@@ -140,12 +144,22 @@ class WeatherFragment : Fragment() {
         SaveMessage.Failed -> getString(R.string.weather_save_failed)
     }
 
+    /** H: one sentence per kind of failure, for the search dropdown and the forecast error. */
+    private fun errorMessage(error: WeatherError): Int = when (error) {
+        WeatherError.NETWORK -> R.string.weather_error_network
+        WeatherError.RATE_LIMITED -> R.string.weather_error_rate_limited
+        WeatherError.SERVER -> R.string.weather_error_server
+        WeatherError.BAD_RESPONSE -> R.string.weather_error_bad_response
+    }
+
     private fun renderForecast(state: ForecastUiState) {
         binding.swipeRefresh.isRefreshing = state.refreshing
         val place = state.place
         binding.groupForecast.isVisible = place != null
         binding.tvForecastError.isVisible = place != null && state.failed && !state.hasForecast
         binding.btnRetry.isVisible = place != null && state.failed && !state.hasForecast
+        val error = state.error
+        if (error != null && !state.hasForecast) binding.tvForecastError.setText(errorMessage(error))
         // The badge reminds the user they are looking at stored data.
         binding.tvOfflineBadge.isVisible = state.fromCache
         if (place == null) return

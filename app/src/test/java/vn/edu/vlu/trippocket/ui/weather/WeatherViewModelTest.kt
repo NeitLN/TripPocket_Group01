@@ -13,6 +13,7 @@ import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
+import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -21,6 +22,8 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import retrofit2.HttpException
+import retrofit2.Response
 import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.model.Place
@@ -34,6 +37,7 @@ import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
+import vn.edu.vlu.trippocket.domain.WeatherError
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.io.IOException
 import java.time.LocalDate
@@ -87,6 +91,7 @@ class WeatherViewModelTest {
             SampleTripRepository(),
             WeatherRepository(api, forecastApi, t.db.weatherCacheDao(), t.db.savedPlaceDao(), now = { clock }),
             savedPlaces,
+            now = { clock },
         )
     }
 
@@ -154,7 +159,7 @@ class WeatherViewModelTest {
 
         viewModel.onQueryChanged("da lat")
         runSearch()
-        assertEquals(SearchState.Error, viewModel.search.value)
+        assertEquals(SearchState.Error(WeatherError.NETWORK), viewModel.search.value)
 
         api.failWith = null
         viewModel.onQueryChanged("da nang")
@@ -172,7 +177,7 @@ class WeatherViewModelTest {
 
         viewModel.onQueryChanged("da lat")
         runSearch()
-        assertEquals(SearchState.Error, viewModel.search.value)
+        assertEquals(SearchState.Error(WeatherError.NETWORK), viewModel.search.value)
 
         api.failWith = null
         viewModel.retrySearch()
@@ -229,7 +234,7 @@ class WeatherViewModelTest {
         viewModel.onQueryChanged("da lat")
         runSearch()
 
-        assertEquals(SearchState.Error, viewModel.search.value)
+        assertEquals(SearchState.Error(WeatherError.NETWORK), viewModel.search.value)
         assertEquals(before, viewModel.forecast.value)
         assertEquals(place.placeId, viewModel.places.value.selectedPlaceId)
     }
@@ -268,17 +273,24 @@ class WeatherViewModelTest {
     }
 
     @Test
-    fun the31stPlace_saysTheLimitIsReached_andDownloadsNothing(): Unit = runTest {
+    fun the31stPlace_saysTheLimitIsReached_andWritesOrDownloadsNothing(): Unit = runTest {
         repeat(Limits.MAX_PLACES) { i ->
             savedPlaces.savePlace(tripId, Place("P$i", "", "Vietnam", 10.0 + i, 106.0))
         }
+        // A fresh cache for the selected place, so opening the screen is not a stale refresh.
+        forecastApi.response = of(day1)
+        weather.refreshForecast(savedPlaces.observePlaces(tripId).first().first())
+        forecastApi.requests.clear()
         val viewModel = newViewModel()
         viewModel.places.first { it.places.size == Limits.MAX_PLACES }
+        val before = revision()
 
         viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
 
         val state = viewModel.places.first { it.message == SaveMessage.LimitReached }
         assertEquals(Limits.MAX_PLACES, state.places.size)
+        // The 31st place is refused before the write and before the forecast request.
+        assertEquals(before, revision())
         assertTrue(forecastApi.requests.isEmpty())
     }
 
@@ -318,6 +330,7 @@ class WeatherViewModelTest {
         assertEquals(26, state.today?.maxTemp)
         assertTrue(state.fromCache)
         assertFalse(state.loading)
+        assertEquals(WeatherError.NETWORK, state.error)
     }
 
     @Test
@@ -340,6 +353,115 @@ class WeatherViewModelTest {
         val state = viewModel.forecast.first { !it.failed && it.today?.maxTemp == 30 }
         assertFalse(state.fromCache)
     }
+
+    @Test
+    fun anOldCache_isDownloadedAgain_once_whenThePlaceIsShown(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 20)
+        weather.refreshForecast(place)
+        clock += 7 * 60 * 60 * 1000
+        forecastApi.response = of(day1, maxTemp = 27)
+        forecastApi.requests.clear()
+
+        val viewModel = newViewModel()
+        val state = viewModel.forecast.first { it.today?.maxTemp == 27 }
+
+        assertFalse(state.failed)
+        assertEquals(1, forecastApi.requests.size)
+    }
+
+    @Test
+    fun aFreshCache_isNotDownloadedWhenThePlaceIsShown(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 20)
+        weather.refreshForecast(place)
+        forecastApi.requests.clear()
+
+        val viewModel = newViewModel()
+        val state = viewModel.forecast.first { it.hasForecast }
+
+        assertEquals(20, state.today?.maxTemp)
+        // The stale check runs before this state is emitted, so a refresh would already be running.
+        assertTrue(forecastApi.requests.isEmpty())
+    }
+
+    @Test
+    fun anOldCacheThatCannotBeDownloaded_keepsTheForecast_andSaysWhy(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 20)
+        weather.refreshForecast(place)
+        clock += 7 * 60 * 60 * 1000
+        forecastApi.failWith = IOException("offline")
+        forecastApi.requests.clear()
+
+        val viewModel = newViewModel()
+        val state = viewModel.forecast.first { it.failed }
+
+        assertEquals(20, state.today?.maxTemp)
+        assertTrue(state.hasForecast)
+        assertTrue(state.fromCache)
+        assertEquals(WeatherError.NETWORK, state.error)
+        assertEquals(1, forecastApi.requests.size)
+    }
+
+    @Test
+    fun refreshingAgainWhileTheFirstRequestRuns_sendsOneRequest(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 20)
+        weather.refreshForecast(place)
+        forecastApi.requests.clear()
+        forecastApi.gate = CompletableDeferred()
+
+        val viewModel = newViewModel()
+        viewModel.forecast.first { it.hasForecast }
+
+        viewModel.refresh()
+        viewModel.forecast.first { it.refreshing }
+        // A second tap while the first request is still open must not reach the API.
+        viewModel.refresh()
+        runCurrent()
+
+        assertEquals(1, forecastApi.requests.size)
+        forecastApi.gate?.complete(Unit)
+        runCurrent()
+        assertEquals(1, forecastApi.requests.size)
+    }
+
+    @Test
+    fun tooManyRequests_showsTheRateLimitSentence(): Unit = runTest {
+        val api = FakeGeocodingApi { listOf(dalat) }
+        api.failWith = httpError(429)
+        val viewModel = newViewModel(api)
+
+        viewModel.onQueryChanged("da lat")
+        runSearch()
+
+        assertEquals(SearchState.Error(WeatherError.RATE_LIMITED), viewModel.search.value)
+    }
+
+    @Test
+    fun aServerErrorWhileDownloading_keepsItsKind(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 20)
+        weather.refreshForecast(place)
+        clock += 7 * 60 * 60 * 1000
+        forecastApi.failWith = httpError(503)
+
+        val viewModel = newViewModel()
+        val state = viewModel.forecast.first { it.failed }
+
+        assertEquals(WeatherError.SERVER, state.error)
+        // The old cache is still shown, marked as the offline copy.
+        assertTrue(state.hasForecast)
+        assertTrue(state.fromCache)
+        assertFalse(state.loading)
+    }
+
+    private suspend fun revision() =
+        t.db.tripDao().observeTrip(tripId, TestDatabase.OWNER).first()!!.localRevision
+
+    private fun httpError(code: Int): HttpException =
+        HttpException(Response.error<Any>(code, "".toResponseBody()))
 
     private companion object {
         const val SEARCH_DEBOUNCE_MS = 300L

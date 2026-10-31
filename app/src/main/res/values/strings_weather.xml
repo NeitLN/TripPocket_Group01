@@ -7,6 +7,9 @@
     <string name="weather_search_try_again">Try again</string>
     <string name="weather_no_results">No places found</string>
     <string name="weather_error_network">Can\'t reach Open-Meteo. Check your connection and try again.</string>
+    <string name="weather_error_rate_limited">Open-Meteo is getting too many requests. Wait a minute and try again.</string>
+    <string name="weather_error_server">Open-Meteo is having trouble. Try again later.</string>
+    <string name="weather_error_bad_response">Open-Meteo sent an answer the app could not read. Try again.</string>
     <string name="weather_saved_places">Saved places</string>
     <string name="weather_empty_places_title">No places in your pocket yet</string>
     <string name="weather_empty_places_body">Save a city to keep its 16-day forecast, even offline.</string>
