@@ -9,9 +9,11 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
+import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.advanceTimeBy
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.runCurrent
@@ -698,15 +700,80 @@ class WeatherViewModelTest {
     }
 
     @Test
-    fun retrySearch_withABlankQuery_staysIdle_andNeverCallsTheApi(): Unit = runTest {
+    fun clearingTheQueryWhileASearchRuns_goesBackToIdle_andTheLateAnswerNeverShows(): Unit = runTest {
         val api = FakeGeocodingApi { listOf(dalat) }
+        api.gate = CompletableDeferred()
         val viewModel = newViewModel(api)
 
+        viewModel.onQueryChanged("da lat")
+        runSearch()
+        assertEquals(SearchState.Loading, viewModel.search.value)
+
+        viewModel.onQueryChanged("")
+        runSearch()
+        assertEquals(SearchState.Idle, viewModel.search.value)
+
+        // The cancelled request answers late: the dropdown stays closed.
+        api.gate?.complete(Unit)
+        runCurrent()
+        assertEquals(SearchState.Idle, viewModel.search.value)
+
+        // Retry with a blank query has nothing to run.
         viewModel.retrySearch()
         runCurrent()
-
         assertEquals(SearchState.Idle, viewModel.search.value)
-        assertTrue(api.queries.isEmpty())
+        assertEquals(listOf("da lat"), api.queries)
+    }
+
+    @Test
+    fun aNewQuery_cancelsTheRunningRequest_andOnlyItsResultsShow(): Unit = runTest {
+        val api = FakeGeocodingApi { listOf(FakeGeocodingApi.result(it)) }
+        api.gate = CompletableDeferred()
+        val viewModel = newViewModel(api)
+        val seen = mutableListOf<SearchState>()
+        backgroundScope.launch(UnconfinedTestDispatcher(testScheduler)) { viewModel.search.collect { seen += it } }
+
+        viewModel.onQueryChanged("a")
+        runSearch()
+        assertEquals(SearchState.Loading, viewModel.search.value)
+
+        viewModel.onQueryChanged("b")
+        runSearch()
+        api.gate?.complete(Unit)
+        runCurrent()
+
+        val state = viewModel.search.value
+        assertTrue(state is SearchState.Results)
+        assertEquals(listOf("b"), (state as SearchState.Results).places.map { it.name })
+        assertEquals(listOf("a", "b"), api.queries)
+        // flatMapLatest dropped "a" before it answered, so its results never reached the screen.
+        assertFalse(seen.any { it is SearchState.Results && it.places.any { p -> p.name == "a" } })
+    }
+
+    @Test
+    fun retryAndRefresh_downloadAgainByTheSavedCoordinates_withoutSavingThePlaceAgain(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 20)
+        weather.refreshForecast(place)
+        forecastApi.requests.clear()
+        val viewModel = newViewModel()
+        viewModel.forecast.first { it.hasForecast }
+        val before = revision()
+
+        forecastApi.response = of(day1, maxTemp = 27)
+        viewModel.retry()
+        viewModel.forecast.first { it.today?.maxTemp == 27 && !it.refreshing }
+
+        forecastApi.response = of(day1, maxTemp = 28)
+        viewModel.refresh()
+        viewModel.forecast.first { it.today?.maxTemp == 28 && !it.refreshing }
+
+        val places = savedPlaces.observePlaces(tripId).first()
+        assertEquals(listOf(place.placeId), places.map { it.placeId })
+        assertEquals(place.placeId, viewModel.places.value.selectedPlaceId)
+        assertEquals(listOf(vietnam, vietnam), forecastApi.requests)
+        // Only the cache changed: the trip was not written, so the place was not saved again.
+        assertEquals(before, revision())
     }
 
     private suspend fun revision() =
