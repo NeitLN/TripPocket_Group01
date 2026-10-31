@@ -100,22 +100,16 @@ class ExpensesViewModel(
         showBalances: Boolean,
     ): ExpensesUiState {
         val byId = members.associateBy { it.memberId }
-        val balances = ExpenseCalculator.balances(members, expenses)
+        // E3: computed from the same members and expenses as the list, so they never disagree.
+        val balances = ExpenseCalculator.summarize(members, expenses)
         return ExpensesUiState(
             loading = false,
             trip = trip,
             showBalances = showBalances,
             memberCount = members.size,
             expenses = expenses.map { ExpenseRow(it, byId[it.payerId]?.name.orEmpty()) },
-            balances = members.map { member ->
-                MemberBalance(
-                    member = member,
-                    paid = ExpenseCalculator.paidBy(member.memberId, expenses),
-                    share = ExpenseCalculator.shareOf(member.memberId, expenses),
-                    balance = balances[member.memberId] ?: 0L,
-                )
-            },
-            settlements = ExpenseCalculator.settle(balances).mapNotNull {
+            balances = balances.positions.map { MemberBalance(it.member, it.paid, it.share, it.balance) },
+            settlements = balances.settlements.mapNotNull {
                 val from = byId[it.fromId] ?: return@mapNotNull null
                 val to = byId[it.toId] ?: return@mapNotNull null
                 SettlementRow(from, to, it.amount)
