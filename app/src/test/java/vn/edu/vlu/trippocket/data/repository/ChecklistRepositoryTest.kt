@@ -1,6 +1,8 @@
 package vn.edu.vlu.trippocket.data.repository
 
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
@@ -106,14 +108,51 @@ class ChecklistRepositoryTest {
     }
 
     @Test
-    fun delete_thenRestore_bringsTheSameItemBack(): Unit = runBlocking {
+    fun delete_thenRestore_bringsTheSameItemBack_andEachMarksTheTripOnce(): Unit = runBlocking {
         val id = repository.add("t1", "Ô gấp")
         repository.setDone("t1", id, done = true)
+        val beforeDelete = revision()
 
         val removed = repository.delete("t1", id)
         assertTrue(items().isEmpty())
+        assertEquals(beforeDelete + 1, revision())
 
         repository.restore(removed)
         assertEquals(listOf(ChecklistItem(id, "t1", "Ô gấp", isDone = true)), items())
+        assertEquals(beforeDelete + 2, revision())
+    }
+
+    @Test
+    fun undo_putsTheItemBackInItsOldPlace(): Unit = runBlocking {
+        repository.add("t1", "Áo khoác")
+        val middle = repository.add("t1", "Kem chống nắng")
+        repository.add("t1", "Sạc dự phòng")
+
+        repository.restore(repository.delete("t1", middle))
+
+        assertEquals(listOf("Áo khoác", "Kem chống nắng", "Sạc dự phòng"), items().map { it.title })
+    }
+
+    @Test
+    fun undo_whenANewItemTookThePlace_goesToTheEnd(): Unit = runBlocking {
+        repository.add("t1", "Áo khoác")
+        val last = repository.add("t1", "Kem chống nắng")
+        val removed = repository.delete("t1", last)
+        repository.add("t1", "Sạc dự phòng") // may reuse the freed rowid
+
+        repository.restore(removed)
+
+        assertEquals(setOf("Áo khoác", "Sạc dự phòng", "Kem chống nắng"), items().map { it.title }.toSet())
+        assertEquals(3, items().size)
+    }
+
+    @Test
+    fun aQuickTickThenUntick_endsUnticked(): Unit = runBlocking {
+        val id = repository.add("t1", "Hộ chiếu")
+        coroutineScope {
+            launch { repository.setDone("t1", id, done = true) }
+            launch { repository.setDone("t1", id, done = false) }
+        }
+        assertEquals(false, items().single().isDone)
     }
 }

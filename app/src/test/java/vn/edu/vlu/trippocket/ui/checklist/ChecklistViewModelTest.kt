@@ -51,8 +51,7 @@ class ChecklistViewModelTest {
     private suspend fun ChecklistViewModel.state(total: Int) =
         withTimeout(5_000) { uiState.first { !it.loading && it.total == total } }
 
-    private suspend fun ChecklistViewModel.nextMessage() =
-        withTimeout(5_000) { message.first { it != null } }!!.also { messageShown() }
+    private suspend fun ChecklistViewModel.nextMessage() = withTimeout(5_000) { messages.first() }
 
     @Test
     fun add_tick_andCount(): Unit = runBlocking {
@@ -91,7 +90,24 @@ class ChecklistViewModelTest {
         val deleted = viewModel.nextMessage() as ChecklistMessage.Deleted
         assertTrue(viewModel.state(total = Limits.MAX_CHECKLIST_ITEMS - 1).canAdd)
 
-        viewModel.undoDelete(deleted.item)
-        assertTrue(viewModel.state(total = Limits.MAX_CHECKLIST_ITEMS).items.any { it.itemId == deleted.item.itemId })
+        viewModel.undoDelete(deleted.deleted)
+        assertEquals(deleted.deleted.item, viewModel.state(total = Limits.MAX_CHECKLIST_ITEMS).items.first())
+    }
+
+    @Test
+    fun twoQuickDeletes_bothOfferUndo(): Unit = runBlocking {
+        val viewModel = viewModel()
+        viewModel.add("A")
+        viewModel.nextMessage()
+        viewModel.add("B")
+        viewModel.nextMessage()
+        val (a, b) = viewModel.state(total = 2).items
+
+        viewModel.delete(a)
+        viewModel.delete(b)
+
+        val first = viewModel.nextMessage() as ChecklistMessage.Deleted
+        val second = viewModel.nextMessage() as ChecklistMessage.Deleted
+        assertEquals(listOf("A", "B"), listOf(first.deleted.item.title, second.deleted.item.title))
     }
 }

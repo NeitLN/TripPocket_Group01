@@ -16,6 +16,7 @@ import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.FragmentChecklistBinding
 import vn.edu.vlu.trippocket.domain.Limits
+import vn.edu.vlu.trippocket.ui.detail.TripDetailActivity
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 
 /** Packing checklist tab (I2): add, tick, rename and delete items, with Undo after a delete. */
@@ -72,7 +73,7 @@ class ChecklistFragment : Fragment() {
                         render(state)
                     }
                 }
-                launch { viewModel.message.collect { it?.let(::show) } }
+                launch { viewModel.messages.collect(::show) }
             }
         }
     }
@@ -103,11 +104,11 @@ class ChecklistFragment : Fragment() {
             }
             is ChecklistMessage.Problem -> binding.tilNewItem.error = getString(message.text)
             is ChecklistMessage.Deleted ->
-                Snackbar.make(binding.root, getString(R.string.checklist_deleted, message.item.title), Snackbar.LENGTH_LONG)
-                    .setAction(R.string.checklist_undo) { viewModel.undoDelete(message.item) }
+                Snackbar.make(binding.root, getString(R.string.checklist_deleted, message.deleted.item.title), Snackbar.LENGTH_LONG)
+                    .setAction(R.string.checklist_undo) { viewModel.undoDelete(message.deleted) }
+                    .setAnchorView((activity as? TripDetailActivity)?.snackbarAnchor)
                     .show()
         }
-        viewModel.messageShown()
     }
 
     override fun onDestroyView() {
