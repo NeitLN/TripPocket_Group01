@@ -6,6 +6,7 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.dao.ActivityDao
+import vn.edu.vlu.trippocket.data.local.dao.BackupDao
 import vn.edu.vlu.trippocket.data.local.dao.ChecklistDao
 import vn.edu.vlu.trippocket.data.local.dao.ExpenseDao
 import vn.edu.vlu.trippocket.data.local.dao.SavedPlaceDao
@@ -48,6 +49,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun savedPlaceDao(): SavedPlaceDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun weatherCacheDao(): WeatherCacheDao
+    abstract fun backupDao(): BackupDao
 
     companion object {
         private const val NAME = "TripPocket_DB"
