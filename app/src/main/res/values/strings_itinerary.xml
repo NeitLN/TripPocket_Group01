@@ -9,4 +9,42 @@
     <string name="itinerary_empty_body">Tap Add activity to plan a stop, a meal or a ride.</string>
     <string name="itinerary_free">Free</string>
     <string name="content_desc_reminder">Reminder set</string>
+
+    <!-- Activity form (I1) -->
+    <string name="itinerary_form_add_title">Add activity</string>
+    <string name="itinerary_form_edit_title">Edit activity</string>
+    <string name="itinerary_field_title">What are you planning?</string>
+    <string name="itinerary_field_place">Place</string>
+    <string name="itinerary_field_time">Time</string>
+    <string name="itinerary_field_day">Day</string>
+    <string name="itinerary_day_option">Day %1$d (%2$s)</string>
+    <string name="itinerary_day_simple">Day %1$d</string>
+    <string name="itinerary_field_cost">Estimated cost</string>
+    <string name="itinerary_currency_suffix">₫</string>
+    <string name="itinerary_field_note">Note</string>
+    <string name="itinerary_field_reminder">Reminder</string>
+    <string name="itinerary_reminder_helper">Minutes before the activity starts</string>
+    <string name="itinerary_save">Save activity</string>
+    <string name="itinerary_delete">Delete activity</string>
+    <string name="itinerary_delete_confirm_title">Delete %1$s?</string>
+    <string name="itinerary_delete_confirm_message">This activity will be removed from your itinerary.</string>
+    <string name="itinerary_cancel">Cancel</string>
+    <string name="itinerary_limit_count">Activities: %1$d/%2$d</string>
+    <string name="itinerary_limit_reached">This trip has reached the limit of 200 activities.</string>
+    <string name="itinerary_error_title_empty">Enter a title</string>
+    <string name="itinerary_error_title_too_long">Title must be 80 characters or less</string>
+    <string name="itinerary_error_place_too_long">Place must be 80 characters or less</string>
+    <string name="itinerary_error_note_too_long">Note must be 200 characters or less</string>
+    <string name="itinerary_error_cost_invalid">Enter a whole number of dong (or 0 for free)</string>
+    <string name="itinerary_error_reminder_invalid">Enter minutes before start (0 or more)</string>
+    <string name="itinerary_error_time_invalid">Choose a valid start time</string>
+    <string name="itinerary_error_day_invalid">Choose a valid day</string>
+    <string name="itinerary_error_not_found">This activity was deleted</string>
+    <string name="itinerary_error_save_failed">Couldn\'t save activity. Please try again.</string>
+
+    <!-- Drag & drop and reorder (I3) -->
+    <string name="itinerary_drag_handle_desc">Drag to reorder</string>
+    <string name="itinerary_activity_more_desc">More reorder options</string>
+    <string name="itinerary_move_up">Move up</string>
+    <string name="itinerary_move_down">Move down</string>
 </resources>

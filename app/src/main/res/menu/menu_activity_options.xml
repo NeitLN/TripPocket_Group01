@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Menu for an activity row (I3): Move up / Move down (WCAG 2.2 AA). -->
+<menu xmlns:android="http://schemas.android.com/apk/res/android">
+    <item
+        android:id="@+id/action_move_up"
+        android:title="@string/itinerary_move_up" />
+    <item
+        android:id="@+id/action_move_down"
+        android:title="@string/itinerary_move_down" />
+</menu>
+
