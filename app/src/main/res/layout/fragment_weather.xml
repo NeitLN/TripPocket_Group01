@@ -246,10 +246,22 @@
         android:maxLines="1"
         android:textAppearance="?attr/textAppearanceTitleLarge"
         android:textColor="?attr/colorOnSecondaryContainer"
-        app:layout_constraintEnd_toStartOf="@id/btnRefresh"
+        app:layout_constraintEnd_toStartOf="@id/btnPlaceOptions"
         app:layout_constraintStart_toStartOf="@id/vTodayPanel"
         app:layout_constraintTop_toTopOf="@id/vTodayPanel"
         tools:text="Đà Lạt, Vietnam" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnPlaceOptions"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:contentDescription="@string/weather_place_options_desc"
+        app:icon="@drawable/ic_more_vert"
+        app:iconTint="?attr/colorOnSecondaryContainer"
+        app:layout_constraintBottom_toBottomOf="@id/btnRefresh"
+        app:layout_constraintEnd_toStartOf="@id/btnRefresh"
+        app:layout_constraintTop_toTopOf="@id/btnRefresh" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnRefresh"
@@ -264,11 +276,33 @@
         app:layout_constraintEnd_toEndOf="@id/vTodayPanel"
         app:layout_constraintTop_toTopOf="@id/vTodayPanel" />
 
+    <TextView
+        android:id="@+id/tvPlaceNote"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xxs"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/btnPlaceOptions"
+        app:layout_constraintStart_toStartOf="@id/tvPlaceName"
+        app:layout_constraintTop_toBottomOf="@id/tvPlaceName"
+        tools:text="Remember to visit the night market on Saturday. Bring a warm jacket."
+        tools:visibility="visible" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierPlaceHeader"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="tvPlaceName,tvPlaceNote" />
+
     <!-- Packed chain: "Last updated ..." -> "Offline copy" -->
     <TextView
         android:id="@+id/tvLastUpdated"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
         android:textAppearance="?attr/textAppearanceBodySmall"
         android:textColor="?attr/colorOnSecondaryContainer"
         app:layout_constrainedWidth="true"
@@ -276,7 +310,7 @@
         app:layout_constraintHorizontal_bias="0"
         app:layout_constraintHorizontal_chainStyle="packed"
         app:layout_constraintStart_toStartOf="@id/tvPlaceName"
-        app:layout_constraintTop_toBottomOf="@id/tvPlaceName"
+        app:layout_constraintTop_toBottomOf="@id/barrierPlaceHeader"
         tools:text="Last updated 16 Oct, 14:05" />
 
     <TextView
@@ -349,7 +383,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="ivTodayIcon,tvTodayTemp,tvTodayRain" />
+        app:constraint_referenced_ids="ivTodayIcon,tvTodayTemp,tvTodayRain,tvPlaceNote" />
 
     <Space
         android:id="@+id/spaceTodayBottom"
@@ -417,7 +451,7 @@
         android:id="@+id/groupForecast"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="vTodayPanel,tvPlaceName,btnRefresh,tvLastUpdated,ivTodayIcon,tvTodayTemp,tvTodayCondition,tvTodayRain,swipeRefresh" />
+        app:constraint_referenced_ids="vTodayPanel,tvPlaceName,btnPlaceOptions,btnRefresh,tvLastUpdated,ivTodayIcon,tvTodayTemp,tvTodayCondition,tvTodayRain,swipeRefresh" />
 
     <TextView
         android:id="@+id/tvAttribution"
