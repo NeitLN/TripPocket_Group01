@@ -11,6 +11,7 @@ import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
+import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -39,6 +40,10 @@ class AppContainer(context: Context) {
     val authRepository: AuthRepository = DevAuthRepository()
 
     val tripRepository: TripRepository by lazy { TripRepository(database.tripDao(), authRepository) }
+
+    val expenseRepository: ExpenseRepository by lazy {
+        ExpenseRepository(database.tripMemberDao(), database.expenseDao(), tripWriter)
+    }
 
     /** Mock data for the module screens until they move to Room. */
     val sampleTripRepository = SampleTripRepository()

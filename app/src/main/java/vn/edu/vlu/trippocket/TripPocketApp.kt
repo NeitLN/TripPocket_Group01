@@ -23,7 +23,9 @@ class TripPocketApp : Application() {
         container = AppContainer(this)
         if (BuildConfig.DEBUG) {
             appScope.launch {
-                container.tripRepository.seedSampleTrips(DevAuthRepository.DEV_UID, System.currentTimeMillis())
+                val now = System.currentTimeMillis()
+                container.tripRepository.seedSampleTrips(DevAuthRepository.DEV_UID, now)
+                container.expenseRepository.seedSampleExpenses(now)
             }
         }
     }
