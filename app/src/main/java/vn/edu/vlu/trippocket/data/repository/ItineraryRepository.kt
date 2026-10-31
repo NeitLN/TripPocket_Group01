@@ -34,6 +34,11 @@ class ItineraryRepository(
     private val activityDao: ActivityDao,
     private val tripWriter: TripWriter,
     private val newId: () -> String = { UUID.randomUUID().toString() },
+    /**
+     * I4: called after an add, edit or delete has been committed, so the activity's alarm is set,
+     * moved or cancelled to match Room. AppContainer passes ReminderReconciler.syncActivity.
+     */
+    private val syncReminder: suspend (activityId: String) -> Unit = {},
 ) {
 
     /** The activities of one day, in display order. */
@@ -73,6 +78,7 @@ class ItineraryRepository(
             activityDao.insert(toEntity(activityId, tripId, input, orderIndex = nextOrderIndex(tripId, input.dayIndex)))
             reorderDay(tripId, input.dayIndex)
         }
+        syncReminder(activityId)
         return activityId
     }
 
@@ -95,7 +101,7 @@ class ItineraryRepository(
             if (movedDay) reorderDay(tripId, old.dayIndex)
             if (movedDay || old.startTime != input.startTime.toMinuteOfDay()) reorderDay(tripId, input.dayIndex)
         }
-        // TODO(I4): reschedule/cancel the reminder of this activity
+        syncReminder(activityId)
     }
 
     /** Deletes the activity and closes the gap in its day's order. */
@@ -106,7 +112,7 @@ class ItineraryRepository(
             activityDao.deleteById(tripId, activityId)
             reorderDay(tripId, row.dayIndex)
         }
-        // TODO(I4): reschedule/cancel the reminder of this activity
+        syncReminder(activityId)
     }
 
     /**

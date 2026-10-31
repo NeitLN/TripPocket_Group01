@@ -1,10 +1,13 @@
 package vn.edu.vlu.trippocket.ui.itinerary
 
+import android.Manifest
+import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -21,6 +24,8 @@ import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.databinding.FragmentActivityFormBinding
 import vn.edu.vlu.trippocket.domain.ActivityProblem
+import vn.edu.vlu.trippocket.reminder.ReminderPermissions
+import vn.edu.vlu.trippocket.reminder.ReminderStatus
 import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
 import vn.edu.vlu.trippocket.ui.detail.TripGate
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
@@ -28,7 +33,8 @@ import vn.edu.vlu.trippocket.util.Format
 import java.time.LocalTime
 
 /**
- * Screen to add or edit an itinerary activity (I1).
+ * Screen to add or edit an itinerary activity (I1). With a reminder set, the reminder field says
+ * when the phone will not show it on time (I4): notifications off, or only inexact alarms.
  */
 class ActivityFormFragment : Fragment() {
 
@@ -39,6 +45,10 @@ class ActivityFormFragment : Fragment() {
     private val detailViewModel: TripDetailViewModel by activityViewModels { TripDetailViewModel.Factory }
 
     private var fieldsFilled = false
+
+    /** I4: asked on save when a reminder is set; the activity is saved whatever the answer. */
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,7 +75,10 @@ class ActivityFormFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
         fieldsFilled = false
 
-        binding.btnSave.setOnClickListener { viewModel.save() }
+        binding.btnSave.setOnClickListener {
+            if (viewModel.uiState.value.reminder.isNotBlank()) askNotificationPermission()
+            viewModel.save()
+        }
         binding.btnDelete.setOnClickListener {
             val title = viewModel.uiState.value.title.trim()
             ConfirmDeleteActivityDialogFragment.newInstance(title)
@@ -90,6 +103,32 @@ class ActivityFormFragment : Fragment() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The user may have changed the permissions in Settings while away.
+        _binding?.let { renderReminderStatus(viewModel.uiState.value.reminder) }
+    }
+
+    private fun askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ReminderPermissions.needsNotificationPermission(requireContext())
+        ) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    /** Helper text under the reminder field: the default hint, or why it may not come on time. */
+    private fun renderReminderStatus(reminder: String) {
+        val status = if (reminder.isBlank()) ReminderStatus.ON_TIME else ReminderPermissions.status(requireContext())
+        binding.tilReminder.helperText = getString(
+            when (status) {
+                ReminderStatus.ON_TIME -> R.string.itinerary_reminder_helper
+                ReminderStatus.MAY_BE_LATE -> R.string.reminder_status_may_be_late
+                ReminderStatus.BLOCKED -> R.string.reminder_status_blocked
+            }
+        )
     }
 
     private fun showTimePicker(currentTime: LocalTime) {
@@ -134,6 +173,7 @@ class ActivityFormFragment : Fragment() {
         }
 
         binding.etTime.setText(state.startTime.format(Format.time))
+        renderReminderStatus(state.reminder)
 
         binding.tilTitle.error = when {
             state.has(ActivityProblem.BLANK_TITLE) -> getString(R.string.itinerary_error_title_empty)

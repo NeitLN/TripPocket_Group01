@@ -72,6 +72,15 @@ interface ActivityDao {
     )
     suspend fun reminderCandidates(): List<ReminderCandidate>
 
+    /** I4: the reminder of one activity; null when the activity is gone or has no reminder. */
+    @Query(
+        "SELECT activity.activityId, activity.tripId, trip.ownerUid, trip.isDeleted, trip.startDate, " +
+            "activity.dayIndex, activity.startTime, activity.title, activity.reminderMinutesBefore " +
+            "FROM activity JOIN trip ON trip.tripId = activity.tripId " +
+            "WHERE activity.activityId = :activityId AND activity.reminderMinutesBefore IS NOT NULL"
+    )
+    suspend fun reminderCandidate(activityId: String): ReminderCandidate?
+
     @Insert
     suspend fun insert(row: ActivityEntity)
 
