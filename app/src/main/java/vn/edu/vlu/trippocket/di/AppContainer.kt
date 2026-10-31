@@ -3,6 +3,10 @@ package vn.edu.vlu.trippocket.di
 import android.content.Context
 import com.google.firebase.FirebaseApp
 import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -11,6 +15,7 @@ import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
+import vn.edu.vlu.trippocket.data.remote.firebase.BackupRemote
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
 import vn.edu.vlu.trippocket.data.remote.firebase.FirestoreBackupRemote
 import vn.edu.vlu.trippocket.data.remote.firebase.NoBackupRemote
@@ -21,6 +26,7 @@ import vn.edu.vlu.trippocket.data.repository.BackupRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
+import vn.edu.vlu.trippocket.data.repository.RestoreRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -50,14 +56,35 @@ class AppContainer(context: Context) {
         if (usesDevAuth) BackupScheduler { } else WorkManagerBackupScheduler(context)
     }
 
+    /** Firestore, shared by backup and restore: its settings can only be set once. */
+    private val backupRemote: BackupRemote by lazy {
+        if (usesDevAuth) NoBackupRemote else FirestoreBackupRemote.create()
+    }
+
     val backupRepository: BackupRepository by lazy {
-        BackupRepository(
+        BackupRepository(database, backupRemote, authRepository, backupScheduler)
+    }
+
+    /**
+     * A4: "Restore from backup". Restored trips get their forecast again in the background,
+     * since the weather cache is not backed up; a place that fails keeps no forecast until
+     * the next refresh.
+     */
+    val restoreRepository: RestoreRepository by lazy {
+        RestoreRepository(
             database,
-            if (usesDevAuth) NoBackupRemote else FirestoreBackupRemote.create(),
+            backupRemote,
             authRepository,
             backupScheduler,
+            reconcileReminders = { uid -> reminderReconciler.reconcile(uid) },
+            onRestored = { tripIds ->
+                backgroundScope.launch { tripIds.forEach { weatherRepository.refreshTripForecasts(it) } }
+            },
         )
     }
+
+    /** Work started by a repository that must outlive the screen that asked for it. */
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val tripWriter: TripWriter by lazy {
         TripWriter(database, TripChangeTracker(database.tripDao()), backupScheduler)

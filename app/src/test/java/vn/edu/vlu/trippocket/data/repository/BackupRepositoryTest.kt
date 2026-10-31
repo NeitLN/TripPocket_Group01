@@ -52,6 +52,8 @@ class BackupRepositoryTest {
             deletes += tripId
             documents.remove("$ownerUid/$tripId")
         }
+
+        override suspend fun fetchAll(ownerUid: String) = error("backup never reads")
     }
 
     private val t = TestDatabase()

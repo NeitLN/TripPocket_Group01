@@ -8,6 +8,12 @@
         android:title="@string/action_toggle_empty"
         app:showAsAction="never" />
 
+    <!-- A4: shown only when Firebase is configured (MainActivity). -->
+    <item
+        android:id="@+id/action_restore"
+        android:title="@string/action_restore"
+        app:showAsAction="never" />
+
     <item
         android:id="@+id/action_sign_out"
         android:icon="@drawable/ic_logout"
