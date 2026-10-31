@@ -47,4 +47,25 @@
     <string name="itinerary_activity_more_desc">More reorder options</string>
     <string name="itinerary_move_up">Move up</string>
     <string name="itinerary_move_down">Move down</string>
+
+    <!-- Checklist (I2) -->
+    <string name="checklist_title">Packing list</string>
+    <string name="checklist_count">%1$d/%2$d packed</string>
+    <string name="checklist_add_hint">Add something to bring</string>
+    <string name="checklist_add">Add</string>
+    <string name="checklist_at_limit">%1$d/%2$d items: the list is full</string>
+    <string name="checklist_empty_title">Nothing to pack yet</string>
+    <string name="checklist_empty_body">Add what to bring or what to sort out before you leave.</string>
+    <string name="checklist_edit_desc">Rename %1$s</string>
+    <string name="checklist_delete_desc">Delete %1$s</string>
+    <string name="checklist_rename_title">Rename item</string>
+    <string name="checklist_delete_item">Delete item</string>
+    <string name="checklist_save">Save</string>
+    <string name="checklist_cancel">Cancel</string>
+    <string name="checklist_deleted">"%1$s" deleted</string>
+    <string name="checklist_undo">Undo</string>
+    <string name="checklist_error_blank">Type an item first.</string>
+    <string name="checklist_error_too_long">Keep it under 80 characters.</string>
+    <string name="checklist_error_limit">The list is full: 100 items per trip.</string>
+    <string name="checklist_error_generic">Could not save that change. Try again.</string>
 </resources>

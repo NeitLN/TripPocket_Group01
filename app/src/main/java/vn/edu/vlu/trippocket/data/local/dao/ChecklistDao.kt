@@ -18,6 +18,9 @@ interface ChecklistDao {
     @Query("SELECT * FROM checklist_item WHERE tripId = :tripId ORDER BY rowid")
     fun observeByTrip(tripId: String): Flow<List<ChecklistItemEntity>>
 
+    @Query("SELECT * FROM checklist_item WHERE itemId = :itemId")
+    suspend fun get(itemId: String): ChecklistItemEntity?
+
     @Query("SELECT COUNT(*) FROM checklist_item WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: String): Int
 

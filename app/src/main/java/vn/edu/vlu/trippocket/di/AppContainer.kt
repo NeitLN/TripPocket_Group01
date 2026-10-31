@@ -12,6 +12,7 @@ import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
+import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
@@ -60,6 +61,10 @@ class AppContainer(context: Context) {
     }
 
     /** I1: the activities of a trip, in Room. */
+    val checklistRepository: ChecklistRepository by lazy {
+        ChecklistRepository(database.checklistDao(), tripWriter)
+    }
+
     val itineraryRepository: ItineraryRepository by lazy {
         ItineraryRepository(database.activityDao(), tripWriter)
     }

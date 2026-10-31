@@ -95,6 +95,11 @@ class TripDetailActivity : AppCompatActivity() {
         binding.bottomNav.setupWithNavController(navController)
     }
 
+    /** Switches the bottom navigation to another tab, e.g. Itinerary's "Packing" button -> Checklist. */
+    fun showTab(menuItemId: Int) {
+        binding.bottomNav.selectedItemId = menuItemId
+    }
+
     companion object {
         fun newIntent(context: Context, tripId: String): Intent =
             Intent(context, TripDetailActivity::class.java).putExtra(ARG_TRIP_ID, tripId)
