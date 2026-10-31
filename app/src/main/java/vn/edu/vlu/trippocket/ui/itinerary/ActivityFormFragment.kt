@@ -1,10 +1,16 @@
 package vn.edu.vlu.trippocket.ui.itinerary
 
+import android.Manifest
+import android.content.Intent
+import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.ArrayAdapter
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.app.NotificationManagerCompat
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
@@ -20,6 +26,9 @@ import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.FragmentActivityFormBinding
 import vn.edu.vlu.trippocket.domain.ActivityProblem
+import vn.edu.vlu.trippocket.reminder.ReminderPermissions
+import vn.edu.vlu.trippocket.reminder.ReminderReceiver
+import vn.edu.vlu.trippocket.reminder.ReminderStatus
 import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
 import vn.edu.vlu.trippocket.ui.detail.TripGate
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
@@ -27,7 +36,8 @@ import vn.edu.vlu.trippocket.util.Format
 import java.time.LocalTime
 
 /**
- * Screen to add or edit an itinerary activity (I1).
+ * Screen to add or edit an itinerary activity (I1). With a reminder set, the reminder field says
+ * when the phone will not show it on time (I4): notifications off, or only inexact alarms.
  */
 class ActivityFormFragment : Fragment() {
 
@@ -39,8 +49,27 @@ class ActivityFormFragment : Fragment() {
 
     private var fieldsFilled = false
 
+    /**
+     * I4: asked once per form when a reminder is set (typed in, or already there when editing),
+     * before the user saves, so the answer shows under the reminder field. The activity is saved
+     * whatever the answer.
+     */
+    private val notificationPermission =
+        registerForActivityResult(ActivityResultContracts.RequestPermission()) { granted ->
+            // Denied with no rationale to show: Android will not ask again, only Settings can.
+            deniedForGood = !granted && Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+                !shouldShowRequestPermissionRationale(Manifest.permission.POST_NOTIFICATIONS)
+            _binding?.let { renderReminderStatus(viewModel.uiState.value.reminder) }
+        }
+
+    /** The permission was already asked in this form; kept across rotation. */
+    private var permissionAsked = false
+    private var deniedForGood = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        permissionAsked = savedInstanceState?.getBoolean(KEY_PERMISSION_ASKED) ?: false
+        deniedForGood = savedInstanceState?.getBoolean(KEY_DENIED_FOR_GOOD) ?: false
         childFragmentManager.setFragmentResultListener(
             ConfirmDeleteActivityDialogFragment.REQUEST_KEY,
             this,
@@ -65,6 +94,13 @@ class ActivityFormFragment : Fragment() {
         fieldsFilled = false
 
         binding.btnSave.setOnClickListener { viewModel.save() }
+        binding.btnReminderPermission.setOnClickListener {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && canAskNotificationPermission()) {
+                notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+            } else {
+                openNotificationSettings()
+            }
+        }
         binding.btnDelete.setOnClickListener {
             val title = viewModel.uiState.value.title.trim()
             ConfirmDeleteActivityDialogFragment.newInstance(title)
@@ -89,6 +125,65 @@ class ActivityFormFragment : Fragment() {
                 }
             }
         }
+    }
+
+    override fun onResume() {
+        super.onResume()
+        // The user may have changed the permissions in Settings while away.
+        _binding?.let { renderReminderStatus(viewModel.uiState.value.reminder) }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putBoolean(KEY_PERMISSION_ASKED, permissionAsked)
+        outState.putBoolean(KEY_DENIED_FOR_GOOD, deniedForGood)
+    }
+
+    /** true on Android 13+ while the permission is missing and Android can still show its dialog. */
+    private fun canAskNotificationPermission(): Boolean =
+        Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU &&
+            ReminderPermissions.needsNotificationPermission(requireContext()) &&
+            !deniedForGood
+
+    /** Asks for the permission the first time this form has a reminder. */
+    private fun askOnceForReminder(reminder: String) {
+        if (reminder.isBlank() || permissionAsked || !canAskNotificationPermission()) return
+        permissionAsked = true
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            notificationPermission.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+    }
+
+    /** The app notification settings, or the reminder channel when only that one is off. */
+    private fun openNotificationSettings() {
+        val context = requireContext()
+        val intent = if (NotificationManagerCompat.from(context).areNotificationsEnabled()) {
+            Intent(Settings.ACTION_CHANNEL_NOTIFICATION_SETTINGS)
+                .putExtra(Settings.EXTRA_CHANNEL_ID, ReminderReceiver.CHANNEL_ID)
+        } else {
+            Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+        }
+        startActivity(intent.putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName))
+    }
+
+    /**
+     * Helper text under the reminder field: the default hint, or why it may not come on time.
+     * While reminders are blocked, a button asks for the permission or opens Settings.
+     */
+    private fun renderReminderStatus(reminder: String) {
+        val status = if (reminder.isBlank()) ReminderStatus.ON_TIME else ReminderPermissions.status(requireContext())
+        binding.tilReminder.helperText = getString(
+            when (status) {
+                ReminderStatus.ON_TIME -> R.string.itinerary_reminder_helper
+                ReminderStatus.MAY_BE_LATE -> R.string.reminder_status_may_be_late
+                ReminderStatus.BLOCKED -> R.string.reminder_status_blocked
+            }
+        )
+        binding.btnReminderPermission.isVisible = status == ReminderStatus.BLOCKED
+        binding.btnReminderPermission.setText(
+            if (canAskNotificationPermission()) R.string.reminder_allow_notifications
+            else R.string.reminder_open_settings
+        )
     }
 
     private fun showTimePicker(currentTime: LocalTime) {
@@ -133,6 +228,8 @@ class ActivityFormFragment : Fragment() {
         }
 
         binding.etTime.setText(state.startTime.format(Format.time))
+        askOnceForReminder(state.reminder)
+        renderReminderStatus(state.reminder)
 
         binding.tilTitle.error = when {
             state.has(ActivityProblem.BLANK_TITLE) -> getString(R.string.itinerary_error_title_empty)
@@ -212,6 +309,8 @@ class ActivityFormFragment : Fragment() {
 
     companion object {
         private const val TAG_TIME_PICKER = "activity_time_picker"
+        private const val KEY_PERMISSION_ASKED = "reminder_permission_asked"
+        private const val KEY_DENIED_FOR_GOOD = "reminder_permission_denied_for_good"
     }
 }
 

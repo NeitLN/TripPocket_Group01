@@ -19,9 +19,9 @@ import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
-import vn.edu.vlu.trippocket.reminder.ScheduledReminder
 import vn.edu.vlu.trippocket.work.BackupScheduler
 
 /**
@@ -61,7 +61,9 @@ class AppContainer(context: Context) {
 
     /** I1: the activities of a trip, in Room. */
     val itineraryRepository: ItineraryRepository by lazy {
-        ItineraryRepository(database.activityDao(), tripWriter)
+        ItineraryRepository(database.activityDao(), tripWriter) { activityId ->
+            reminderReconciler.syncActivity(activityId, authRepository.currentUid.value)
+        }
     }
 
     /** Mock data for the module screens until they move to Room. */
@@ -86,11 +88,8 @@ class AppContainer(context: Context) {
     /** Retrofit for https://api.open-meteo.com/ (daily forecast). */
     val forecastRetrofit: Retrofit by lazy { retrofit("https://api.open-meteo.com/") }
 
-    /** Replaced by the AlarmManager scheduler in I4. */
-    val reminderScheduler: ReminderScheduler = object : ReminderScheduler {
-        override fun schedule(reminder: ScheduledReminder) = Unit
-        override fun cancel(activityId: String) = Unit
-    }
+    /** I4: activity alarms on AlarmManager (exact when allowed, inexact otherwise). */
+    val reminderScheduler: ReminderScheduler = AlarmReminderScheduler(context)
 
     /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
     val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
