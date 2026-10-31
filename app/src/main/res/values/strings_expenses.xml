@@ -27,6 +27,7 @@
 
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>
+    <string name="expenses_of_planned_over">of %1$s planned · %2$s over</string>
     <string name="expenses_category_food">Food</string>
     <string name="expenses_category_stay">Stay</string>
     <string name="expenses_category_transport">Transport</string>

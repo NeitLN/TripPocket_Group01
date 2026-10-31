@@ -7,6 +7,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -18,7 +19,6 @@ import vn.edu.vlu.trippocket.data.model.Settlement
 import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.model.TripMember
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import vn.edu.vlu.trippocket.domain.ExpenseSummaryText
@@ -54,6 +54,9 @@ data class ExpensesUiState(
     val budgetProgress: Int
         get() = if (planned == 0L) 0 else (spent * 100 / planned).toInt().coerceAtMost(100)
 
+    /** How much the spending passed the plan; 0 when within it or when nothing is planned. */
+    val overPlan: Long get() = if (planned > 0 && spent > planned) spent - planned else 0
+
     /** The form refuses a 301st expense; the list says so before opening it. */
     val atExpenseLimit: Boolean get() = expenses.size >= Limits.MAX_EXPENSES
 }
@@ -63,8 +66,8 @@ class ExpensesViewModel(
     private val savedStateHandle: SavedStateHandle,
     tripRepository: TripRepository,
     expenseRepository: ExpenseRepository,
-    // The planned budget moves to ItineraryRepository.estimatedTotal with E4.
-    private val sampleRepository: SampleTripRepository,
+    /** E4: the planned budget, the sum of the itinerary's estimated costs (ItineraryRepository). */
+    plannedTotal: (tripId: String) -> Flow<Long>,
 ) : ViewModel() {
 
     private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
@@ -73,9 +76,10 @@ class ExpensesViewModel(
         tripRepository.observeTrip(tripId),
         expenseRepository.observeMembers(tripId),
         expenseRepository.observeExpenses(tripId),
+        plannedTotal(tripId),
         savedStateHandle.getStateFlow(KEY_BALANCES, false),
-    ) { trip, members, expenses, showBalances ->
-        buildState(trip, members, expenses, showBalances)
+    ) { trip, members, expenses, planned, showBalances ->
+        buildState(trip, members, expenses, planned, showBalances)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExpensesUiState())
 
     fun showBalances(show: Boolean) {
@@ -90,13 +94,14 @@ class ExpensesViewModel(
         val settlements = state.settlements.map {
             Settlement(it.from.memberId, it.to.memberId, it.amount)
         }
-        return ExpenseSummaryText.build(trip, state.spent, settlements, names)
+        return ExpenseSummaryText.build(trip, state.planned, state.spent, state.categoryTotals, settlements, names)
     }
 
     private fun buildState(
         trip: Trip?,
         members: List<TripMember>,
         expenses: List<Expense>,
+        planned: Long,
         showBalances: Boolean,
     ): ExpensesUiState {
         val byId = members.associateBy { it.memberId }
@@ -115,7 +120,7 @@ class ExpensesViewModel(
                 SettlementRow(from, to, it.amount)
             },
             spent = expenses.sumOf { it.amount },
-            planned = sampleRepository.estimatedTotal(tripId),
+            planned = planned,
             categoryTotals = ExpenseCategory.entries.associateWith { category ->
                 expenses.filter { it.category == category }.sumOf { it.amount }
             },
@@ -132,7 +137,7 @@ class ExpensesViewModel(
                     createSavedStateHandle(),
                     container.tripRepository,
                     container.expenseRepository,
-                    container.sampleTripRepository,
+                    container.itineraryRepository::estimatedTotal,
                 )
             }
         }

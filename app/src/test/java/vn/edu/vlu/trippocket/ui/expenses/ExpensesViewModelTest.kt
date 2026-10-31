@@ -17,6 +17,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
+import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
 import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
@@ -24,7 +25,7 @@ import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.LocalDate
@@ -57,7 +58,7 @@ class ExpensesViewModelTest {
         SavedStateHandle(mapOf(ARG_TRIP_ID to "t1")),
         TripRepository(t.db.tripDao(), auth, t.writer),
         expenses,
-        SampleTripRepository(),
+        ItineraryRepository(t.db.activityDao(), t.writer)::estimatedTotal,
     )
 
     private suspend fun ExpensesViewModel.loaded(expenseCount: Int) =
@@ -82,6 +83,35 @@ class ExpensesViewModelTest {
         assertEquals(0L, state.balances.sumOf { it.balance })
         assertEquals(setOf("Bình" to "An", "Chi" to "An"), state.settlements.map { it.from.name to it.to.name }.toSet())
         assertTrue(viewModel.shareText().contains("- Bình pays An 100,000 ₫"))
+    }
+
+    @Test
+    fun plannedBudget_isTheItinerarysEstimatedCosts_andFollowsThem(): Unit = runBlocking {
+        val viewModel = viewModel()
+        assertEquals(0L, viewModel.loaded(expenseCount = 0).planned)
+
+        t.db.activityDao().insert(ActivityEntity("a1", "t1", 0, "Chợ đêm", "", 19 * 60, 150_000, "", 0, null))
+        t.db.activityDao().insert(ActivityEntity("a2", "t1", 1, "Cáp treo", "", 9 * 60, 100_000, "", 0, null))
+
+        assertEquals(250_000L, withTimeout(5_000) { viewModel.uiState.first { it.planned == 250_000L } }.planned)
+    }
+
+    @Test
+    fun overPlan_andTheSharedText_matchTheScreen(): Unit = runBlocking {
+        t.db.activityDao().insert(ActivityEntity("a1", "t1", 0, "Chợ đêm", "", 19 * 60, 250_000, "", 0, null))
+        val viewModel = viewModel()
+        expenses.addExpense(
+            "t1",
+            ExpenseInput("Lẩu", 300_000, "m0", ExpenseCategory.FOOD, SplitType.EQUAL, LocalDate.of(2026, 10, 15),
+                mapOf("m0" to 100_000L, "m1" to 100_000L, "m2" to 100_000L)),
+        )
+
+        val state = withTimeout(5_000) { viewModel.uiState.first { it.expenses.size == 1 && it.planned == 250_000L } }
+
+        assertEquals(50_000L, state.overPlan)
+        assertEquals(100, state.budgetProgress)
+        val text = viewModel.shareText()
+        assertTrue(text.contains("Planned: 250,000 ₫\nSpent: 300,000 ₫ (50,000 ₫ over plan)\n- Food: 300,000 ₫\n"))
     }
 
     @Test
