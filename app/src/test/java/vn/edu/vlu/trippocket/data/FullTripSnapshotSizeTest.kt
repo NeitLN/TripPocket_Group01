@@ -8,19 +8,14 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
-import vn.edu.vlu.trippocket.data.remote.firebase.ActivitySnapshot
-import vn.edu.vlu.trippocket.data.remote.firebase.ChecklistItemSnapshot
-import vn.edu.vlu.trippocket.data.remote.firebase.ExpenseSnapshot
 import vn.edu.vlu.trippocket.data.remote.firebase.FirestoreDocumentSize
-import vn.edu.vlu.trippocket.data.remote.firebase.MemberSnapshot
-import vn.edu.vlu.trippocket.data.remote.firebase.PlaceSnapshot
-import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshot
+import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotMapper
 import vn.edu.vlu.trippocket.domain.Limits
 
 /**
  * A5 (proposal 6.2, 6.4): a trip at every limit still fits in one Firestore document.
- * Owner: Minh. The snapshot is built by [snapshotOf] for now; switch it to the real A3
- * mapper (Tiến) once it lands, so the test measures what is really uploaded.
+ * Owner: Minh. The fixture goes into Room and comes back out the way the backup job reads it
+ * (BackupDao.rowsOf + TripSnapshotMapper, A3), so the size is the size of the real upload.
  */
 @RunWith(RobolectricTestRunner::class)
 class FullTripSnapshotSizeTest {
@@ -72,35 +67,17 @@ class FullTripSnapshotSizeTest {
     }
 
     @Test
-    fun fullTripSnapshot_fitsInOneFirestoreDocument() {
-        val size = FirestoreDocumentSize.ofTripBackup(snapshotOf(FullTripFixture))
+    fun fullTripSnapshot_fitsInOneFirestoreDocument() = runBlocking {
+        FullTripFixture.insertInto(t.db)
+        val rows = t.db.backupDao().rowsOf(FullTripFixture.TRIP_ID)!!
+        val snapshot = TripSnapshotMapper.toSnapshot(rows)
+        // Nothing was dropped on the way: every row of the fixture is in the snapshot.
+        assertEquals(Limits.MAX_EXPENSES, snapshot.expenses.size)
+        assertTrue(snapshot.expenses.all { it.shares.size == Limits.MAX_MEMBERS })
+        assertEquals(Limits.MAX_ACTIVITIES, snapshot.activities.size)
+
+        val size = FirestoreDocumentSize.ofTripBackup(snapshot)
         println("A5: full-trip snapshot = $size bytes, ${FirestoreDocumentSize.MAX_BYTES - size} bytes under 1 MiB")
         assertTrue("Snapshot is $size bytes", size < FirestoreDocumentSize.MAX_BYTES)
-    }
-
-    /** Stand-in for the A3 mapper: Room rows -> TripSnapshot, field for field. */
-    private fun snapshotOf(f: FullTripFixture): TripSnapshot {
-        val sharesByExpense = f.shares.groupBy { it.expenseId }
-        return TripSnapshot(
-            tripId = f.trip.tripId,
-            ownerUid = f.trip.ownerUid,
-            name = f.trip.name,
-            destination = f.trip.destination,
-            startDate = f.trip.startDate,
-            endDate = f.trip.endDate,
-            localRevision = f.trip.localRevision,
-            updatedAt = f.trip.updatedAt,
-            members = f.members.map { MemberSnapshot(it.memberId, it.name, it.orderIndex) },
-            activities = f.activities.map {
-                ActivitySnapshot(it.activityId, it.dayIndex, it.title, it.place, it.startTime, it.estimatedCost,
-                    it.note, it.orderIndex, it.reminderMinutesBefore)
-            },
-            checklist = f.checklist.map { ChecklistItemSnapshot(it.itemId, it.title, it.isDone) },
-            places = f.places.map { PlaceSnapshot(it.placeId, it.name, it.country, it.latitude, it.longitude, it.note) },
-            expenses = f.expenses.map { e ->
-                ExpenseSnapshot(e.expenseId, e.title, e.amount, e.payerId, e.category.name, e.splitType.name, e.spentAt,
-                    e.createdAt, sharesByExpense.getValue(e.expenseId).associate { it.memberId to it.shareAmount })
-            },
-        )
     }
 }
