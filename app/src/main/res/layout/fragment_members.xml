@@ -1,0 +1,127 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Members screen (E1, Expenses module). Layout by Minh; MembersFragment comes with E1.
+    One column capped at @dimen/content_max_width:
+    title + "3 of 15 members" -> add field + Add button (a packed horizontal chain, the button
+    sized by its text) -> the rule about order and removal -> member list (item_member.xml).
+    groupEmpty swaps the list for tvEmptyMembers. At 15 members the add row is disabled
+    and tvMemberCount says so.
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    tools:context=".ui.members.MembersFragment">
+
+    <TextView
+        android:id="@+id/tvMembersTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_lg"
+        android:accessibilityHeading="true"
+        android:text="@string/members_title"
+        android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:targetApi="28" />
+
+    <TextView
+        android:id="@+id/tvMemberCount"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tvMembersTitle"
+        app:layout_constraintStart_toStartOf="@id/tvMembersTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvMembersTitle"
+        tools:text="3 of 15 members" />
+
+    <com.google.android.material.textfield.TextInputLayout
+        android:id="@+id/tilNewMember"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_md"
+        android:layout_marginEnd="@dimen/space_sm"
+        android:hint="@string/members_add_hint"
+        app:counterEnabled="true"
+        app:counterMaxLength="80"
+        app:layout_constraintEnd_toStartOf="@id/btnAddMember"
+        app:layout_constraintHorizontal_chainStyle="packed"
+        app:layout_constraintStart_toStartOf="@id/tvMembersTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvMemberCount">
+
+        <com.google.android.material.textfield.TextInputEditText
+            android:id="@+id/etNewMember"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:imeOptions="actionDone"
+            android:inputType="textPersonName|textCapWords"
+            android:maxLength="80" />
+    </com.google.android.material.textfield.TextInputLayout>
+
+    <!-- Aligned with the field's box, not its counter line. -->
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAddMember"
+        style="@style/Widget.TripPocket.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:text="@string/members_add"
+        app:icon="@drawable/ic_add"
+        app:layout_constraintEnd_toEndOf="@id/tvMembersTitle"
+        app:layout_constraintStart_toEndOf="@id/tilNewMember"
+        app:layout_constraintTop_toTopOf="@id/tilNewMember" />
+
+    <TextView
+        android:id="@+id/tvMembersRule"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:text="@string/members_rule"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tvMembersTitle"
+        app:layout_constraintStart_toStartOf="@id/tvMembersTitle"
+        app:layout_constraintTop_toBottomOf="@id/tilNewMember" />
+
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rvMembers"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="@dimen/space_sm"
+        android:clipToPadding="false"
+        android:paddingBottom="@dimen/space_xl"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvMembersRule"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:itemCount="3"
+        tools:listitem="@layout/item_member" />
+
+    <TextView
+        android:id="@+id/tvEmptyMembers"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_xxl"
+        android:gravity="center"
+        android:text="@string/members_empty"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvMembersRule" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupEmpty"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="tvEmptyMembers" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>

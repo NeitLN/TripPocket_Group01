@@ -1,6 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Expenses strings. Owner: Minh. -->
 <resources>
+    <!-- Members screen (layouts for E1) -->
+    <string name="members_title">Trip members</string>
+    <plurals name="members_count">
+        <item quantity="one">%1$d of %2$d members</item>
+        <item quantity="other">%1$d of %2$d members</item>
+    </plurals>
+    <string name="members_add_hint">Add a member</string>
+    <string name="members_add">Add</string>
+    <string name="members_rule">Leftover dong from an equal split go to the first people in this list. Someone who paid or shares an expense cannot be removed.</string>
+    <string name="members_empty">No one here yet. Add the people on this trip to split costs.</string>
+    <string name="members_in_use">Paid or shares an expense</string>
+    <string name="members_rename">Rename %1$s</string>
+    <string name="members_remove">Remove %1$s</string>
+    <string name="members_name_hint">Name</string>
+
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>
     <string name="expenses_category_food">Food</string>
