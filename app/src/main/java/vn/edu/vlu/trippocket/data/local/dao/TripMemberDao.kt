@@ -30,6 +30,14 @@ interface TripMemberDao {
     @Query("SELECT COUNT(*) FROM trip_member WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: String): Int
 
+    /** E1: null when the member is not in that trip. */
+    @Query("SELECT * FROM trip_member WHERE memberId = :memberId AND tripId = :tripId")
+    suspend fun get(tripId: String, memberId: String): TripMemberEntity?
+
+    /** E1: the highest fixed order in the trip; null when it has no members yet. */
+    @Query("SELECT MAX(orderIndex) FROM trip_member WHERE tripId = :tripId")
+    suspend fun maxOrderIndex(tripId: String): Int?
+
     @Insert
     suspend fun insert(row: TripMemberEntity)
 

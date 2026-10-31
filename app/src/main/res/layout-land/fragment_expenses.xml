@@ -41,11 +41,27 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_lg"
         android:layout_marginTop="@dimen/space_lg"
+        android:layout_marginEnd="@dimen/space_xs"
         android:text="@string/expenses_spent_label"
+        app:layout_constrainedWidth="true"
+        app:layout_constraintEnd_toStartOf="@id/btnMembers"
+        app:layout_constraintHorizontal_bias="0"
         android:textAppearance="@style/TextAppearance.TripPocket.Overline"
         android:textColor="?attr/colorOnPrimaryContainer"
         app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
         app:layout_constraintTop_toTopOf="@id/vSummaryPanel" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnMembers"
+        style="@style/Widget.TripPocket.Button.Text"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:minHeight="48dp"
+        android:textColor="?attr/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/btnShare"
+        app:layout_constraintEnd_toStartOf="@id/btnShare"
+        app:layout_constraintTop_toTopOf="@id/btnShare"
+        tools:text="Members (3)" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnShare"

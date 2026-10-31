@@ -9,13 +9,15 @@
     Result: a card look with zero nested layouts.
 
     Other constraints:
+    - Header: 80dp FrameLayout slot (@dimen/sticker_slot) with clipChildren=false
+      containing TripStickerView 64dp, title + subtitle, barrierHeaderBottom.
     - Last updated + "Offline copy" badge: packed horizontal chain, bias 0.
     - barrierForecastTop (direction=bottom) sits under the panel OR under the
-      error row when it is visible, so the forecast list moves down only when
+      error row when it is visible, so the swipeRefresh moves down only when
       there is an error to show.
-    - Search results (rvResults / tvNoResults) are declared last and have
-      elevation, so they float over the screen like a dropdown. Their height
-      is wrap_content capped by layout_constraintHeight_max.
+    - SwipeRefreshLayout only wraps rvForecast, preserving the flat barrier layout.
+    - Search results (rvResults / tvNoResults / layoutSearchError) are declared last
+      and have elevation, so they float over the screen like a dropdown.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -24,7 +26,59 @@
     android:layout_height="match_parent"
     tools:context=".ui.weather.WeatherFragment">
 
-    <!-- Search: error state is used when the Geocoding call fails. -->
+    <!-- ===== Trip header with sticker ===== -->
+    <FrameLayout
+        android:id="@+id/flStickerSlot"
+        android:layout_width="@dimen/sticker_slot"
+        android:layout_height="@dimen/sticker_slot"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_md"
+        android:clipChildren="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <vn.edu.vlu.trippocket.ui.common.TripStickerView
+            android:id="@+id/stickerWeather"
+            android:layout_width="@dimen/sticker_size"
+            android:layout_height="@dimen/sticker_size"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
+    <TextView
+        android:id="@+id/tvWeatherTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_sm"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:accessibilityHeading="true"
+        android:text="@string/weather_title"
+        android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toEndOf="@id/flStickerSlot"
+        app:layout_constraintTop_toTopOf="@id/flStickerSlot"
+        app:layout_constraintWidth_max="@dimen/content_max_width"
+        tools:targetApi="28" />
+
+    <TextView
+        android:id="@+id/tvTripSubtitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintEnd_toEndOf="@id/tvWeatherTitle"
+        app:layout_constraintStart_toStartOf="@id/tvWeatherTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvWeatherTitle"
+        tools:text="Đà Lạt · 4 days" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierHeaderBottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="flStickerSlot,tvTripSubtitle" />
+
+    <!-- ===== Search bar ===== -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilSearch"
         style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -34,11 +88,11 @@
         android:layout_marginTop="@dimen/space_md"
         android:hint="@string/weather_search_hint"
         app:endIconMode="clear_text"
-        app:errorEnabled="true"
+        app:errorEnabled="false"
         app:helperText="@string/weather_search_helper"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barrierHeaderBottom"
         app:layout_constraintWidth_max="@dimen/content_max_width"
         app:startIconDrawable="@drawable/ic_search">
 
@@ -49,6 +103,19 @@
             android:imeOptions="actionSearch"
             android:inputType="textCapWords" />
     </com.google.android.material.textfield.TextInputLayout>
+
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/progressSearch"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:elevation="6dp"
+        android:indeterminate="true"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tilSearch"
+        app:trackCornerRadius="2dp"
+        app:trackThickness="4dp" />
 
     <TextView
         android:id="@+id/tvSavedLabel"
@@ -62,8 +129,7 @@
         app:layout_constraintStart_toStartOf="@id/tilSearch"
         app:layout_constraintTop_toBottomOf="@id/tilSearch" />
 
-    <!-- Chips are created from the saved places at runtime; the two below are
-         only here so the layout preview shows realistic content. -->
+    <!-- Chips are created from the saved places at runtime -->
     <com.google.android.material.chip.ChipGroup
         android:id="@+id/chipGroupPlaces"
         android:layout_width="0dp"
@@ -90,20 +156,73 @@
             tools:ignore="HardcodedText" />
     </com.google.android.material.chip.ChipGroup>
 
-    <!-- Shown instead of the panel + forecast when the trip has no saved place. -->
-    <TextView
-        android:id="@+id/tvNoPlaces"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_xl"
-        android:gravity="center"
-        android:text="@string/weather_no_saved_places"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        android:visibility="gone"
+    <!-- ===== Empty state when trip has no saved places ===== -->
+    <ImageView
+        android:id="@+id/ivEmptyPlaces"
+        android:layout_width="@dimen/empty_icon_size"
+        android:layout_height="@dimen/empty_icon_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:contentDescription="@null"
+        android:padding="@dimen/space_xl"
+        android:src="@drawable/ic_sticker_pocket"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyPlacesTitle"
         app:layout_constraintEnd_toEndOf="@id/tilSearch"
         app:layout_constraintStart_toStartOf="@id/tilSearch"
-        app:layout_constraintTop_toBottomOf="@id/chipGroupPlaces" />
+        app:layout_constraintTop_toBottomOf="@id/chipGroupPlaces"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:tint="?attr/colorOnPrimaryContainer" />
+
+    <TextView
+        android:id="@+id/tvEmptyPlacesTitle"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        android:gravity="center"
+        android:text="@string/weather_empty_places_title"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorOnSurface"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyPlacesBody"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/ivEmptyPlaces"
+        app:layout_constraintWidth_max="@dimen/form_max_width" />
+
+    <TextView
+        android:id="@+id/tvEmptyPlacesBody"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_xs"
+        android:gravity="center"
+        android:text="@string/weather_empty_places_body"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toTopOf="@id/btnEmptySearch"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tvEmptyPlacesTitle"
+        app:layout_constraintWidth_max="@dimen/form_max_width" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnEmptySearch"
+        style="@style/Widget.TripPocket.Button"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_md"
+        android:text="@string/weather_empty_search_button"
+        app:icon="@drawable/ic_search"
+        app:layout_constraintBottom_toTopOf="@id/tvAttribution"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tvEmptyPlacesBody" />
+
+    <androidx.constraintlayout.widget.Group
+        android:id="@+id/groupEmptyPlaces"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:constraint_referenced_ids="ivEmptyPlaces,tvEmptyPlacesTitle,tvEmptyPlacesBody,btnEmptySearch" />
 
     <!-- ===== Today panel (flat) ===== -->
     <View
@@ -166,11 +285,14 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_sm"
         android:background="@drawable/bg_summary_panel"
+        android:drawablePadding="@dimen/space_xxs"
         android:paddingHorizontal="@dimen/space_sm"
         android:paddingVertical="@dimen/space_xxs"
         android:text="@string/weather_offline_copy"
         android:textAppearance="?attr/textAppearanceLabelSmall"
         android:textColor="?attr/colorOnPrimaryContainer"
+        app:drawableStartCompat="@drawable/ic_cloud_alert"
+        app:drawableTint="?attr/colorOnPrimaryContainer"
         app:layout_constraintBaseline_toBaselineOf="@id/tvLastUpdated"
         app:layout_constraintEnd_toEndOf="@id/btnRefresh"
         app:layout_constraintStart_toEndOf="@id/tvLastUpdated" />
@@ -272,23 +394,30 @@
         app:barrierMargin="@dimen/space_sm"
         app:constraint_referenced_ids="vTodayPanel,tvForecastError,btnRetry" />
 
-    <androidx.recyclerview.widget.RecyclerView
-        android:id="@+id/rvForecast"
+    <!-- SwipeRefreshLayout wraps ONLY rvForecast, inheriting its exact constraints -->
+    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
+        android:id="@+id/swipeRefresh"
         android:layout_width="0dp"
         android:layout_height="0dp"
-        android:clipToPadding="false"
         app:layout_constraintBottom_toTopOf="@id/tvAttribution"
         app:layout_constraintEnd_toEndOf="@id/tilSearch"
         app:layout_constraintStart_toStartOf="@id/tilSearch"
-        app:layout_constraintTop_toBottomOf="@id/barrierForecastTop"
-        tools:itemCount="8"
-        tools:listitem="@layout/item_forecast_day" />
+        app:layout_constraintTop_toBottomOf="@id/barrierForecastTop">
+
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvForecast"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            tools:itemCount="8"
+            tools:listitem="@layout/item_forecast_day" />
+    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/groupForecast"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        app:constraint_referenced_ids="vTodayPanel,tvPlaceName,btnRefresh,tvLastUpdated,ivTodayIcon,tvTodayTemp,tvTodayCondition,tvTodayRain,rvForecast" />
+        app:constraint_referenced_ids="vTodayPanel,tvPlaceName,btnRefresh,tvLastUpdated,ivTodayIcon,tvTodayTemp,tvTodayCondition,tvTodayRain,swipeRefresh" />
 
     <TextView
         android:id="@+id/tvAttribution"
@@ -331,5 +460,35 @@
         app:layout_constraintEnd_toEndOf="@id/tilSearch"
         app:layout_constraintStart_toStartOf="@id/tilSearch"
         app:layout_constraintTop_toBottomOf="@id/tilSearch" />
+
+    <LinearLayout
+        android:id="@+id/layoutSearchError"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:background="?attr/colorSurfaceContainerHigh"
+        android:elevation="6dp"
+        android:orientation="vertical"
+        android:padding="@dimen/space_md"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/tilSearch">
+
+        <TextView
+            android:id="@+id/tvSearchError"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/weather_error_network"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorError" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnSearchRetry"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/weather_search_try_again" />
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>

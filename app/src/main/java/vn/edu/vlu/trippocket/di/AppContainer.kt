@@ -9,6 +9,8 @@ import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
+import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
+import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
@@ -56,7 +58,14 @@ class AppContainer(context: Context) {
 
     /** Mock data for the module screens until they move to Room. */
     val sampleTripRepository = SampleTripRepository()
-    val weatherRepository = WeatherRepository()
+    val weatherRepository by lazy {
+        WeatherRepository(
+            geocodingRetrofit.create(GeocodingApi::class.java),
+            forecastRetrofit.create(ForecastApi::class.java),
+            database.weatherCacheDao(),
+            database.savedPlaceDao(),
+        )
+    }
 
     /** W2: places saved to a trip, in Room. */
     val savedPlaceRepository: SavedPlaceRepository by lazy {
