@@ -21,6 +21,8 @@ import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
+import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
+import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
@@ -49,8 +51,15 @@ class ItineraryViewModelTest {
 
     private fun handle() = SavedStateHandle(mapOf(ARG_TRIP_ID to MockData.TRIP_DALAT))
 
+    private fun weather() = WeatherRepository(
+        FakeGeocodingApi(),
+        FakeForecastApi(),
+        t.db.weatherCacheDao(),
+        t.db.savedPlaceDao(),
+    )
+
     private fun viewModel(handle: SavedStateHandle = handle()) =
-        ItineraryViewModel(handle, SampleTripRepository(), WeatherRepository(), repository)
+        ItineraryViewModel(handle, SampleTripRepository(), weather(), repository)
 
     private fun insert(id: String, dayIndex: Int, startTime: Int, cost: Long, orderIndex: Int) =
         ActivityEntity(id, MockData.TRIP_DALAT, dayIndex, "Activity $id", "", startTime, cost, "", orderIndex, null)
@@ -107,7 +116,7 @@ class ItineraryViewModelTest {
         val viewModel = ItineraryViewModel(
             SavedStateHandle(mapOf(ARG_TRIP_ID to "missing")),
             SampleTripRepository(),
-            WeatherRepository(),
+            weather(),
             repository,
         )
 
