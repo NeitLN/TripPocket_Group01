@@ -7,11 +7,13 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.repository.AuthException
@@ -48,7 +50,11 @@ data class LoginUiState(
  * repository reports an [AuthProblem] and this class turns it into a string resource. The
  * state leaves [LoginUiState.loading] in every path, including errors.
  */
-class LoginViewModel(private val auth: AuthRepository) : ViewModel() {
+class LoginViewModel(
+    private val auth: AuthRepository,
+    /** Sets the reminder alarms of the account that just signed in (ReminderReconciler, I5). */
+    private val syncReminders: suspend (uid: String?) -> Unit = {},
+) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         LoginUiState(alreadySignedIn = auth.currentUid.value != null),
@@ -100,6 +106,8 @@ class LoginViewModel(private val auth: AuthRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 auth.signIn(email.trim(), password)
+                // The screen closes once signedIn is set; finish the alarms first, uncancellable.
+                withContext(NonCancellable) { syncReminders(auth.currentUid.value) }
                 _uiState.update { it.copy(loading = false, signedIn = true) }
             } catch (e: CancellationException) {
                 throw e
@@ -132,6 +140,8 @@ class LoginViewModel(private val auth: AuthRepository) : ViewModel() {
         viewModelScope.launch {
             try {
                 auth.register(email.trim(), password)
+                // The screen closes once signedIn is set; finish the alarms first, uncancellable.
+                withContext(NonCancellable) { syncReminders(auth.currentUid.value) }
                 _uiState.update { it.copy(loading = false, signedIn = true) }
             } catch (e: CancellationException) {
                 throw e
@@ -143,7 +153,10 @@ class LoginViewModel(private val auth: AuthRepository) : ViewModel() {
 
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer { LoginViewModel(appContainer().authRepository) }
+            initializer {
+                val container = appContainer()
+                LoginViewModel(container.authRepository) { uid -> container.reminderReconciler.reconcile(uid) }
+            }
         }
     }
 }

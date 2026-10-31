@@ -34,7 +34,10 @@ class LoginViewModelTest {
     @After
     fun tearDown() = Dispatchers.resetMain()
 
-    private fun viewModel() = LoginViewModel(auth)
+    /** Every uid the ViewModel asked the reminder reconciler to rebuild alarms for. */
+    private val reminderSyncs = mutableListOf<String?>()
+
+    private fun viewModel() = LoginViewModel(auth) { reminderSyncs += it }
 
     private suspend fun LoginViewModel.awaitState(condition: (LoginUiState) -> Boolean) =
         withTimeout(5_000) { uiState.first(condition) }
@@ -53,6 +56,8 @@ class LoginViewModelTest {
         assertEquals(1, auth.calls)
         assertEquals(validEmail, auth.lastEmail)
         assertEquals(FakeAuthRepository.UID, auth.currentUid.value)
+        // The new account's reminders are set before the trip list opens.
+        assertEquals(listOf<String?>(FakeAuthRepository.UID), reminderSyncs)
     }
 
     @Test

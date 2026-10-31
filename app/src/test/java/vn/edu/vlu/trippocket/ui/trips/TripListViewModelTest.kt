@@ -40,8 +40,16 @@ class TripListViewModelTest {
         t.close()
     }
 
-    private fun viewModel() =
-        TripListViewModel(SavedStateHandle(), TripRepository(t.db.tripDao(), auth), SampleTripRepository(), auth)
+    /** Every uid the ViewModel asked the reminder reconciler to rebuild alarms for. */
+    private val reminderSyncs = mutableListOf<String?>()
+
+    private fun viewModel() = TripListViewModel(
+        SavedStateHandle(),
+        TripRepository(t.db.tripDao(), auth),
+        SampleTripRepository(),
+        auth,
+        syncReminders = { reminderSyncs += it },
+    )
 
     private suspend fun TripListViewModel.loaded(trips: Int) =
         withTimeout(5_000) { uiState.first { !it.loading && it.trips.size == trips } }
@@ -90,6 +98,8 @@ class TripListViewModelTest {
 
         assertEquals(1, auth.signOutCalls)
         assertNull(auth.currentUid.value)
+        // Signed out: every alarm on this phone is cancelled.
+        assertEquals(listOf<String?>(null), reminderSyncs)
         viewModel.loaded(trips = 0)
         // Still in Room for the next sign-in of the same account.
         assertEquals(1, t.db.tripDao().observeTrips(TestDatabase.OWNER).first().size)
