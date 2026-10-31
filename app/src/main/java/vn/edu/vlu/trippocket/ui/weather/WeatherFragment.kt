@@ -59,7 +59,7 @@ class WeatherFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch {
                     viewModel.search.collect { state ->
-                        resultAdapter.submitList(state.results.orEmpty())
+                        resultAdapter.submitList((state as? SearchState.Results)?.places.orEmpty())
                         renderSearch(state)
                     }
                 }
@@ -85,11 +85,12 @@ class WeatherFragment : Fragment() {
             ?.hideSoftInputFromWindow(binding.etSearch.windowToken, 0)
     }
 
-    private fun renderSearch(state: SearchUiState) {
-        binding.rvResults.isVisible = !state.results.isNullOrEmpty()
-        binding.tvNoResults.isVisible = state.results?.isEmpty() == true
+    private fun renderSearch(state: SearchState) {
+        val results = (state as? SearchState.Results)?.places.orEmpty()
+        binding.rvResults.isVisible = results.isNotEmpty()
+        binding.tvNoResults.isVisible = state is SearchState.Empty
         binding.tilSearch.error =
-            if (state.networkError) getString(R.string.weather_error_network) else null
+            if (state is SearchState.Error) getString(R.string.weather_error_network) else null
     }
 
     private fun renderPlaces(state: SavedPlacesUiState) {
