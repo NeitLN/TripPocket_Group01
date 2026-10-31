@@ -22,7 +22,8 @@ import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
 import vn.edu.vlu.trippocket.data.model.ActivityInput
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
+import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.domain.ActivityProblem
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
@@ -35,6 +36,7 @@ class ItineraryFormViewModelTest {
 
     private val t = TestDatabase()
     private val repository = ItineraryRepository(t.db.activityDao(), t.writer)
+    private val tripRepository = TripRepository(t.db.tripDao(), FakeAuthRepository(TestDatabase.OWNER), t.writer)
     private val trip = MockData.TRIP_DALAT
 
     @Before
@@ -52,7 +54,10 @@ class ItineraryFormViewModelTest {
     private fun form(activityId: String? = null): ItineraryFormViewModel {
         val args = mutableMapOf<String, Any?>(ARG_TRIP_ID to trip)
         if (activityId != null) args[ARG_ACTIVITY_ID] = activityId
-        return ItineraryFormViewModel(SavedStateHandle(args), SampleTripRepository(), repository)
+        val viewModel = ItineraryFormViewModel(SavedStateHandle(args), tripRepository, repository)
+        // The trip's days are read from Room first (A2); the form ignores Save until then.
+        runBlocking { withTimeout(5_000) { viewModel.uiState.first { !it.loading } } }
+        return viewModel
     }
 
     private suspend fun loadedForm(activityId: String): ItineraryFormViewModel {

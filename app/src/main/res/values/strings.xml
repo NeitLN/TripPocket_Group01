@@ -72,4 +72,26 @@
     <string name="nav_weather">Weather</string>
     <string name="nav_expenses">Expenses</string>
     <string name="content_desc_back">Back</string>
+
+    <!-- Trip form, edit and delete (A2) -->
+    <string name="trip_form_new_title">New trip</string>
+    <string name="trip_form_edit_title">Edit trip</string>
+    <string name="trip_field_name">Trip name</string>
+    <string name="trip_field_destination">Destination</string>
+    <string name="trip_field_dates">Dates</string>
+    <string name="trip_dates_picker_title">Start and end dates</string>
+    <string name="trip_save">Save trip</string>
+    <string name="trip_action_edit">Edit trip</string>
+    <string name="trip_action_delete">Delete trip</string>
+    <string name="trip_delete_confirm_title">Delete %1$s?</string>
+    <string name="trip_delete_confirm_message">Its itinerary, checklist, places and expenses are deleted too, on this phone and in the backup.</string>
+    <string name="trip_error_name_empty">Enter a trip name</string>
+    <string name="trip_error_name_too_long">Name must be 80 characters or less</string>
+    <string name="trip_error_destination_empty">Enter a destination</string>
+    <string name="trip_error_destination_too_long">Destination must be 80 characters or less</string>
+    <string name="trip_error_dates_missing">Choose the start and end dates</string>
+    <string name="trip_error_dates_reversed">The end date must be on or after the start date</string>
+    <string name="trip_error_days_in_use">Some activities are planned after the new end date. Move or delete them first.</string>
+    <string name="trip_error_not_found">This trip is no longer available</string>
+    <string name="trip_error_save_failed">Couldn\'t save the trip. Please try again.</string>
 </resources>

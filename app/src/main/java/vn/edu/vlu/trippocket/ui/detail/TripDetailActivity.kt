@@ -15,6 +15,7 @@ import androidx.navigation.ui.setupWithNavController
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.ActivityTripDetailBinding
+import vn.edu.vlu.trippocket.ui.trips.TripFormDialogFragment
 import vn.edu.vlu.trippocket.util.Format
 import vn.edu.vlu.trippocket.util.applySystemBarPadding
 
@@ -37,6 +38,7 @@ class TripDetailActivity : AppCompatActivity() {
         // BottomNavigationView pads itself for the gesture/navigation bar.
         binding.root.applySystemBarPadding(bottom = false)
         binding.toolbar.setNavigationOnClickListener { onBackPressedDispatcher.onBackPressed() }
+        setUpTripMenu()
 
         navController = (supportFragmentManager.findFragmentById(R.id.detailContainer) as NavHostFragment).navController
 
@@ -49,11 +51,36 @@ class TripDetailActivity : AppCompatActivity() {
                         is TripGate.Ready -> {
                             binding.toolbar.title = gate.trip.name
                             binding.toolbar.subtitle = Format.dateRange(gate.trip.startDate, gate.trip.endDate)
+                            binding.toolbar.menu.setGroupVisible(0, true)
                             showTabs()
                         }
                     }
                 }
             }
+        }
+    }
+
+    /** A2: Edit trip opens the trip form; Delete trip asks first. Shown once the trip is Ready. */
+    private fun setUpTripMenu() {
+        binding.toolbar.inflateMenu(R.menu.menu_trip_options)
+        binding.toolbar.menu.setGroupVisible(0, false)
+        binding.toolbar.setOnMenuItemClickListener { item ->
+            val trip = (viewModel.gate.value as? TripGate.Ready)?.trip ?: return@setOnMenuItemClickListener false
+            when (item.itemId) {
+                R.id.action_edit_trip -> {
+                    TripFormDialogFragment.show(supportFragmentManager, trip.tripId)
+                    true
+                }
+                R.id.action_delete_trip -> {
+                    ConfirmDeleteTripDialogFragment.newInstance(trip.name)
+                        .show(supportFragmentManager, ConfirmDeleteTripDialogFragment.TAG)
+                    true
+                }
+                else -> false
+            }
+        }
+        supportFragmentManager.setFragmentResultListener(ConfirmDeleteTripDialogFragment.REQUEST_KEY, this) { _, bundle ->
+            if (bundle.getBoolean(ConfirmDeleteTripDialogFragment.RESULT_CONFIRMED)) viewModel.deleteTrip()
         }
     }
 

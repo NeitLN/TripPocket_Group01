@@ -55,7 +55,7 @@ class ExpensesViewModelTest {
 
     private fun viewModel() = ExpensesViewModel(
         SavedStateHandle(mapOf(ARG_TRIP_ID to "t1")),
-        TripRepository(t.db.tripDao(), auth),
+        TripRepository(t.db.tripDao(), auth, t.writer),
         expenses,
         SampleTripRepository(),
     )

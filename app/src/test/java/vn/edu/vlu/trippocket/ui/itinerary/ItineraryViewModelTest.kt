@@ -24,7 +24,9 @@ import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
+import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
@@ -36,11 +38,19 @@ class ItineraryViewModelTest {
 
     private val t = TestDatabase()
     private val repository = ItineraryRepository(t.db.activityDao(), t.writer)
+    private val tripRepository = TripRepository(t.db.tripDao(), FakeAuthRepository(TestDatabase.OWNER), t.writer)
 
     @Before
     fun setUp() = runBlocking {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        t.db.tripDao().insert(t.trip(MockData.TRIP_DALAT))
+        // Same dates as the sample trip, so the sample forecast (until W5) lines up with the tabs.
+        val sample = MockData.trip(MockData.TRIP_DALAT)!!
+        t.db.tripDao().insert(
+            t.trip(MockData.TRIP_DALAT).copy(
+                startDate = sample.startDate.toEpochDay(),
+                endDate = sample.endDate.toEpochDay(),
+            )
+        )
     }
 
     @After
@@ -48,6 +58,8 @@ class ItineraryViewModelTest {
         Dispatchers.resetMain()
         t.close()
     }
+
+    private val sampleDayCount = MockData.trip(MockData.TRIP_DALAT)!!.dayCount
 
     private fun handle() = SavedStateHandle(mapOf(ARG_TRIP_ID to MockData.TRIP_DALAT))
 
@@ -59,7 +71,7 @@ class ItineraryViewModelTest {
     )
 
     private fun viewModel(handle: SavedStateHandle = handle()) =
-        ItineraryViewModel(handle, SampleTripRepository(), weather(), repository)
+        ItineraryViewModel(handle, tripRepository, SampleTripRepository(), weather(), repository)
 
     private fun insert(id: String, dayIndex: Int, startTime: Int, cost: Long, orderIndex: Int) =
         ActivityEntity(id, MockData.TRIP_DALAT, dayIndex, "Activity $id", "", startTime, cost, "", orderIndex, null)
@@ -76,7 +88,7 @@ class ItineraryViewModelTest {
         val viewModel = viewModel(state)
 
         val first = viewModel.loaded(activities = 2)
-        assertEquals(4, first.days.size)
+        assertEquals(sampleDayCount, first.days.size)
         assertEquals(listOf("a1", "a2"), first.activities.map { it.activityId })
         assertEquals(1_800_000, first.estimatedCost)
         assertEquals(3, first.activityCount)
@@ -91,9 +103,9 @@ class ItineraryViewModelTest {
         assertEquals(second.days[1], second.forecast?.date)
 
         // A re-created screen opens on the saved tab.
-        val again = viewModel(state)
-        assertEquals(1, again.uiState.value.selectedDay)
-        assertEquals(4, again.uiState.value.days.size)
+        val again = withTimeout(5_000) { viewModel(state).uiState.first { it.days.isNotEmpty() } }
+        assertEquals(1, again.selectedDay)
+        assertEquals(sampleDayCount, again.days.size)
     }
 
     @Test
@@ -115,6 +127,7 @@ class ItineraryViewModelTest {
     fun anUnknownTrip_showsTheEmptyState() {
         val viewModel = ItineraryViewModel(
             SavedStateHandle(mapOf(ARG_TRIP_ID to "missing")),
+            tripRepository,
             SampleTripRepository(),
             weather(),
             repository,

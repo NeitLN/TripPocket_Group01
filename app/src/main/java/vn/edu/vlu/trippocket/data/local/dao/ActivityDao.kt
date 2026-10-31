@@ -60,6 +60,10 @@ interface ActivityDao {
     @Query("SELECT endDate - startDate + 1 FROM trip WHERE tripId = :tripId AND isDeleted = 0")
     suspend fun tripDayCount(tripId: String): Int?
 
+    /** A2: the last day that has an activity; null when the trip has none. */
+    @Query("SELECT MAX(dayIndex) FROM activity WHERE tripId = :tripId")
+    suspend fun lastUsedDayIndex(tripId: String): Int?
+
     @Query("DELETE FROM activity WHERE tripId = :tripId AND activityId = :activityId")
     suspend fun deleteById(tripId: String, activityId: String): Int
 

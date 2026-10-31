@@ -17,7 +17,7 @@ import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.ActivityInput
 import vn.edu.vlu.trippocket.data.repository.InvalidActivityException
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.domain.ActivityProblem
 import vn.edu.vlu.trippocket.domain.LimitExceededException
 import vn.edu.vlu.trippocket.domain.Limits
@@ -68,27 +68,30 @@ data class ItineraryFormUiState(
  */
 class ItineraryFormViewModel(
     savedStateHandle: SavedStateHandle,
-    tripRepository: SampleTripRepository,
+    private val tripRepository: TripRepository,
     private val itineraryRepository: ItineraryRepository,
 ) : ViewModel() {
 
     private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
     private val activityId: String? = savedStateHandle[ARG_ACTIVITY_ID]
-    private val dayCount: Int = tripRepository.trip(tripId)?.dayCount ?: 0
 
-    private val _uiState = MutableStateFlow(
-        ItineraryFormUiState(
-            editing = activityId != null,
-            loading = activityId != null,
-            dayCount = dayCount,
-        )
-    )
+    /** Loading until the trip's days (from Room, so trips made in A2 work) and the activity are read. */
+    private val _uiState = MutableStateFlow(ItineraryFormUiState(editing = activityId != null, loading = true))
     val uiState: StateFlow<ItineraryFormUiState> = _uiState.asStateFlow()
 
     init {
         val activityId = activityId
-        if (activityId != null) {
-            viewModelScope.launch {
+        viewModelScope.launch {
+            val dayCount = try {
+                tripRepository.getTrip(tripId)?.dayCount ?: 0
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                0
+            }
+            if (activityId == null) {
+                _uiState.update { it.copy(loading = false, dayCount = dayCount, notFound = dayCount == 0) }
+            } else {
                 val activity = try {
                     itineraryRepository.getActivity(activityId)
                 } catch (e: CancellationException) {
@@ -97,11 +100,12 @@ class ItineraryFormViewModel(
                     null
                 }
                 _uiState.update { state ->
-                    if (activity == null || activity.tripId != tripId) {
+                    if (dayCount == 0 || activity == null || activity.tripId != tripId) {
                         state.copy(loading = false, notFound = true)
                     } else {
                         state.copy(
                             loading = false,
+                            dayCount = dayCount,
                             title = activity.title,
                             place = activity.place,
                             startTime = activity.startTime,
@@ -135,7 +139,7 @@ class ItineraryFormViewModel(
     /** Saves the form; nothing is written when a field is invalid. */
     fun save() {
         val state = _uiState.value
-        if (state.saving || state.saved || state.deleted) return
+        if (state.loading || state.saving || state.saved || state.deleted) return
 
         val input = try {
             state.toInput()
@@ -232,7 +236,7 @@ class ItineraryFormViewModel(
             title.length > Limits.MAX_TEXT -> ActivityProblem.TITLE_TOO_LONG
             place.length > Limits.MAX_TEXT -> ActivityProblem.PLACE_TOO_LONG
             note.length > Limits.MAX_NOTE -> ActivityProblem.NOTE_TOO_LONG
-            dayIndex !in 0 until dayCount -> ActivityProblem.DAY_OUT_OF_RANGE
+            dayIndex !in 0 until this.dayCount -> ActivityProblem.DAY_OUT_OF_RANGE
             else -> null
         }
         if (problem != null) throw InvalidActivityException(problem)
@@ -271,7 +275,7 @@ class ItineraryFormViewModel(
             initializer {
                 ItineraryFormViewModel(
                     createSavedStateHandle(),
-                    appContainer().sampleTripRepository,
+                    appContainer().tripRepository,
                     appContainer().itineraryRepository,
                 )
             }

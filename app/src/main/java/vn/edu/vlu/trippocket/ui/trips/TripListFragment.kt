@@ -63,7 +63,13 @@ class TripListFragment : Fragment() {
                 if (dy > 0) binding.fabNewTrip.shrink() else if (dy < 0) binding.fabNewTrip.extend()
             }
         })
-        binding.fabNewTrip.setOnClickListener { showNotYet(it) }
+        binding.fabNewTrip.setOnClickListener { TripFormDialogFragment.show(childFragmentManager) }
+        // A2: a trip just created opens straight away; an edit (from Trip Detail) never lands here.
+        childFragmentManager.setFragmentResultListener(TripFormDialogFragment.REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
+            bundle.getString(TripFormDialogFragment.RESULT_TRIP_ID)?.let { tripId ->
+                startActivity(TripDetailActivity.newIntent(requireContext(), tripId))
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {

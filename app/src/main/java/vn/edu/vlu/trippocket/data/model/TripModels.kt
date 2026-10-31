@@ -24,3 +24,12 @@ data class Trip(
     val dayCount: Int get() = (endDate.toEpochDay() - startDate.toEpochDay()).toInt() + 1
     fun dateOfDay(dayIndex: Int): LocalDate = startDate.plusDays(dayIndex.toLong())
 }
+
+/** What the trip form writes (A2). The repository trims the texts and checks the rules again. */
+data class TripInput(
+    val name: String,
+    val destination: String,
+    val startDate: LocalDate,
+    /** Inclusive; the same day as [startDate] for a day trip. */
+    val endDate: LocalDate,
+)
