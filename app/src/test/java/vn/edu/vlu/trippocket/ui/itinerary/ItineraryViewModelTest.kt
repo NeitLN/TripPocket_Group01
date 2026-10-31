@@ -21,15 +21,18 @@ import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
+import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
+import java.time.LocalDate
 
 /** I1: the itinerary screen reads the selected day from Room. Owner of the module: Bảo. */
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -43,7 +46,7 @@ class ItineraryViewModelTest {
     @Before
     fun setUp() = runBlocking {
         Dispatchers.setMain(UnconfinedTestDispatcher())
-        // Same dates as the sample trip, so the sample forecast (until W5) lines up with the tabs.
+        // Same dates as the sample trip, so the tests can name its days.
         val sample = MockData.trip(MockData.TRIP_DALAT)!!
         t.db.tripDao().insert(
             t.trip(MockData.TRIP_DALAT).copy(
@@ -63,12 +66,23 @@ class ItineraryViewModelTest {
 
     private fun handle() = SavedStateHandle(mapOf(ARG_TRIP_ID to MockData.TRIP_DALAT))
 
-    private fun weather() = WeatherRepository(
+    private val forecastApi = FakeForecastApi()
+    private val weatherRepository = WeatherRepository(
         FakeGeocodingApi(),
-        FakeForecastApi(),
+        forecastApi,
         t.db.weatherCacheDao(),
         t.db.savedPlaceDao(),
     )
+
+    private fun weather() = weatherRepository
+
+    /** W5: saves a place to the trip and downloads its forecast for [dates] into the cache. */
+    private suspend fun cacheForecast(vararg dates: LocalDate) {
+        val places = SavedPlaceRepository(t.db.savedPlaceDao(), t.writer)
+        val id = places.savePlace(MockData.TRIP_DALAT, Place("Dalat", "Lâm Đồng", "Vietnam", 11.94, 108.44))
+        forecastApi.response = FakeForecastApi.of(*dates)
+        weatherRepository.refreshForecast(places.observePlaces(MockData.TRIP_DALAT).first().first { it.placeId == id })
+    }
 
     private fun viewModel(handle: SavedStateHandle = handle()) =
         ItineraryViewModel(handle, tripRepository, SampleTripRepository(), weather(), repository)
@@ -93,19 +107,56 @@ class ItineraryViewModelTest {
         assertEquals(1_800_000, first.estimatedCost)
         assertEquals(3, first.activityCount)
         assertTrue(first.canAdd)
-        // Kept on the sample data until W5: the trip's forecast starts the day after the first tab.
-        assertNull(first.forecast)
 
         viewModel.selectDay(1)
         val second = withTimeout(5_000) { viewModel.uiState.first { it.selectedDay == 1 && it.activities.size == 1 } }
         assertEquals(listOf("a3"), second.activities.map { it.activityId })
         assertEquals(210_000, second.estimatedCost)
-        assertEquals(second.days[1], second.forecast?.date)
 
         // A re-created screen opens on the saved tab.
         val again = withTimeout(5_000) { viewModel(state).uiState.first { it.days.isNotEmpty() } }
         assertEquals(1, again.selectedDay)
         assertEquals(sampleDayCount, again.days.size)
+    }
+
+    @Test
+    fun weather_withoutASavedPlace_saysHowToGetOne_insteadOfAForecast() = runBlocking {
+        val state = withTimeout(5_000) { viewModel().uiState.first { it.days.isNotEmpty() } }
+
+        assertFalse(state.hasSavedPlace)
+        assertNull(state.forecast)
+    }
+
+    @Test
+    fun weather_isTheCachedForecastOfThatExactDay_andOtherDaysAreNotAvailable() = runBlocking {
+        val days = withTimeout(5_000) { viewModel().uiState.first { it.days.isNotEmpty() } }.days
+        // The cache covers the second day only: the first is before it, the last past its range.
+        cacheForecast(days[1])
+        val requestsBefore = forecastApi.requests.size
+        val viewModel = viewModel()
+
+        val first = withTimeout(5_000) { viewModel.uiState.first { it.hasSavedPlace } }
+        assertNull(first.forecast)
+
+        viewModel.selectDay(1)
+        val second = withTimeout(5_000) { viewModel.uiState.first { it.selectedDay == 1 } }
+        assertEquals(days[1], second.forecast?.date)
+        assertEquals(25, second.forecast?.maxTemp)
+
+        viewModel.selectDay(days.lastIndex)
+        assertNull(withTimeout(5_000) { viewModel.uiState.first { it.selectedDay == days.lastIndex } }.forecast)
+        // Read from the Room cache only, so it works offline: the screen never calls the API.
+        assertEquals(requestsBefore, forecastApi.requests.size)
+    }
+
+    @Test
+    fun weather_appearsOnceTheWeatherScreenDownloadsIt() = runBlocking {
+        val viewModel = viewModel()
+        val days = withTimeout(5_000) { viewModel.uiState.first { it.days.isNotEmpty() } }.days
+
+        cacheForecast(days[0])
+
+        assertEquals(days[0], withTimeout(5_000) { viewModel.uiState.first { it.forecast != null } }.forecast?.date)
     }
 
     @Test
