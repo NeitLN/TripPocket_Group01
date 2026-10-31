@@ -50,4 +50,20 @@ data class CachedForecast(
     val placeId: String,
     val days: List<ForecastDay>,
     val fetchedAt: Long,
+) {
+    /**
+     * true when the forecast was fetched more than [maxAgeMillis] before [now] (both epoch
+     * millis). The screen refreshes its own accord at that point; a cache exactly at the limit
+     * is still fresh, and a fetch time in the future (the clock was changed) is not stale.
+     */
+    fun isStale(now: Long, maxAgeMillis: Long): Boolean = now - fetchedAt > maxAgeMillis
+}
+
+/**
+ * How a trip-wide refresh went (H): [refreshed] places now have a new forecast, [failed]
+ * places kept their previous cache. One failure never stops the other places.
+ */
+data class RefreshSummary(
+    val refreshed: Int,
+    val failed: Int,
 )

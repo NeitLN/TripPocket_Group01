@@ -46,6 +46,9 @@ class SavedPlaceRepository(
         val name = place.name.trim().take(Limits.MAX_TEXT)
         if (name.isEmpty()) throw InvalidPlaceException(PlaceProblem.BLANK_NAME)
         return tripWriter.write(tripId) {
+            // Checked again inside the transaction: two quick taps that both passed the check
+            // above must still end with one row (this rare path costs one revision).
+            dao.findAt(tripId, place.latitude, place.longitude)?.let { return@write it.placeId }
             Limits.check(dao.countByTrip(tripId), Limits.MAX_PLACES)
             val id = newId()
             dao.insert(

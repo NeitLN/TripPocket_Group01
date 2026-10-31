@@ -25,6 +25,7 @@ import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.merge
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -34,10 +35,15 @@ import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.repository.InvalidPlaceException
+import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.data.repository.toWeatherError
 import vn.edu.vlu.trippocket.domain.LimitExceededException
+import vn.edu.vlu.trippocket.domain.Limits
+import vn.edu.vlu.trippocket.domain.WeatherError
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.Instant
 import java.time.LocalDate
@@ -57,8 +63,8 @@ sealed interface SearchState {
     /** The API answered with no match: "No places found". */
     data object Empty : SearchState
 
-    /** Network, HTTP or JSON failure; the screen offers Try again. */
-    data object Error : SearchState
+    /** The request failed; the screen offers Try again and the sentence for [error]. */
+    data class Error(val error: WeatherError) : SearchState
 }
 
 /**
@@ -78,6 +84,18 @@ sealed interface SaveMessage {
 
     /** The write failed (invalid name, database error); nothing was added. */
     data object Failed : SaveMessage
+
+    /** The place now has [placeName] (WP). */
+    data class Renamed(val placeName: String) : SaveMessage
+
+    /** The note of [placeName] was saved (WP). */
+    data class NoteSaved(val placeName: String) : SaveMessage
+
+    /** [placeName] was removed from the trip, with its cached forecast (WP). */
+    data class Deleted(val placeName: String) : SaveMessage
+
+    /** The write was refused; [problem] says which field, so the dialog can mark it (WP). */
+    data class Invalid(val problem: PlaceProblem) : SaveMessage
 }
 
 data class SavedPlacesUiState(
@@ -87,6 +105,9 @@ data class SavedPlacesUiState(
 ) {
     /** The place whose forecast the screen shows. */
     val selected: SavedPlace? get() = places.firstOrNull { it.placeId == selectedPlaceId }
+
+    /** Note of [selected], for the place panel; empty when there is no place or no note. */
+    val selectedNote: String get() = selected?.note.orEmpty()
 }
 
 data class ForecastUiState(
@@ -96,12 +117,15 @@ data class ForecastUiState(
     val loading: Boolean = false,
     /** true while a download runs but the cache below is still displayed. */
     val refreshing: Boolean = false,
-    /** true when the last download failed; the cached rows are then the offline copy. */
-    val failed: Boolean = false,
+    /** Why the last download failed; null when it did not. */
+    val error: WeatherError? = null,
     val lastUpdated: LocalDateTime? = null,
     val rows: List<ForecastRow> = emptyList(),
 ) {
     val today: ForecastDay? get() = rows.firstOrNull()?.forecast
+
+    /** true when the last download failed; the cached rows are then the offline copy. */
+    val failed: Boolean get() = error != null
 
     /** true while the screen still shows the forecast stored at the last sync. */
     val fromCache: Boolean get() = failed && hasForecast
@@ -140,12 +164,17 @@ data class ForecastRow(val date: LocalDate, val tripDay: Int?, val forecast: For
  * Saved places (W2) and the forecast (W3) come from Room. Saving a search result stores it and
  * downloads its forecast; Retry and pull-to-refresh only download the forecast again. The screen
  * itself never reads the API for a forecast.
+ *
+ * H: a forecast older than [FORECAST_MAX_AGE_MS] is downloaded again when its place is shown,
+ * once per place, and a failure keeps the cache on screen. Every download goes through
+ * [download], which drops a second request for a place that is already downloading.
  */
 class WeatherViewModel(
     savedStateHandle: SavedStateHandle,
     tripRepository: SampleTripRepository,
     private val weatherRepository: WeatherRepository,
     private val savedPlaceRepository: SavedPlaceRepository,
+    private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
     private val trip: Trip? = tripRepository.trip(savedStateHandle[ARG_TRIP_ID] ?: "")
@@ -173,6 +202,12 @@ class WeatherViewModel(
     /** The download of the selected place, if any. */
     private val refresh = MutableStateFlow<Refresh?>(null)
 
+    /** Place ids already checked for a stale cache, so a failed download is not retried forever. */
+    private val autoRefreshed = mutableSetOf<String>()
+
+    /** Place ids with a download running; a second request for the same place is dropped. */
+    private val downloading = mutableSetOf<String>()
+
     /**
      * The selected place and its cache. [flatMapLatest] cancels the cache flow of the previous
      * place, so two places are never collected side by side while the user taps the chips.
@@ -189,8 +224,14 @@ class WeatherViewModel(
             }
         }
 
-    val forecast: StateFlow<ForecastUiState> = combine(loaded, refresh, ::forecastState)
+    val forecast: StateFlow<ForecastUiState> = combine(
+        // The stale check runs before the state is built, so it is part of showing the place.
+        loaded.onEach { autoRefreshIfStale(it) },
+        refresh,
+        ::forecastState,
+    )
         .stateIn(viewModelScope, SharingStarted.Eagerly, ForecastUiState())
+
 
     init {
         val tripId = trip?.tripId
@@ -225,8 +266,15 @@ class WeatherViewModel(
         val tripId = trip?.tripId ?: return
         // W2 dedupes by coordinates, and it can only answer after the write, so the message is
         // decided here from the current list.
-        val alreadySaved = _places.value.places.any {
+        val places = _places.value.places
+        val alreadySaved = places.any {
             it.latitude == place.latitude && it.longitude == place.longitude
+        }
+        // H: the 31st place is refused before the write and before any forecast request; a place
+        // already saved to the trip still works at the cap (it only selects its forecast).
+        if (!alreadySaved && places.size >= Limits.MAX_PLACES) {
+            _places.update { it.copy(message = SaveMessage.LimitReached) }
+            return
         }
         viewModelScope.launch {
             val placeId = try {
@@ -256,6 +304,56 @@ class WeatherViewModel(
     fun selectPlace(placeId: String) {
         _places.update { state ->
             if (state.places.any { it.placeId == placeId }) state.copy(selectedPlaceId = placeId) else state
+        }
+    }
+
+    /** Renames a saved place (WP); one write, reported once through [SavedPlacesUiState.message]. */
+    fun renamePlace(placeId: String, name: String) {
+        val tripId = trip?.tripId ?: return
+        val newName = name.trim()
+        writePlace({ savedPlaceRepository.renamePlace(tripId, placeId, name) }) {
+            SaveMessage.Renamed(newName)
+        }
+    }
+
+    /** Saves the note of a saved place (WP); an empty note removes it. */
+    fun updatePlaceNote(placeId: String, note: String) {
+        val tripId = trip?.tripId ?: return
+        val placeName = _places.value.places.firstOrNull { it.placeId == placeId }?.name.orEmpty()
+        writePlace({ savedPlaceRepository.updateNote(tripId, placeId, note) }) {
+            SaveMessage.NoteSaved(placeName)
+        }
+    }
+
+    /**
+     * Removes a saved place and its cached forecast (WP). Removing the selected place makes the
+     * places flow pick the first remaining one, or none at all.
+     */
+    fun deletePlace(placeId: String) {
+        val tripId = trip?.tripId ?: return
+        val placeName = _places.value.places.firstOrNull { it.placeId == placeId }?.name.orEmpty()
+        writePlace({ savedPlaceRepository.deletePlace(tripId, placeId) }) {
+            SaveMessage.Deleted(placeName)
+        }
+    }
+
+    /**
+     * Runs one write on a saved place and reports the outcome once. A refused field keeps the
+     * old values and reports [SaveMessage.Invalid]; a database failure reports [SaveMessage.Failed].
+     */
+    private fun writePlace(block: suspend () -> Unit, onSuccess: () -> SaveMessage) {
+        viewModelScope.launch {
+            val message = try {
+                block()
+                onSuccess()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: InvalidPlaceException) {
+                SaveMessage.Invalid(e.problem)
+            } catch (e: Exception) {
+                SaveMessage.Failed
+            }
+            _places.update { it.copy(message = message) }
         }
     }
 
@@ -290,8 +388,9 @@ class WeatherViewModel(
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // IOException when offline, HttpException for a bad status, JSON errors: one UI state.
-            SearchState.Error
+            // IOException, HttpException and JSON errors keep their kind, so the screen can say
+            // whether it is the connection, the rate limit or the service.
+            SearchState.Error(e.toWeatherError())
         }
         emit(result)
     }
@@ -307,18 +406,46 @@ class WeatherViewModel(
     /**
      * Downloads the forecast and records the outcome. A failure keeps the cached rows: only
      * [refresh] changes, so the screen can mark them as the offline copy.
+     *
+     * One download per place at a time: the automatic refresh and a pull-to-refresh can ask at
+     * the same moment, and the second request is dropped, not queued.
      */
     private suspend fun download(place: SavedPlace) {
-        refresh.value = Refresh(place.placeId, RefreshStatus.LOADING)
-        val status = try {
-            weatherRepository.refreshForecast(place)
-            RefreshStatus.IDLE
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            RefreshStatus.FAILED
+        if (!downloading.add(place.placeId)) return
+        try {
+            refresh.value = Refresh(place.placeId, RefreshStatus.LOADING)
+            var error: WeatherError? = null
+            try {
+                weatherRepository.refreshForecast(place)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                error = e.toWeatherError()
+            }
+            refresh.value = Refresh(
+                place.placeId,
+                if (error == null) RefreshStatus.IDLE else RefreshStatus.FAILED,
+                error,
+            )
+        } finally {
+            downloading.remove(place.placeId)
         }
-        refresh.value = Refresh(place.placeId, status)
+    }
+
+    /**
+     * H: when the place just shown has a cached forecast older than [FORECAST_MAX_AGE_MS],
+     * downloads it once. A place with no cache at all is not stale: saving it already downloads
+     * its forecast, and after a Restore the trip-wide refresh (A4) fills the cache.
+     * [autoRefreshed] keeps a failed download from being retried every time the cache emits, and
+     * [downloading] leaves a request that is already running alone.
+     */
+    private fun autoRefreshIfStale(loaded: Loaded) {
+        val place = loaded.place ?: return
+        if (place.placeId in autoRefreshed || place.placeId in downloading) return
+        val cached = loaded.cached ?: return
+        if (!cached.isStale(now(), FORECAST_MAX_AGE_MS)) return
+        autoRefreshed += place.placeId
+        viewModelScope.launch { download(place) }
     }
 
     private fun forecastState(loaded: Loaded, refresh: Refresh?): ForecastUiState {
@@ -328,12 +455,12 @@ class WeatherViewModel(
 
         val cached = loaded.cached
         // A download of another place (the user tapped a chip meanwhile) is not this state.
-        val status = refresh?.takeIf { it.placeId == place.placeId }?.status
+        val status = refresh?.takeIf { it.placeId == place.placeId }
         return ForecastUiState(
             place = place,
-            loading = status == RefreshStatus.LOADING && cached == null,
-            refreshing = status == RefreshStatus.LOADING && cached != null,
-            failed = status == RefreshStatus.FAILED,
+            loading = status?.status == RefreshStatus.LOADING && cached == null,
+            refreshing = status?.status == RefreshStatus.LOADING && cached != null,
+            error = status?.error,
             lastUpdated = cached?.fetchedAt?.let(::toLocalDateTime),
             rows = ForecastRow.build(cached?.days.orEmpty(), trip),
         )
@@ -344,6 +471,9 @@ class WeatherViewModel(
 
     companion object {
         private const val SEARCH_DEBOUNCE_MS = 300L
+
+        /** A cached forecast older than this is downloaded again when its place is shown. */
+        private const val FORECAST_MAX_AGE_MS = 6L * 60 * 60 * 1000
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
@@ -361,6 +491,10 @@ class WeatherViewModel(
 /** The selected place and its cached forecast, emitted together so they never disagree. */
 private data class Loaded(val place: SavedPlace?, val cached: CachedForecast?)
 
-private data class Refresh(val placeId: String, val status: RefreshStatus)
+private data class Refresh(
+    val placeId: String,
+    val status: RefreshStatus,
+    val error: WeatherError? = null,
+)
 
 private enum class RefreshStatus { IDLE, LOADING, FAILED }

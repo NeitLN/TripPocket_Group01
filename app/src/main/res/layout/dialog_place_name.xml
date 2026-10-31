@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Rename-place dialog body (WP): one name field, up to 80 characters.
+     Used with MaterialAlertDialogBuilder.setView; the dialog supplies title and buttons. -->
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tilName"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/space_xl"
+    android:paddingTop="@dimen/space_sm"
+    android:hint="@string/weather_place_name_hint"
+    app:counterEnabled="true"
+    app:counterMaxLength="80">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/etName"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:imeOptions="actionDone"
+        android:inputType="textCapWords"
+        android:maxLength="80" />
+</com.google.android.material.textfield.TextInputLayout>
+

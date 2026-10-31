@@ -5,6 +5,7 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.view.inputmethod.InputMethodManager
+import androidx.appcompat.widget.PopupMenu
 import androidx.core.content.getSystemService
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
@@ -18,8 +19,11 @@ import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.Place
+import vn.edu.vlu.trippocket.data.model.SavedPlace
+import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.databinding.FragmentWeatherBinding
 import vn.edu.vlu.trippocket.databinding.ViewPlaceChipBinding
+import vn.edu.vlu.trippocket.domain.WeatherError
 import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
 import vn.edu.vlu.trippocket.ui.detail.TripGate
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
@@ -33,6 +37,41 @@ class WeatherFragment : Fragment() {
 
     private val viewModel: WeatherViewModel by tripViewModels { WeatherViewModel.Factory }
     private val tripDetailViewModel: TripDetailViewModel by activityViewModels { TripDetailViewModel.Factory }
+
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+
+        childFragmentManager.setFragmentResultListener(
+            RenamePlaceDialogFragment.REQUEST_KEY,
+            this,
+        ) { _, bundle ->
+            val placeId = bundle.getString(RenamePlaceDialogFragment.EXTRA_PLACE_ID)
+                ?: return@setFragmentResultListener
+            val name = bundle.getString(RenamePlaceDialogFragment.EXTRA_NAME)
+                ?: return@setFragmentResultListener
+            viewModel.renamePlace(placeId, name)
+        }
+
+        childFragmentManager.setFragmentResultListener(
+            EditPlaceNoteDialogFragment.REQUEST_KEY,
+            this,
+        ) { _, bundle ->
+            val placeId = bundle.getString(EditPlaceNoteDialogFragment.EXTRA_PLACE_ID)
+                ?: return@setFragmentResultListener
+            val note = bundle.getString(EditPlaceNoteDialogFragment.EXTRA_NOTE)
+                ?: return@setFragmentResultListener
+            viewModel.updatePlaceNote(placeId, note)
+        }
+
+        childFragmentManager.setFragmentResultListener(
+            ConfirmDeletePlaceDialogFragment.REQUEST_KEY,
+            this,
+        ) { _, bundle ->
+            val placeId = bundle.getString(ConfirmDeletePlaceDialogFragment.EXTRA_PLACE_ID)
+                ?: return@setFragmentResultListener
+            viewModel.deletePlace(placeId)
+        }
+    }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -56,6 +95,11 @@ class WeatherFragment : Fragment() {
         binding.btnRefresh.setOnClickListener {
             viewModel.refresh()
             Snackbar.make(it, R.string.weather_refresh, Snackbar.LENGTH_SHORT).show()
+        }
+        binding.btnPlaceOptions.setOnClickListener { anchor ->
+            viewModel.places.value.selected?.let { selected ->
+                showPlaceMenu(selected, anchor)
+            }
         }
         binding.btnRetry.setOnClickListener { viewModel.retry() }
         binding.btnSearchRetry.setOnClickListener { viewModel.retrySearch() }
@@ -109,6 +153,9 @@ class WeatherFragment : Fragment() {
         binding.progressSearch.isVisible = state is SearchState.Loading
         binding.tvNoResults.isVisible = state is SearchState.Empty
         binding.layoutSearchError.isVisible = state is SearchState.Error
+        if (state is SearchState.Error) {
+            binding.tvSearchError.setText(errorMessage(state.error))
+        }
     }
 
     private fun renderPlaces(state: SavedPlacesUiState) {
@@ -119,12 +166,20 @@ class WeatherFragment : Fragment() {
             chip.id = View.generateViewId()
             chip.isChecked = place.placeId == state.selectedPlaceId
             chip.setOnClickListener { viewModel.selectPlace(place.placeId) }
+            chip.setOnLongClickListener {
+                showPlaceMenu(place, chip)
+                true
+            }
             binding.chipGroupPlaces.addView(chip)
         }
         val hasPlaces = state.places.isNotEmpty()
         binding.tvSavedLabel.isVisible = hasPlaces
         binding.chipGroupPlaces.isVisible = hasPlaces
         binding.groupEmptyPlaces.isVisible = !hasPlaces
+
+        val note = state.selectedNote
+        binding.tvPlaceNote.isVisible = hasPlaces && note.isNotBlank()
+        binding.tvPlaceNote.text = note
 
         // One snackbar per save: the message is cleared right after it is shown.
         state.message?.let { message ->
@@ -133,11 +188,57 @@ class WeatherFragment : Fragment() {
         }
     }
 
+    private fun showPlaceMenu(place: SavedPlace, anchor: View) {
+        val popup = PopupMenu(requireContext(), anchor)
+        popup.menuInflater.inflate(R.menu.menu_place_options, popup.menu)
+        popup.setOnMenuItemClickListener { item ->
+            when (item.itemId) {
+                R.id.action_rename_place -> {
+                    RenamePlaceDialogFragment.newInstance(place.placeId, place.name)
+                        .show(childFragmentManager, "rename_place")
+                    true
+                }
+                R.id.action_edit_note -> {
+                    EditPlaceNoteDialogFragment.newInstance(place.placeId, place.name, place.note)
+                        .show(childFragmentManager, "edit_place_note")
+                    true
+                }
+                R.id.action_delete_place -> {
+                    ConfirmDeletePlaceDialogFragment.newInstance(place.placeId, place.name)
+                        .show(childFragmentManager, "delete_place")
+                    true
+                }
+                else -> false
+            }
+        }
+        popup.show()
+    }
+
     private fun saveMessage(message: SaveMessage): String = when (message) {
         is SaveMessage.Saved -> getString(R.string.weather_saved_toast, message.placeName)
         is SaveMessage.AlreadySaved -> getString(R.string.weather_place_exists, message.placeName)
         SaveMessage.LimitReached -> getString(R.string.weather_place_limit)
         SaveMessage.Failed -> getString(R.string.weather_save_failed)
+        is SaveMessage.Renamed -> getString(R.string.weather_place_renamed, message.placeName)
+        is SaveMessage.NoteSaved -> getString(R.string.weather_place_note_saved, message.placeName)
+        is SaveMessage.Deleted -> getString(R.string.weather_place_deleted, message.placeName)
+        is SaveMessage.Invalid -> getString(placeProblemMessage(message.problem))
+    }
+
+    /** WP: the sentence for a refused rename / note, so the dialog can say what to fix. */
+    private fun placeProblemMessage(problem: PlaceProblem): Int = when (problem) {
+        PlaceProblem.BLANK_NAME -> R.string.weather_place_name_blank
+        PlaceProblem.NAME_TOO_LONG -> R.string.weather_place_name_long
+        PlaceProblem.NOTE_TOO_LONG -> R.string.weather_place_note_long
+        PlaceProblem.NOT_FOUND -> R.string.weather_place_not_found
+    }
+
+    /** H: one sentence per kind of failure, for the search dropdown and the forecast error. */
+    private fun errorMessage(error: WeatherError): Int = when (error) {
+        WeatherError.NETWORK -> R.string.weather_error_network
+        WeatherError.RATE_LIMITED -> R.string.weather_error_rate_limited
+        WeatherError.SERVER -> R.string.weather_error_server
+        WeatherError.BAD_RESPONSE -> R.string.weather_error_bad_response
     }
 
     private fun renderForecast(state: ForecastUiState) {
@@ -146,9 +247,14 @@ class WeatherFragment : Fragment() {
         binding.groupForecast.isVisible = place != null
         binding.tvForecastError.isVisible = place != null && state.failed && !state.hasForecast
         binding.btnRetry.isVisible = place != null && state.failed && !state.hasForecast
+        val error = state.error
+        if (error != null && !state.hasForecast) binding.tvForecastError.setText(errorMessage(error))
         // The badge reminds the user they are looking at stored data.
         binding.tvOfflineBadge.isVisible = state.fromCache
-        if (place == null) return
+        if (place == null) {
+            binding.tvPlaceNote.isVisible = false
+            return
+        }
 
         binding.tvPlaceName.text = getString(R.string.weather_place_title, place.name, place.country)
         val today = state.today

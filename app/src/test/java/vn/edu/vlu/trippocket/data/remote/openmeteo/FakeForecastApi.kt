@@ -1,5 +1,6 @@
 package vn.edu.vlu.trippocket.data.remote.openmeteo
 
+import kotlinx.coroutines.CompletableDeferred
 import java.time.LocalDate
 
 /**
@@ -10,6 +11,13 @@ class FakeForecastApi : ForecastApi {
 
     val requests = mutableListOf<Pair<Double, Double>>()
     var failWith: Exception? = null
+
+    /** When set, only the requests this returns true for fail (with [failWith]). */
+    var failFor: ((Pair<Double, Double>) -> Boolean)? = null
+
+    /** Holds a request open, so a test can see the screen while a download runs. */
+    var gate: CompletableDeferred<Unit>? = null
+
     var response: ForecastResponse = of(LocalDate.of(2026, 10, 31))
 
     override suspend fun daily(
@@ -19,8 +27,11 @@ class FakeForecastApi : ForecastApi {
         timezone: String,
         forecastDays: Int,
     ): ForecastResponse {
-        requests += latitude to longitude
-        failWith?.let { throw it }
+        val request = latitude to longitude
+        requests += request
+        gate?.await()
+        val failure = failWith
+        if (failure != null && (failFor?.invoke(request) ?: true)) throw failure
         return response
     }
 

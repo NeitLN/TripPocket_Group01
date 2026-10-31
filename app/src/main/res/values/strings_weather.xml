@@ -7,6 +7,9 @@
     <string name="weather_search_try_again">Try again</string>
     <string name="weather_no_results">No places found</string>
     <string name="weather_error_network">Can\'t reach Open-Meteo. Check your connection and try again.</string>
+    <string name="weather_error_rate_limited">Open-Meteo is getting too many requests. Wait a minute and try again.</string>
+    <string name="weather_error_server">Open-Meteo is having trouble. Try again later.</string>
+    <string name="weather_error_bad_response">Open-Meteo sent an answer the app could not read. Try again.</string>
     <string name="weather_saved_places">Saved places</string>
     <string name="weather_empty_places_title">No places in your pocket yet</string>
     <string name="weather_empty_places_body">Save a city to keep its 16-day forecast, even offline.</string>
@@ -28,5 +31,26 @@
     <string name="weather_place_exists">%1$s is already saved to this trip</string>
     <string name="weather_place_limit">This trip already has 30 places</string>
     <string name="weather_save_failed">Couldn\'t save the place. Try again.</string>
+    <string name="weather_place_renamed">%1$s renamed</string>
+    <string name="weather_place_note_saved">Note saved for %1$s</string>
+    <string name="weather_place_deleted">%1$s removed from this trip</string>
+    <string name="weather_place_name_blank">Enter a name for the place</string>
+    <string name="weather_place_name_long">The name is too long (at most 80 characters)</string>
+    <string name="weather_place_note_long">The note is too long (at most 300 characters)</string>
+    <string name="weather_place_not_found">This place is no longer in the trip</string>
     <string name="weather_coordinates">%1$.2f, %2$.2f</string>
+
+    <!-- Saved place options and dialogs (WP) -->
+    <string name="weather_place_action_rename">Rename place</string>
+    <string name="weather_place_action_note">Edit note</string>
+    <string name="weather_place_action_delete">Remove place</string>
+    <string name="weather_place_options_desc">Place options</string>
+    <string name="weather_place_rename_title">Rename %1$s</string>
+    <string name="weather_place_name_hint">Place name</string>
+    <string name="weather_place_note_title">Note for %1$s</string>
+    <string name="weather_place_note_hint">Add a note (e.g. key sights, tickets, packing tips)</string>
+    <string name="weather_place_delete_confirm_title">Remove %1$s?</string>
+    <string name="weather_place_delete_confirm_body">Its forecast and notes will be removed from this trip.</string>
+    <string name="weather_place_delete_confirm_action">Remove</string>
+    <string name="weather_save">Save</string>
 </resources>

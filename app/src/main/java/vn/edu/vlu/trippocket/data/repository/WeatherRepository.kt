@@ -2,18 +2,23 @@ package vn.edu.vlu.trippocket.data.repository
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
+import retrofit2.HttpException
 import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.dao.SavedPlaceDao
 import vn.edu.vlu.trippocket.data.local.dao.WeatherCacheDao
+import vn.edu.vlu.trippocket.data.local.entity.SavedPlaceEntity
 import vn.edu.vlu.trippocket.data.local.entity.WeatherCacheEntity
 import vn.edu.vlu.trippocket.data.model.CachedForecast
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.Place
+import vn.edu.vlu.trippocket.data.model.RefreshSummary
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.WeatherCondition
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
@@ -21,6 +26,8 @@ import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.toForecastDays
 import vn.edu.vlu.trippocket.data.remote.openmeteo.toPlaces
 import vn.edu.vlu.trippocket.domain.DailyWeather
+import vn.edu.vlu.trippocket.domain.WeatherError
+import java.io.IOException
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -80,6 +87,32 @@ class WeatherRepository(
         cacheDao.observe(placeId).map { row ->
             row?.let { CachedForecast(it.placeId, decode(it.forecastJson), it.fetchedAt) }
         }
+
+    /**
+     * Reloads the forecast of every place saved to [tripId], one after another, and reports how
+     * many were refreshed and how many kept their previous cache. A failing place does not stop
+     * the places after it.
+     *
+     * For A4 (Tiến): call this after a Restore, because the forecast cache is not part of the
+     * backup (docs/tasks/W-places-weather.md, W3), so a restored trip starts with no forecast.
+     */
+    suspend fun refreshTripForecasts(tripId: String): RefreshSummary {
+        val places = savedPlaceDao.observeByTrip(tripId).first().map { it.toSavedPlace() }
+        var refreshed = 0
+        var failed = 0
+        for (place in places) {
+            try {
+                refreshForecast(place)
+                refreshed++
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // This place keeps its cache; the next place is still worth trying.
+                failed++
+            }
+        }
+        return RefreshSummary(refreshed, failed)
+    }
 
     /**
      * Contract for W5 (Itinerary, Tiến): the weather of a trip, from the cache.
@@ -162,3 +195,31 @@ class WeatherRepository(
         }
     }
 }
+
+/** The stored row as the model the rest of the app uses; only the fields a refresh needs. */
+private fun SavedPlaceEntity.toSavedPlace() = SavedPlace(
+    placeId = placeId,
+    tripId = tripId,
+    name = name,
+    country = country,
+    latitude = latitude,
+    longitude = longitude,
+    note = note,
+)
+
+/**
+ * The reason a request failed, as the screen shows it (H). Called where the request was made,
+ * because only this layer knows Retrofit: [HttpException] for an HTTP error, [IOException] when
+ * the phone could not reach the service, anything else (JSON of an unexpected shape) as
+ * [WeatherError.BAD_RESPONSE].
+ */
+internal fun Throwable.toWeatherError(): WeatherError = when {
+    this is IOException -> WeatherError.NETWORK
+    this is HttpException -> when {
+        code() == 429 -> WeatherError.RATE_LIMITED
+        code() in 500..599 -> WeatherError.SERVER
+        else -> WeatherError.BAD_RESPONSE
+    }
+    else -> WeatherError.BAD_RESPONSE
+}
+
