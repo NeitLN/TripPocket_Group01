@@ -3,7 +3,6 @@ package vn.edu.vlu.trippocket.ui.expenses
 import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -23,6 +22,7 @@ import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
+import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -35,9 +35,7 @@ import java.time.LocalDate
 class ExpensesViewModelTest {
 
     private val t = TestDatabase()
-    private val auth = object : AuthRepository {
-        override val currentUid = MutableStateFlow<String?>(TestDatabase.OWNER)
-    }
+    private val auth: AuthRepository = FakeAuthRepository(TestDatabase.OWNER)
     private val expenses = ExpenseRepository(t.db.tripMemberDao(), t.db.expenseDao(), t.writer)
 
     @Before
