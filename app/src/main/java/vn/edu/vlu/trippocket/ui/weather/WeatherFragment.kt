@@ -9,7 +9,7 @@ import androidx.core.content.getSystemService
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import vn.edu.vlu.trippocket.ui.detail.tripViewModels
+import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -20,6 +20,9 @@ import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.databinding.FragmentWeatherBinding
 import vn.edu.vlu.trippocket.databinding.ViewPlaceChipBinding
+import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
+import vn.edu.vlu.trippocket.ui.detail.TripGate
+import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import vn.edu.vlu.trippocket.util.Format
 
 /** Screen 4: place search, saved places and the cached forecast (see [WeatherViewModel]). */
@@ -29,6 +32,7 @@ class WeatherFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: WeatherViewModel by tripViewModels { WeatherViewModel.Factory }
+    private val tripDetailViewModel: TripDetailViewModel by activityViewModels { TripDetailViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -54,9 +58,26 @@ class WeatherFragment : Fragment() {
             Snackbar.make(it, R.string.weather_refresh, Snackbar.LENGTH_SHORT).show()
         }
         binding.btnRetry.setOnClickListener { viewModel.retry() }
+        binding.btnSearchRetry.setOnClickListener { viewModel.retrySearch() }
+        binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
+        binding.btnEmptySearch.setOnClickListener {
+            binding.etSearch.requestFocus()
+            requireContext().getSystemService<InputMethodManager>()
+                ?.showSoftInput(binding.etSearch, 0)
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch {
+                    tripDetailViewModel.gate.collect { gate ->
+                        if (gate is TripGate.Ready) {
+                            val trip = gate.trip
+                            binding.stickerWeather.bind(trip.destination, trip.tripId)
+                            val daysText = resources.getQuantityString(R.plurals.trip_days, trip.dayCount, trip.dayCount)
+                            binding.tvTripSubtitle.text = getString(R.string.trip_dates_days, trip.destination, daysText)
+                        }
+                    }
+                }
                 launch {
                     viewModel.search.collect { state ->
                         resultAdapter.submitList((state as? SearchState.Results)?.places.orEmpty())
@@ -85,9 +106,9 @@ class WeatherFragment : Fragment() {
     private fun renderSearch(state: SearchState) {
         val results = (state as? SearchState.Results)?.places.orEmpty()
         binding.rvResults.isVisible = results.isNotEmpty()
+        binding.progressSearch.isVisible = state is SearchState.Loading
         binding.tvNoResults.isVisible = state is SearchState.Empty
-        binding.tilSearch.error =
-            if (state is SearchState.Error) getString(R.string.weather_error_network) else null
+        binding.layoutSearchError.isVisible = state is SearchState.Error
     }
 
     private fun renderPlaces(state: SavedPlacesUiState) {
@@ -102,7 +123,9 @@ class WeatherFragment : Fragment() {
         }
         val hasPlaces = state.places.isNotEmpty()
         binding.tvSavedLabel.isVisible = hasPlaces
-        binding.tvNoPlaces.isVisible = !hasPlaces
+        binding.chipGroupPlaces.isVisible = hasPlaces
+        binding.groupEmptyPlaces.isVisible = !hasPlaces
+
         // One snackbar per save: the message is cleared right after it is shown.
         state.message?.let { message ->
             Snackbar.make(binding.root, saveMessage(message), Snackbar.LENGTH_SHORT).show()
@@ -118,6 +141,7 @@ class WeatherFragment : Fragment() {
     }
 
     private fun renderForecast(state: ForecastUiState) {
+        binding.swipeRefresh.isRefreshing = state.refreshing
         val place = state.place
         binding.groupForecast.isVisible = place != null
         binding.tvForecastError.isVisible = place != null && state.failed && !state.hasForecast
