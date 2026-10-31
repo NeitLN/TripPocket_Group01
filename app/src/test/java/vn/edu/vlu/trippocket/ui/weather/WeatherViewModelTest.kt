@@ -1,6 +1,10 @@
 package vn.edu.vlu.trippocket.ui.weather
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -35,6 +39,7 @@ import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi.Companion.of
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
+import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingResult
 import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
@@ -47,7 +52,7 @@ import java.time.LocalDate
 
 /**
  * W1 search and W3 saved places + cached forecast of the Weather screen.
- * Owner: Duy Anh.
+ * Owner: Duy Anh. W4 cases (same name, rename, empty cache, retry): Bảo.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -63,6 +68,9 @@ class WeatherViewModelTest {
     private val day1 = LocalDate.of(2026, 10, 31)
     private val vietnam = 11.94 to 108.44
     private val oregon = 45.52 to -122.98
+
+    /** Holds the ViewModel so [tearDown] can cancel its scope before Main is reset. */
+    private val viewModels = ViewModelStore()
 
     private val savedPlaces = SavedPlaceRepository(t.db.savedPlaceDao(), t.writer) { "p${++nextId}" }
 
@@ -80,6 +88,8 @@ class WeatherViewModelTest {
 
     @After
     fun tearDown() {
+        // A ViewModel still collecting Room would touch Main while the next test sets it.
+        viewModels.clear()
         Dispatchers.resetMain()
         t.close()
     }
@@ -89,13 +99,18 @@ class WeatherViewModelTest {
         api: FakeGeocodingApi = FakeGeocodingApi { listOf(dalat) },
     ): WeatherViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
-        return WeatherViewModel(
-            SavedStateHandle(mapOf(ARG_TRIP_ID to tripId)),
-            SampleTripRepository(),
-            WeatherRepository(api, forecastApi, t.db.weatherCacheDao(), t.db.savedPlaceDao(), now = { clock }),
-            savedPlaces,
-            now = { clock },
-        )
+        val factory = viewModelFactory {
+            initializer {
+                WeatherViewModel(
+                    SavedStateHandle(mapOf(ARG_TRIP_ID to tripId)),
+                    SampleTripRepository(),
+                    WeatherRepository(api, forecastApi, t.db.weatherCacheDao(), t.db.savedPlaceDao(), now = { clock }),
+                    savedPlaces,
+                    now = { clock },
+                )
+            }
+        }
+        return ViewModelProvider(viewModels, factory)[WeatherViewModel::class.java]
     }
 
     /** Lets the 300 ms debounce fire and the answer land. */
@@ -565,6 +580,133 @@ class WeatherViewModelTest {
             SaveMessage.Invalid(PlaceProblem.NOT_FOUND),
             viewModel.places.first { it.message is SaveMessage.Invalid }.message,
         )
+    }
+
+    @Test
+    fun twoPlacesWithTheSameName_areSavedApart_andEachGetsItsOwnForecast(): Unit = runTest {
+        val viewModel = newViewModel()
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+        val first = viewModel.places.first { it.places.size == 1 }.places.single()
+        viewModel.forecast.first { it.place?.placeId == first.placeId && it.hasForecast }
+
+        viewModel.pickPlace(Place("Da Lat", "Oregon", "United States", oregon.first, oregon.second))
+
+        // Same name, other coordinates: a second place, not "already saved".
+        val state = viewModel.places.first { it.places.size == 2 && it.message == SaveMessage.Saved("Da Lat") }
+        val second = state.places.single { it.placeId != first.placeId }
+        assertEquals(second.placeId, state.selectedPlaceId)
+        assertEquals(oregon.first, second.latitude, 0.0)
+        viewModel.forecast.first { it.place?.placeId == second.placeId && it.hasForecast }
+        assertEquals(listOf(vietnam, oregon), forecastApi.requests)
+    }
+
+    @Test
+    fun renamingAPlace_keepsItsId_itsSelection_andItsForecast(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 23)
+        weather.refreshForecast(place)
+        forecastApi.requests.clear()
+        val viewModel = newViewModel()
+        viewModel.forecast.first { it.hasForecast }
+
+        viewModel.renamePlace(place.placeId, "Đà Lạt")
+
+        // The cache is keyed by id, so the new name shows the same forecast without a download.
+        val state = viewModel.forecast.first { it.place?.name == "Đà Lạt" }
+        assertEquals(place.placeId, state.place?.placeId)
+        assertEquals(place.placeId, viewModel.places.value.selectedPlaceId)
+        assertEquals(23, state.today?.maxTemp)
+        assertTrue(forecastApi.requests.isEmpty())
+    }
+
+    @Test
+    fun aPlaceWithNoCache_showsItsTripDaysEmpty_andIsNotDownloadedOnItsOwn(): Unit = runTest {
+        val place = seedPlace()
+        val viewModel = newViewModel()
+
+        val state = viewModel.forecast.first { it.place?.placeId == place.placeId }
+        runCurrent()
+
+        assertFalse(state.hasForecast)
+        assertFalse(state.loading)
+        assertFalse(state.failed)
+        assertNull(state.lastUpdated)
+        assertTrue(state.rows.isNotEmpty())
+        assertTrue(state.rows.all { it.forecast == null })
+        // No cache is not a stale cache: only saving the place or a refresh downloads it.
+        assertTrue(forecastApi.requests.isEmpty())
+
+        viewModel.refresh()
+        viewModel.forecast.first { it.hasForecast }
+        assertEquals(listOf(vietnam), forecastApi.requests)
+    }
+
+    @Test
+    fun theFirstDownload_showsLoading_untilTheForecastArrives(): Unit = runTest {
+        val viewModel = newViewModel()
+        forecastApi.gate = CompletableDeferred()
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+
+        val loading = viewModel.forecast.first { it.loading }
+        assertFalse(loading.refreshing)
+        assertFalse(loading.hasForecast)
+
+        forecastApi.gate?.complete(Unit)
+        val done = viewModel.forecast.first { it.hasForecast }
+        assertFalse(done.loading)
+        assertFalse(done.failed)
+    }
+
+    @Test
+    fun aFirstDownloadThatFails_keepsThePlace_andIsNotAnOfflineCopy(): Unit = runTest {
+        val viewModel = newViewModel()
+        forecastApi.failWith = IOException("offline")
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+
+        val state = viewModel.forecast.first { it.failed }
+        assertEquals(WeatherError.NETWORK, state.error)
+        assertFalse(state.hasForecast)
+        // Nothing was cached, so there is no offline copy to show.
+        assertFalse(state.fromCache)
+        assertFalse(state.loading)
+        assertEquals(1, savedPlaces.observePlaces(tripId).first().size)
+
+        forecastApi.failWith = null
+        viewModel.retry()
+        assertFalse(viewModel.forecast.first { it.hasForecast }.failed)
+    }
+
+    @Test
+    fun retrySearch_afterAnEmptyResult_runsTheSameQueryAgain(): Unit = runTest {
+        var found = emptyList<GeocodingResult>()
+        val api = FakeGeocodingApi { found }
+        val viewModel = newViewModel(api)
+
+        viewModel.onQueryChanged("da lat")
+        runSearch()
+        assertEquals(SearchState.Empty, viewModel.search.value)
+
+        found = listOf(dalat)
+        viewModel.retrySearch()
+        runCurrent()
+
+        assertTrue(viewModel.search.value is SearchState.Results)
+        assertEquals(listOf("da lat", "da lat"), api.queries)
+    }
+
+    @Test
+    fun retrySearch_withABlankQuery_staysIdle_andNeverCallsTheApi(): Unit = runTest {
+        val api = FakeGeocodingApi { listOf(dalat) }
+        val viewModel = newViewModel(api)
+
+        viewModel.retrySearch()
+        runCurrent()
+
+        assertEquals(SearchState.Idle, viewModel.search.value)
+        assertTrue(api.queries.isEmpty())
     }
 
     private suspend fun revision() =
