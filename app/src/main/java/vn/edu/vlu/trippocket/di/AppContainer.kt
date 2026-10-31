@@ -11,9 +11,14 @@ import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
+import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.reminder.ReminderReconciler
+import vn.edu.vlu.trippocket.reminder.ReminderScheduler
+import vn.edu.vlu.trippocket.reminder.ScheduledReminder
 import vn.edu.vlu.trippocket.work.BackupScheduler
 
 /**
@@ -39,15 +44,33 @@ class AppContainer(context: Context) {
 
     val tripRepository: TripRepository by lazy { TripRepository(database.tripDao(), authRepository) }
 
+    val expenseRepository: ExpenseRepository by lazy {
+        ExpenseRepository(database.tripMemberDao(), database.expenseDao(), tripWriter)
+    }
+
     /** Mock data for the module screens until they move to Room. */
     val sampleTripRepository = SampleTripRepository()
     val weatherRepository = WeatherRepository()
+
+    /** W2: places saved to a trip, in Room. */
+    val savedPlaceRepository: SavedPlaceRepository by lazy {
+        SavedPlaceRepository(database.savedPlaceDao(), tripWriter)
+    }
 
     /** Retrofit for https://geocoding-api.open-meteo.com/ (place search). */
     val geocodingRetrofit: Retrofit by lazy { retrofit("https://geocoding-api.open-meteo.com/") }
 
     /** Retrofit for https://api.open-meteo.com/ (daily forecast). */
     val forecastRetrofit: Retrofit by lazy { retrofit("https://api.open-meteo.com/") }
+
+    /** Replaced by the AlarmManager scheduler in I4. */
+    val reminderScheduler: ReminderScheduler = object : ReminderScheduler {
+        override fun schedule(reminder: ScheduledReminder) = Unit
+        override fun cancel(activityId: String) = Unit
+    }
+
+    /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
+    val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
 
     private val okHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()

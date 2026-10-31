@@ -15,7 +15,9 @@ import vn.edu.vlu.trippocket.databinding.ItemSettlementBinding
 import vn.edu.vlu.trippocket.util.Format
 
 /** "Expenses" mode: one card per expense (item_expense.xml). */
-class ExpenseAdapter : ListAdapter<ExpenseRow, ExpenseAdapter.ViewHolder>(DIFF) {
+class ExpenseAdapter(
+    private val onClick: (ExpenseRow) -> Unit,
+) : ListAdapter<ExpenseRow, ExpenseAdapter.ViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(
         ItemExpenseBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -23,10 +25,11 @@ class ExpenseAdapter : ListAdapter<ExpenseRow, ExpenseAdapter.ViewHolder>(DIFF) 
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) = holder.bind(getItem(position))
 
-    class ViewHolder(private val binding: ItemExpenseBinding) :
+    inner class ViewHolder(private val binding: ItemExpenseBinding) :
         RecyclerView.ViewHolder(binding.root) {
 
         fun bind(row: ExpenseRow) {
+            binding.cardExpense.setOnClickListener { onClick(row) }
             val context = binding.root.context
             val expense = row.expense
             binding.ivCategory.setImageResource(expense.category.iconRes)
