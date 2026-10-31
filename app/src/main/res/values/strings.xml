@@ -42,6 +42,9 @@
     <string name="trips_empty_title">No trips yet</string>
     <string name="trips_empty_body">Plan your first trip: itinerary, packing list, weather and shared costs in one place.</string>
     <string name="action_sign_out">Sign out</string>
+    <string name="sign_out_dialog_title">Sign out?</string>
+    <string name="sign_out_dialog_message">Your trips stay on this phone. Sign in again to see them.</string>
+    <string name="action_cancel">Cancel</string>
     <string name="action_toggle_empty">Preview empty state</string>
     <string name="sync_synced">Backed up</string>
     <string name="sync_pending">Waiting for backup</string>
