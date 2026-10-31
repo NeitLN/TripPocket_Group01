@@ -41,4 +41,10 @@
     <string name="itinerary_error_day_invalid">Choose a valid day</string>
     <string name="itinerary_error_not_found">This activity was deleted</string>
     <string name="itinerary_error_save_failed">Couldn\'t save activity. Please try again.</string>
+
+    <!-- Drag & drop and reorder (I3) -->
+    <string name="itinerary_drag_handle_desc">Drag to reorder</string>
+    <string name="itinerary_activity_more_desc">More reorder options</string>
+    <string name="itinerary_move_up">Move up</string>
+    <string name="itinerary_move_down">Move down</string>
 </resources>

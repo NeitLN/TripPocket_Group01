@@ -31,4 +31,7 @@ enum class ActivityProblem {
 
     /** The activity does not exist, or it belongs to another trip (a missing trip also ends here). */
     NOT_FOUND,
+
+    /** A drag list that is not exactly the activities of that day (missing, extra or duplicate id). */
+    ORDER_MISMATCH,
 }

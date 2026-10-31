@@ -61,6 +61,16 @@ class ItineraryRepositoryTest {
 
     private fun ids(activities: List<ItineraryActivity>) = activities.map { it.activityId }
 
+    private suspend fun insertRow(
+        activityId: String,
+        dayIndex: Int = 0,
+        startTime: Int = 9 * 60,
+        orderIndex: Int,
+        tripId: String = "t1",
+    ) = t.db.activityDao().insert(
+        ActivityEntity(activityId, tripId, dayIndex, "Stop $activityId", "", startTime, 0, "", orderIndex, null),
+    )
+
     private suspend inline fun <reified E : Exception> assertRejected(crossinline block: suspend () -> Unit): E {
         try {
             block()
@@ -292,5 +302,107 @@ class ItineraryRepositoryTest {
         repository.seedSampleActivities()
 
         assertEquals(0, t.db.activityDao().countByTrip(MockData.TRIP_DALAT))
+    }
+
+    @Test
+    fun reorder_renumbersTheDayInOneWrite() = runBlocking {
+        // The display order is orderIndex, not the time: the rows are inserted out of time order.
+        listOf("a", "b", "c", "d", "e").forEachIndexed { i, id ->
+            insertRow(id, startTime = 14 * 60 - i * 60, orderIndex = i)
+        }
+
+        repository.reorder("t1", 0, listOf("e", "d", "c", "b", "a"))
+
+        assertEquals(listOf("e", "d", "c", "b", "a"), ids(day()))
+        assertEquals(listOf(0, 1, 2, 3, 4), orders())
+        assertEquals(6, revision())
+        assertEquals(listOf(OWNER), t.backupRequests)
+    }
+
+    @Test
+    fun reorder_withTheCurrentOrder_writesNothing() = runBlocking {
+        listOf("a", "b", "c").forEachIndexed { i, id -> insertRow(id, orderIndex = i) }
+        repository.reorder("t1", 0, listOf("c", "a", "b"))
+        val revisionAfterDrag = revision()
+
+        // Dropped back where it was: Room keeps the order, the revision and the backup list.
+        repository.reorder("t1", 0, listOf("c", "a", "b"))
+
+        assertEquals(listOf("c", "a", "b"), ids(day()))
+        assertEquals(revisionAfterDrag, revision())
+        assertEquals(listOf(OWNER), t.backupRequests)
+
+        // Still validated: a wrong id is refused even when the visible order would not change.
+        assertProblem(ActivityProblem.ORDER_MISMATCH) { repository.reorder("t1", 0, listOf("c", "a", "ghost")) }
+        assertEquals(revisionAfterDrag, revision())
+        assertEquals(listOf(OWNER), t.backupRequests)
+    }
+
+    @Test
+    fun reorder_withAListThatIsNotTheDay_isRejected() = runBlocking {
+        insertRow("a", orderIndex = 0)
+        insertRow("b", orderIndex = 1)
+        insertRow("c", dayIndex = 1, orderIndex = 0)
+        insertRow("other", tripId = "t2", orderIndex = 0)
+
+        assertProblem(ActivityProblem.ORDER_MISMATCH) { repository.reorder("t1", 0, listOf("a", "b", "ghost")) }
+        assertProblem(ActivityProblem.ORDER_MISMATCH) { repository.reorder("t1", 0, listOf("a")) }
+        assertProblem(ActivityProblem.ORDER_MISMATCH) { repository.reorder("t1", 0, listOf("a", "b", "b")) }
+        assertProblem(ActivityProblem.ORDER_MISMATCH) { repository.reorder("t1", 0, listOf("a", "c")) }
+        assertProblem(ActivityProblem.ORDER_MISMATCH) { repository.reorder("t1", 0, listOf("a", "other")) }
+        assertProblem(ActivityProblem.DAY_OUT_OF_RANGE) { repository.reorder("t1", 4, listOf("a", "b")) }
+        assertProblem(ActivityProblem.NOT_FOUND) { repository.reorder("missing", 0, listOf("a", "b")) }
+
+        assertEquals(listOf("a", "b"), ids(day()))
+        assertEquals(listOf(0, 1), orders())
+        assertEquals(5, revision())
+        assertTrue(t.backupRequests.isEmpty())
+    }
+
+    @Test
+    fun moveUpAndMoveDown_swapWithTheNeighbour_andStopAtTheEnds() = runBlocking {
+        listOf("a", "b", "c").forEachIndexed { i, id -> insertRow(id, orderIndex = i) }
+
+        repository.moveUp("t1", "b")
+        assertEquals(listOf("b", "a", "c"), ids(day()))
+        assertEquals(6, revision())
+
+        repository.moveDown("t1", "b")
+        assertEquals(listOf("a", "b", "c"), ids(day()))
+        assertEquals(7, revision())
+
+        // The first cannot move up and the last cannot move down: no write at all.
+        repository.moveUp("t1", "a")
+        repository.moveDown("t1", "c")
+        assertEquals(listOf("a", "b", "c"), ids(day()))
+        assertEquals(7, revision())
+        assertEquals(listOf(OWNER, OWNER), t.backupRequests)
+    }
+
+    @Test
+    fun movingAnActivityOfAnotherTripOrAMissingOne_isNotFound() = runBlocking {
+        insertRow("a", orderIndex = 0)
+
+        assertProblem(ActivityProblem.NOT_FOUND) { repository.moveUp("t2", "a") }
+        assertProblem(ActivityProblem.NOT_FOUND) { repository.moveDown("t1", "ghost") }
+
+        assertEquals(5, revision())
+        assertEquals(5, revision("t2"))
+        assertTrue(t.backupRequests.isEmpty())
+    }
+
+    @Test
+    fun afterAReorder_changingTheTime_stillSortsByTime() = runBlocking {
+        insertRow("a", startTime = 9 * 60, orderIndex = 0)
+        insertRow("b", startTime = 14 * 60, orderIndex = 1)
+        insertRow("c", startTime = 9 * 60, orderIndex = 2)
+        repository.reorder("t1", 0, listOf("c", "b", "a"))
+        assertEquals(listOf("c", "b", "a"), ids(day()))
+
+        // The I1 rule is untouched by I3: a new time re-sorts that day.
+        repository.updateActivity("t1", "a", input(title = "Stop a", startTime = LocalTime.of(7, 0)))
+
+        assertEquals(listOf("a", "c", "b"), ids(day()))
+        assertEquals(listOf(0, 1, 2), orders())
     }
 }

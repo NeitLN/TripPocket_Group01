@@ -7,6 +7,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.ItineraryActivity
@@ -89,6 +91,44 @@ class ItineraryViewModel(
         val day = dayIndex.coerceIn(0, (dayCount - 1).coerceAtLeast(0))
         savedStateHandle[KEY_DAY] = day
         selectedDay.value = day
+    }
+
+    /**
+     * Saves the order of the selected day after a drag (I3). Called once, on drop, so one drop
+     * is one revision; dropping an activity back where it was writes nothing.
+     */
+    fun reorder(orderedActivityIds: List<String>) {
+        val tripId = trip?.tripId ?: return
+        val day = selectedDay.value
+        write { itineraryRepository.reorder(tripId, day, orderedActivityIds) }
+    }
+
+    /** "Move up" of one activity, for the same order without a drag (WCAG 2.2 AA). */
+    fun moveUp(activityId: String) {
+        val tripId = trip?.tripId ?: return
+        write { itineraryRepository.moveUp(tripId, activityId) }
+    }
+
+    /** "Move down" of one activity, for the same order without a drag (WCAG 2.2 AA). */
+    fun moveDown(activityId: String) {
+        val tripId = trip?.tripId ?: return
+        write { itineraryRepository.moveDown(tripId, activityId) }
+    }
+
+    /**
+     * A rejected reorder leaves Room with the old order, so the list re-emits it by itself and
+     * there is nothing to show; only cancellation must keep propagating.
+     */
+    private fun write(block: suspend () -> Unit) {
+        viewModelScope.launch {
+            try {
+                block()
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // Room still holds the old order; the flow below puts the list back.
+            }
+        }
     }
 
     private fun state(dayIndex: Int, activities: List<ItineraryActivity>, activityCount: Int): ItineraryUiState {
