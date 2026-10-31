@@ -21,6 +21,16 @@ interface SavedPlaceDao {
     @Query("SELECT COUNT(*) FROM saved_place WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: String): Int
 
+    /** W2: null when the place is not in that trip. */
+    @Query("SELECT * FROM saved_place WHERE placeId = :placeId AND tripId = :tripId")
+    suspend fun get(tripId: String, placeId: String): SavedPlaceEntity?
+
+    /** W2: a place is the same place only at the same coordinates, whatever its name. */
+    @Query(
+        "SELECT * FROM saved_place WHERE tripId = :tripId AND latitude = :latitude AND longitude = :longitude LIMIT 1"
+    )
+    suspend fun findAt(tripId: String, latitude: Double, longitude: Double): SavedPlaceEntity?
+
     @Insert
     suspend fun insert(row: SavedPlaceEntity)
 
@@ -29,4 +39,8 @@ interface SavedPlaceDao {
 
     @Delete
     suspend fun delete(row: SavedPlaceEntity)
+
+    /** W2: its cached forecast goes with it (CASCADE). Returns 0 when the place is not in that trip. */
+    @Query("DELETE FROM saved_place WHERE placeId = :placeId AND tripId = :tripId")
+    suspend fun deleteById(tripId: String, placeId: String): Int
 }

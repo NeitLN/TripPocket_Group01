@@ -13,6 +13,7 @@ import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.work.BackupScheduler
@@ -43,6 +44,11 @@ class AppContainer(context: Context) {
     /** Mock data for the module screens until they move to Room. */
     val sampleTripRepository = SampleTripRepository()
     val weatherRepository by lazy { WeatherRepository(geocodingRetrofit.create(GeocodingApi::class.java)) }
+
+    /** W2: places saved to a trip, in Room. */
+    val savedPlaceRepository: SavedPlaceRepository by lazy {
+        SavedPlaceRepository(database.savedPlaceDao(), tripWriter)
+    }
 
     /** Retrofit for https://geocoding-api.open-meteo.com/ (place search). */
     val geocodingRetrofit: Retrofit by lazy { retrofit("https://geocoding-api.open-meteo.com/") }
