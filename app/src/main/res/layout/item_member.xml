@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One trip member (members screen, E1). A flat row like item_balance.xml.
+    Avatar initial -> name, with "Paid or shares an expense" under it when the member is in use
+    -> rename and remove icon buttons. barrierActionsStart keeps the name clear of the buttons.
+    When the member is in use, btnRemove is disabled and tvInUse is the reason (proposal 3.4).
+    Each button's contentDescription is set in code with the member's name
+    (members_rename / members_remove).
+-->
+<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:minHeight="64dp"
+    android:paddingHorizontal="@dimen/screen_margin"
+    android:paddingVertical="@dimen/space_sm">
+
+    <TextView
+        android:id="@+id/tvAvatar"
+        android:layout_width="@dimen/avatar_size"
+        android:layout_height="@dimen/avatar_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:gravity="center"
+        android:importantForAccessibility="no"
+        android:textAppearance="?attr/textAppearanceTitleMedium"
+        android:textColor="?attr/colorOnPrimaryContainer"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:text="B" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRemove"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/ic_delete"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:contentDescription="Remove Bình" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnRename"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:icon="@drawable/ic_edit"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnRemove"
+        app:layout_constraintTop_toTopOf="parent"
+        tools:contentDescription="Rename Bình" />
+
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierActionsStart"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="start"
+        app:constraint_referenced_ids="btnRename" />
+
+    <TextView
+        android:id="@+id/tvMemberName"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/space_lg"
+        android:textAppearance="?attr/textAppearanceBodyLarge"
+        app:layout_constraintBottom_toTopOf="@id/tvInUse"
+        app:layout_constraintEnd_toStartOf="@id/barrierActionsStart"
+        app:layout_constraintStart_toEndOf="@id/tvAvatar"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed"
+        tools:text="Bình" />
+
+    <TextView
+        android:id="@+id/tvInUse"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:text="@string/members_in_use"
+        android:textAppearance="?attr/textAppearanceBodySmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="@id/tvMemberName"
+        app:layout_constraintStart_toStartOf="@id/tvMemberName"
+        app:layout_constraintTop_toBottomOf="@id/tvMemberName" />
+
+</androidx.constraintlayout.widget.ConstraintLayout>
