@@ -110,6 +110,29 @@ class ItineraryRepository(
     }
 
     /**
+     * Saves the order of one day after a drag (I3): [orderedActivityIds] must hold exactly the
+     * activities of that day, once each, and the day is renumbered 0..n-1 in one transaction, so
+     * the revision goes up once. A list that is already the current order writes nothing, so
+     * dropping an activity back where it was does not bump the revision or request a backup.
+     *
+     * Throws [InvalidActivityException] with [ActivityProblem.ORDER_MISMATCH] for a list that is
+     * not a permutation of the day, and nothing is written.
+     */
+    suspend fun reorder(tripId: String, dayIndex: Int, orderedActivityIds: List<String>) {
+        if (isCurrentOrder(tripId, dayIndex, orderedActivityIds)) return
+        tripWriter.write(tripId) {
+            // Read again inside the transaction: a row deleted meanwhile must not be skipped.
+            applyOrder(checkedDayRows(tripId, dayIndex, orderedActivityIds), orderedActivityIds)
+        }
+    }
+
+    /** Moves an activity one place up (towards the first item) by saving the day's new order. */
+    suspend fun moveUp(tripId: String, activityId: String) = moveBy(tripId, activityId, offset = -1)
+
+    /** Moves an activity one place down (towards the last item) by saving the day's new order. */
+    suspend fun moveDown(tripId: String, activityId: String) = moveBy(tripId, activityId, offset = 1)
+
+    /**
      * Debug builds only, until A2 adds the activity form: copies the sample activities into
      * Room for the sample trips (same ids as
      * [vn.edu.vlu.trippocket.data.repository.TripRepository.seedSampleTrips]), so a fresh
@@ -183,6 +206,61 @@ class ItineraryRepository(
 
     private suspend fun nextOrderIndex(tripId: String, dayIndex: Int): Int =
         (activityDao.dayRows(tripId, dayIndex).maxOfOrNull { it.orderIndex } ?: -1) + 1
+
+    /**
+     * true when [orderedActivityIds] is the day's current order. The list is checked the same
+     * way as a real reorder first, so a wrong id still fails instead of quietly returning.
+     */
+    private suspend fun isCurrentOrder(tripId: String, dayIndex: Int, orderedActivityIds: List<String>): Boolean =
+        checkedDayRows(tripId, dayIndex, orderedActivityIds).map { it.activityId } == orderedActivityIds
+
+    /**
+     * The rows of one day, after checking that the trip exists, the day is inside the trip and
+     * [orderedActivityIds] is a permutation of that day (same size, same ids: the primary key
+     * makes the ids unique, so this leaves no room for a missing, extra or duplicate id).
+     */
+    private suspend fun checkedDayRows(
+        tripId: String,
+        dayIndex: Int,
+        orderedActivityIds: List<String>,
+    ): List<ActivityEntity> {
+        val dayCount = activityDao.tripDayCount(tripId)
+            ?: throw InvalidActivityException(ActivityProblem.NOT_FOUND)
+        if (dayIndex !in 0 until dayCount) throw InvalidActivityException(ActivityProblem.DAY_OUT_OF_RANGE)
+        val rows = activityDao.dayRows(tripId, dayIndex)
+        val ids = rows.map { it.activityId }
+        if (orderedActivityIds.size != ids.size || orderedActivityIds.toSet() != ids.toSet()) {
+            throw InvalidActivityException(ActivityProblem.ORDER_MISMATCH)
+        }
+        return rows
+    }
+
+    /** `orderIndex` 0..n-1 in the given order; only the rows that change are written. */
+    private suspend fun applyOrder(rows: List<ActivityEntity>, orderedActivityIds: List<String>) {
+        val byId = rows.associateBy { it.activityId }
+        orderedActivityIds.forEachIndexed { index, activityId ->
+            val row = byId.getValue(activityId)
+            if (row.orderIndex != index) activityDao.update(row.copy(orderIndex = index))
+        }
+    }
+
+    /**
+     * Moves an activity by [offset] places inside its day and delegates the write to [reorder],
+     * so a tap is one transaction. The first activity cannot move up and the last cannot move
+     * down: that returns without writing.
+     */
+    private suspend fun moveBy(tripId: String, activityId: String, offset: Int) {
+        val activity = activityDao.get(activityId)
+        if (activity == null || activity.tripId != tripId) throw InvalidActivityException(ActivityProblem.NOT_FOUND)
+        val ids = activityDao.dayRows(tripId, activity.dayIndex).map { it.activityId }
+        val from = ids.indexOf(activityId)
+        val to = from + offset
+        if (from < 0 || to !in ids.indices) return
+        val reordered = ids.toMutableList()
+        reordered.removeAt(from)
+        reordered.add(to, activityId)
+        reorder(tripId, activity.dayIndex, reordered)
+    }
 
     private fun toEntity(activityId: String, tripId: String, input: ActivityInput, orderIndex: Int) =
         ActivityEntity(

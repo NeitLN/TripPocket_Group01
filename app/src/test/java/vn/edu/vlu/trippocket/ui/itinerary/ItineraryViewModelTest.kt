@@ -115,4 +115,30 @@ class ItineraryViewModelTest {
         viewModel.selectDay(2)
         assertEquals(ItineraryUiState(), viewModel.uiState.value)
     }
+
+    @Test
+    fun reorderAndMove_saveTheNewOrder_oneRevisionPerChange() = runBlocking {
+        listOf("a", "b", "c").forEachIndexed { i, id ->
+            t.db.activityDao().insert(insert(id, dayIndex = 0, startTime = 9 * 60, cost = 0, orderIndex = i))
+        }
+        val viewModel = viewModel()
+        viewModel.loaded(activities = 3)
+
+        viewModel.reorder(listOf("c", "a", "b"))
+        val dragged = withTimeout(5_000) {
+            viewModel.uiState.first { it.activities.map { activity -> activity.activityId } == listOf("c", "a", "b") }
+        }
+        assertEquals(listOf("c", "a", "b"), dragged.activities.map { it.activityId })
+        assertEquals(6, revision())
+
+        // The same write path as a drag, for the Move down button (c moves from first to second).
+        viewModel.moveDown("c")
+        withTimeout(5_000) {
+            viewModel.uiState.first { it.activities.map { activity -> activity.activityId } == listOf("a", "c", "b") }
+        }
+        assertEquals(7, revision())
+    }
+
+    private suspend fun revision() =
+        t.db.tripDao().observeTrip(MockData.TRIP_DALAT, TestDatabase.OWNER).first()!!.localRevision
 }
