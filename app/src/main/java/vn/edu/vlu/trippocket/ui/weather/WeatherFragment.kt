@@ -75,10 +75,7 @@ class WeatherFragment : Fragment() {
     }
 
     private fun onResultPicked(place: Place) {
-        if (viewModel.pickPlace(place)) {
-            Snackbar.make(binding.root, getString(R.string.weather_saved_toast, place.name),
-                Snackbar.LENGTH_SHORT).show()
-        }
+        viewModel.pickPlace(place)
         binding.etSearch.setText("")
         binding.etSearch.clearFocus()
         requireContext().getSystemService<InputMethodManager>()
@@ -99,20 +96,32 @@ class WeatherFragment : Fragment() {
             val chip = ViewPlaceChipBinding.inflate(layoutInflater, binding.chipGroupPlaces, false).root
             chip.text = place.name
             chip.id = View.generateViewId()
-            chip.isChecked = place == state.selected
-            chip.setOnClickListener { viewModel.selectPlace(place) }
+            chip.isChecked = place.placeId == state.selectedPlaceId
+            chip.setOnClickListener { viewModel.selectPlace(place.placeId) }
             binding.chipGroupPlaces.addView(chip)
         }
         val hasPlaces = state.places.isNotEmpty()
         binding.tvSavedLabel.isVisible = hasPlaces
         binding.tvNoPlaces.isVisible = !hasPlaces
+        // One snackbar per save: the message is cleared right after it is shown.
+        state.message?.let { message ->
+            Snackbar.make(binding.root, saveMessage(message), Snackbar.LENGTH_SHORT).show()
+            viewModel.messageShown()
+        }
+    }
+
+    private fun saveMessage(message: SaveMessage): String = when (message) {
+        is SaveMessage.Saved -> getString(R.string.weather_saved_toast, message.placeName)
+        is SaveMessage.AlreadySaved -> getString(R.string.weather_place_exists, message.placeName)
+        SaveMessage.LimitReached -> getString(R.string.weather_place_limit)
+        SaveMessage.Failed -> getString(R.string.weather_save_failed)
     }
 
     private fun renderForecast(state: ForecastUiState) {
         val place = state.place
         binding.groupForecast.isVisible = place != null
-        binding.tvForecastError.isVisible = place != null && !state.loaded
-        binding.btnRetry.isVisible = place != null && !state.loaded
+        binding.tvForecastError.isVisible = place != null && state.failed && !state.hasForecast
+        binding.btnRetry.isVisible = place != null && state.failed && !state.hasForecast
         // The badge reminds the user they are looking at stored data.
         binding.tvOfflineBadge.isVisible = state.fromCache
         if (place == null) return
@@ -120,7 +129,7 @@ class WeatherFragment : Fragment() {
         binding.tvPlaceName.text = getString(R.string.weather_place_title, place.name, place.country)
         val today = state.today
         val lastUpdated = state.lastUpdated
-        if (!state.loaded || today == null || lastUpdated == null) {
+        if (!state.hasForecast || today == null || lastUpdated == null) {
             binding.tvLastUpdated.text = getString(R.string.weather_not_available)
             binding.tvTodayTemp.text = "--"
             binding.tvTodayCondition.text = ""

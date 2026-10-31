@@ -4,6 +4,8 @@ import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.TestScope
 import kotlinx.coroutines.test.advanceTimeBy
@@ -15,25 +17,65 @@ import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
+import org.junit.Before
 import org.junit.Test
+import org.junit.runner.RunWith
+import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.MockData
+import vn.edu.vlu.trippocket.data.local.TestDatabase
+import vn.edu.vlu.trippocket.data.model.Place
+import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
+import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi.Companion.of
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.io.IOException
 import java.time.LocalDate
 
-/** W1: search pipeline of the Weather screen on a fake Open-Meteo API. Owner: Duy Anh. */
+/**
+ * W1 search and W3 saved places + cached forecast of the Weather screen.
+ * Owner: Duy Anh.
+ */
 @OptIn(ExperimentalCoroutinesApi::class)
+@RunWith(RobolectricTestRunner::class)
 class WeatherViewModelTest {
 
+    private val t = TestDatabase()
+    private val forecastApi = FakeForecastApi()
+    private var clock = 1_000L
+    private var nextId = 0
+
+    private val tripId = MockData.TRIP_DALAT
     private val dalat = FakeGeocodingApi.result("Da Lat")
+    private val day1 = LocalDate.of(2026, 10, 31)
+    private val vietnam = 11.94 to 108.44
+    private val oregon = 45.52 to -122.98
+
+    private val savedPlaces = SavedPlaceRepository(t.db.savedPlaceDao(), t.writer) { "p${++nextId}" }
+
+    /** Prepares the cache before the ViewModel starts, like a previous run of the app. */
+    private val weather = WeatherRepository(
+        FakeGeocodingApi(),
+        forecastApi,
+        t.db.weatherCacheDao(),
+        t.db.savedPlaceDao(),
+        now = { clock },
+    )
+
+    @Before
+    fun setUp() = runBlocking { t.db.tripDao().insert(t.trip(tripId)) }
 
     @After
-    fun tearDown() = Dispatchers.resetMain()
+    fun tearDown() {
+        Dispatchers.resetMain()
+        t.close()
+    }
 
     /** Main uses the runTest scheduler, so debounce and requests run on virtual time. */
     private fun TestScope.newViewModel(
@@ -41,9 +83,10 @@ class WeatherViewModelTest {
     ): WeatherViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         return WeatherViewModel(
-            SavedStateHandle(mapOf(ARG_TRIP_ID to MockData.TRIP_DALAT)),
+            SavedStateHandle(mapOf(ARG_TRIP_ID to tripId)),
             SampleTripRepository(),
-            WeatherRepository(api),
+            WeatherRepository(api, forecastApi, t.db.weatherCacheDao(), t.db.savedPlaceDao(), now = { clock }),
+            savedPlaces,
         )
     }
 
@@ -51,6 +94,11 @@ class WeatherViewModelTest {
     private fun TestScope.runSearch() {
         advanceTimeBy(SEARCH_DEBOUNCE_MS + 1)
         runCurrent()
+    }
+
+    private suspend fun seedPlace(at: Pair<Double, Double> = vietnam): SavedPlace {
+        val id = savedPlaces.savePlace(tripId, Place("Da Lat", "Lam Dong", "Vietnam", at.first, at.second))
+        return savedPlaces.observePlaces(tripId).first().first { it.placeId == id }
     }
 
     @Test
@@ -169,19 +217,128 @@ class WeatherViewModelTest {
 
     @Test
     fun aSearchError_leavesTheSavedPlaceAndForecastAlone(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1)
+        weather.refreshForecast(place)
+
         val api = FakeGeocodingApi { listOf(dalat) }
         val viewModel = newViewModel(api)
-        val forecastBefore = viewModel.forecast.value
-        assertTrue(forecastBefore.loaded)
-        assertFalse(forecastBefore.rows.isEmpty())
+        val before = viewModel.forecast.first { it.hasForecast }
 
         api.failWith = IOException("offline")
         viewModel.onQueryChanged("da lat")
         runSearch()
 
         assertEquals(SearchState.Error, viewModel.search.value)
-        assertEquals(forecastBefore, viewModel.forecast.value)
-        assertTrue(viewModel.places.value.places.isNotEmpty())
+        assertEquals(before, viewModel.forecast.value)
+        assertEquals(place.placeId, viewModel.places.value.selectedPlaceId)
+    }
+
+    @Test
+    fun savingAPlace_savesItToTheTrip_andDownloadsItsForecast(): Unit = runTest {
+        val viewModel = newViewModel()
+        forecastApi.response = of(day1, maxTemp = 24)
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+
+        val state = viewModel.forecast.first { it.hasForecast }
+        assertEquals("Da Lat", state.place?.name)
+        assertEquals(24, state.today?.maxTemp)
+        assertEquals(listOf(vietnam), forecastApi.requests)
+        assertEquals(SaveMessage.Saved("Da Lat"), viewModel.places.value.message)
+
+        val places = viewModel.places.value
+        assertEquals(1, places.places.size)
+        assertEquals(places.places.single().placeId, places.selectedPlaceId)
+        assertEquals(places.places.single().placeId, state.place?.placeId)
+    }
+
+    @Test
+    fun savingTheSameCoordinatesAgain_keepsOnePlace_andSaysItIsAlreadySaved(): Unit = runTest {
+        val viewModel = newViewModel()
+        val place = Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second)
+
+        viewModel.pickPlace(place)
+        viewModel.places.first { it.places.size == 1 && it.message is SaveMessage.Saved }
+
+        viewModel.pickPlace(place)
+
+        val state = viewModel.places.first { it.message is SaveMessage.AlreadySaved }
+        assertEquals(1, state.places.size)
+    }
+
+    @Test
+    fun the31stPlace_saysTheLimitIsReached_andDownloadsNothing(): Unit = runTest {
+        repeat(Limits.MAX_PLACES) { i ->
+            savedPlaces.savePlace(tripId, Place("P$i", "", "Vietnam", 10.0 + i, 106.0))
+        }
+        val viewModel = newViewModel()
+        viewModel.places.first { it.places.size == Limits.MAX_PLACES }
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+
+        val state = viewModel.places.first { it.message == SaveMessage.LimitReached }
+        assertEquals(Limits.MAX_PLACES, state.places.size)
+        assertTrue(forecastApi.requests.isEmpty())
+    }
+
+    @Test
+    fun selectingAPlaceById_showsThatPlacesOwnCache(): Unit = runTest {
+        // Same name, different coordinates: the id decides, not the name.
+        val vn = seedPlace(vietnam)
+        val us = seedPlace(oregon)
+        forecastApi.response = of(day1, maxTemp = 22)
+        weather.refreshForecast(vn)
+        forecastApi.response = of(day1, maxTemp = 31)
+        weather.refreshForecast(us)
+
+        val viewModel = newViewModel()
+        val first = viewModel.forecast.first { it.place?.placeId == vn.placeId && it.hasForecast }
+        assertEquals(22, first.today?.maxTemp)
+
+        viewModel.selectPlace(us.placeId)
+
+        val second = viewModel.forecast.first { it.place?.placeId == us.placeId && it.hasForecast }
+        assertEquals(31, second.today?.maxTemp)
+    }
+
+    @Test
+    fun aFailedRefresh_keepsTheCachedRows_andMarksThemAsAnOfflineCopy(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 26)
+        weather.refreshForecast(place)
+
+        val viewModel = newViewModel()
+        viewModel.forecast.first { it.hasForecast }
+
+        forecastApi.failWith = IOException("offline")
+        viewModel.refresh()
+
+        val state = viewModel.forecast.first { it.failed }
+        assertEquals(26, state.today?.maxTemp)
+        assertTrue(state.fromCache)
+        assertFalse(state.loading)
+    }
+
+    @Test
+    fun retryAfterAFailure_downloadsTheForecastAgain_andClearsTheOfflineCopy(): Unit = runTest {
+        val place = seedPlace()
+        forecastApi.response = of(day1, maxTemp = 26)
+        weather.refreshForecast(place)
+
+        val viewModel = newViewModel()
+        viewModel.forecast.first { it.hasForecast }
+
+        forecastApi.failWith = IOException("offline")
+        viewModel.refresh()
+        viewModel.forecast.first { it.failed }
+
+        forecastApi.failWith = null
+        forecastApi.response = of(day1, maxTemp = 30)
+        viewModel.retry()
+
+        val state = viewModel.forecast.first { !it.failed && it.today?.maxTemp == 30 }
+        assertFalse(state.fromCache)
     }
 
     private companion object {

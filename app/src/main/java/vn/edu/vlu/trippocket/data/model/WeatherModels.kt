@@ -41,3 +41,13 @@ data class ForecastDay(
     val minTemp: Int,
     val rainChance: Int,
 )
+
+/**
+ * The forecast stored in Room for one saved place (W3). [fetchedAt] is epoch millis, the time
+ * Open-Meteo answered; [days] is empty when the stored JSON could not be read.
+ */
+data class CachedForecast(
+    val placeId: String,
+    val days: List<ForecastDay>,
+    val fetchedAt: Long,
+)
