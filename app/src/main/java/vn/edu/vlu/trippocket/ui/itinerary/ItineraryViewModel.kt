@@ -17,11 +17,12 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.appContainer
+import vn.edu.vlu.trippocket.data.model.ChecklistItem
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.ItineraryActivity
 import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
@@ -50,13 +51,13 @@ data class ItineraryUiState(
 
 /**
  * Screen 3, day by day. The trip (its days, so a trip created or re-dated in A2 shows the right
- * tabs) and the activities come from Room; the checklist count and the forecast stay on the
- * sample data until their own tasks (W5, I2) move them.
+ * tabs), the activities and the packing count (I2) come from Room; the forecast stays on the
+ * sample data until W5 moves it.
  */
 class ItineraryViewModel(
     private val savedStateHandle: SavedStateHandle,
     tripRepository: TripRepository,
-    private val sampleRepository: SampleTripRepository,
+    checklistRepository: ChecklistRepository,
     weatherRepository: WeatherRepository,
     private val itineraryRepository: ItineraryRepository,
 ) : ViewModel() {
@@ -82,13 +83,14 @@ class ItineraryViewModel(
         selectedDay,
         selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day) },
         itineraryRepository.observeActivities(tripId),
-    ) { trip, day, activities, all ->
+        checklistRepository.observe(tripId),
+    ) { trip, day, activities, all, checklist ->
         dayCount = trip?.dayCount ?: 0
         if (trip == null) return@combine ItineraryUiState()
         // A trip made shorter (A2) or a restored tab past the end: fall back to the last day.
         val shown = day.coerceIn(0, dayCount - 1)
         if (shown != day) selectDay(shown)
-        state(trip, shown, if (shown == day) activities else emptyList(), all.size)
+        state(trip, shown, if (shown == day) activities else emptyList(), all.size, checklist)
     }.stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
 
     fun selectDay(dayIndex: Int) {
@@ -137,17 +139,17 @@ class ItineraryViewModel(
         dayIndex: Int,
         activities: List<ItineraryActivity>,
         activityCount: Int,
+        checklist: List<ChecklistItem>,
     ): ItineraryUiState {
         val dates = (0 until trip.dayCount).map(trip::dateOfDay)
-        val (done, total) = sampleRepository.checklist(trip.tripId)
         return ItineraryUiState(
             days = dates,
             selectedDay = dayIndex,
             activities = activities,
             forecast = dates.getOrNull(dayIndex)?.let { date -> forecast.firstOrNull { it.date == date } },
             estimatedCost = activities.sumOf { it.estimatedCost },
-            checklistDone = done,
-            checklistTotal = total,
+            checklistDone = checklist.count { it.isDone },
+            checklistTotal = checklist.size,
             activityCount = activityCount,
         )
     }
@@ -160,7 +162,7 @@ class ItineraryViewModel(
                 ItineraryViewModel(
                     createSavedStateHandle(),
                     appContainer().tripRepository,
-                    appContainer().sampleTripRepository,
+                    appContainer().checklistRepository,
                     appContainer().weatherRepository,
                     appContainer().itineraryRepository,
                 )
