@@ -39,6 +39,18 @@ data class Expense(
 
 data class Settlement(val fromId: String, val toId: String, val amount: Long)
 
+/** E3: what one member paid, their own share, and paid - share (positive = gets money back). */
+data class MemberPosition(val member: TripMember, val paid: Long, val share: Long, val balance: Long)
+
+/**
+ * E3 (proposal 3.4): every member's position in member order, and the suggested payments that
+ * bring every balance back to 0. The balances always add up to 0.
+ */
+data class TripBalances(
+    val positions: List<MemberPosition> = emptyList(),
+    val settlements: List<Settlement> = emptyList(),
+)
+
 /** A new or edited expense as the form sends it; [shares] are already split. */
 data class ExpenseInput(
     val title: String,
