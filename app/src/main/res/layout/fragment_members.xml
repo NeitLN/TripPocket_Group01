@@ -2,9 +2,9 @@
 <!--
     Members screen (E1, Expenses module). Layout by Minh; MembersFragment comes with E1.
     One column capped at @dimen/content_max_width:
-    title + "3 of 15 members" -> add field + Add button (a packed horizontal chain, the button
+    sticker + title + "3 of 15 members" -> add field + Add button (a packed horizontal chain, the button
     sized by its text) -> the rule about order and removal -> member list (item_member.xml).
-    groupEmpty swaps the list for tvEmptyMembers. At 15 members the add row is disabled
+    groupEmpty swaps the list for ivEmptyMembers + tvEmptyMembers. At 15 members the add row is disabled
     and tvMemberCount says so.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -14,18 +14,36 @@
     android:layout_height="match_parent"
     tools:context=".ui.members.MembersFragment">
 
+    <FrameLayout
+        android:id="@+id/flStickerSlot"
+        android:layout_width="@dimen/sticker_slot"
+        android:layout_height="@dimen/sticker_slot"
+        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_lg"
+        android:clipChildren="false"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <vn.edu.vlu.trippocket.ui.common.TripStickerView
+            android:id="@+id/stickerMembers"
+            android:layout_width="@dimen/sticker_size"
+            android:layout_height="@dimen/sticker_size"
+            android:layout_gravity="center"
+            android:importantForAccessibility="no" />
+    </FrameLayout>
+
     <TextView
         android:id="@+id/tvMembersTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/screen_margin"
-        android:layout_marginTop="@dimen/space_lg"
+        android:layout_marginStart="@dimen/space_sm"
+        android:layout_marginEnd="@dimen/screen_margin"
         android:accessibilityHeading="true"
         android:text="@string/members_title"
         android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintStart_toEndOf="@id/flStickerSlot"
+        app:layout_constraintTop_toTopOf="@id/flStickerSlot"
         app:layout_constraintWidth_max="@dimen/content_max_width"
         tools:targetApi="28" />
 
@@ -40,19 +58,28 @@
         app:layout_constraintTop_toBottomOf="@id/tvMembersTitle"
         tools:text="3 of 15 members" />
 
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierHeaderBottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="flStickerSlot,tvMemberCount" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilNewMember"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/screen_margin"
         android:layout_marginTop="@dimen/space_md"
         android:layout_marginEnd="@dimen/space_sm"
         android:hint="@string/members_add_hint"
         app:counterEnabled="true"
         app:counterMaxLength="80"
+        app:errorEnabled="true"
         app:layout_constraintEnd_toStartOf="@id/btnAddMember"
         app:layout_constraintHorizontal_chainStyle="packed"
-        app:layout_constraintStart_toStartOf="@id/tvMembersTitle"
-        app:layout_constraintTop_toBottomOf="@id/tvMemberCount">
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/barrierHeaderBottom">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etNewMember"
@@ -70,9 +97,10 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_xs"
+        android:layout_marginEnd="@dimen/screen_margin"
         android:text="@string/members_add"
         app:icon="@drawable/ic_add"
-        app:layout_constraintEnd_toEndOf="@id/tvMembersTitle"
+        app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toEndOf="@id/tilNewMember"
         app:layout_constraintTop_toTopOf="@id/tilNewMember" />
 
@@ -80,13 +108,15 @@
         android:id="@+id/tvMembersRule"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
+        android:layout_marginHorizontal="@dimen/screen_margin"
         android:layout_marginTop="@dimen/space_xs"
         android:text="@string/members_rule"
         android:textAppearance="?attr/textAppearanceBodySmall"
         android:textColor="?attr/colorOnSurfaceVariant"
-        app:layout_constraintEnd_toEndOf="@id/tvMembersTitle"
-        app:layout_constraintStart_toStartOf="@id/tvMembersTitle"
-        app:layout_constraintTop_toBottomOf="@id/tilNewMember" />
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tilNewMember"
+        app:layout_constraintWidth_max="@dimen/content_max_width" />
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvMembers"
@@ -103,11 +133,28 @@
         tools:itemCount="3"
         tools:listitem="@layout/item_member" />
 
+    <!-- Empty state with pocket sticker icon and friendly copy -->
+    <ImageView
+        android:id="@+id/ivEmptyMembers"
+        android:layout_width="@dimen/empty_icon_size"
+        android:layout_height="@dimen/empty_icon_size"
+        android:background="@drawable/bg_circle_primary_container"
+        android:contentDescription="@null"
+        android:padding="@dimen/space_xl"
+        android:src="@drawable/ic_sticker_pocket"
+        app:layout_constraintBottom_toTopOf="@id/tvEmptyMembers"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tvMembersRule"
+        app:layout_constraintVertical_chainStyle="packed"
+        app:tint="?attr/colorOnPrimaryContainer" />
+
     <TextView
         android:id="@+id/tvEmptyMembers"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/space_xxl"
+        android:layout_marginTop="@dimen/space_lg"
         android:gravity="center"
         android:text="@string/members_empty"
         android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -115,13 +162,14 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvMembersRule" />
+        app:layout_constraintTop_toBottomOf="@id/ivEmptyMembers"
+        app:layout_constraintWidth_max="@dimen/form_max_width" />
 
     <androidx.constraintlayout.widget.Group
         android:id="@+id/groupEmpty"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
-        app:constraint_referenced_ids="tvEmptyMembers" />
+        app:constraint_referenced_ids="ivEmptyMembers,tvEmptyMembers" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
