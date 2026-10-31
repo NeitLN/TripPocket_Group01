@@ -8,6 +8,8 @@
     - The title ends where the cost begins (constraintEnd_toStartOf), so a
       long title wraps instead of running under the price.
     - The note is optional: when it is GONE the card simply gets shorter.
+    - ivDragHandle and btnActivityMore are on the right, keeping ConstraintLayout flat
+      and never displacing barrierTimeEnd.
 -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -69,8 +71,10 @@
             android:id="@+id/tvActivityTitle"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="@dimen/space_md"
+            android:layout_marginStart="@dimen/space_md"
+            android:layout_marginEnd="@dimen/space_sm"
             android:textAppearance="?attr/textAppearanceTitleMedium"
+            app:layout_constrainedWidth="true"
             app:layout_constraintEnd_toStartOf="@id/tvActivityCost"
             app:layout_constraintStart_toEndOf="@id/vTimeline"
             app:layout_constraintTop_toTopOf="parent"
@@ -80,11 +84,40 @@
             android:id="@+id/tvActivityCost"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_xs"
             android:textAppearance="?attr/textAppearanceLabelLarge"
             android:textColor="?attr/colorTertiary"
             app:layout_constraintBaseline_toBaselineOf="@id/tvActivityTitle"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnActivityMore"
+            app:layout_goneMarginEnd="0dp"
             tools:text="300,000 ₫" />
+
+        <ImageButton
+            android:id="@+id/btnActivityMore"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="@string/itinerary_activity_more_desc"
+            android:scaleType="center"
+            android:src="@drawable/ic_more_vert"
+            app:layout_constraintEnd_toStartOf="@id/ivDragHandle"
+            app:layout_constraintTop_toTopOf="parent"
+            app:layout_goneMarginEnd="0dp"
+            app:tint="?attr/colorOnSurfaceVariant" />
+
+        <ImageView
+            android:id="@+id/ivDragHandle"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:contentDescription="@string/itinerary_drag_handle_desc"
+            android:focusable="true"
+            android:scaleType="center"
+            android:src="@drawable/ic_drag_handle"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView
             android:id="@+id/tvActivityPlace"
@@ -93,7 +126,8 @@
             android:layout_marginTop="@dimen/space_xxs"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnActivityMore"
+            app:layout_goneMarginEnd="0dp"
             app:layout_constraintStart_toStartOf="@id/tvActivityTitle"
             app:layout_constraintTop_toBottomOf="@id/tvActivityTitle"
             tools:text="Tao Ngộ, 5 Đường 3/4" />
@@ -107,7 +141,8 @@
             android:maxLines="2"
             android:textAppearance="?attr/textAppearanceBodySmall"
             android:textColor="?attr/colorOnSurfaceVariant"
-            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintEnd_toStartOf="@id/btnActivityMore"
+            app:layout_goneMarginEnd="0dp"
             app:layout_constraintStart_toStartOf="@id/tvActivityTitle"
             app:layout_constraintTop_toBottomOf="@id/tvActivityPlace"
             tools:text="Book a table for 3 before 18:00." />
