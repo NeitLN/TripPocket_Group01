@@ -1,6 +1,12 @@
 package vn.edu.vlu.trippocket.di
 
 import android.content.Context
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.launch
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,12 +15,18 @@ import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
+import vn.edu.vlu.trippocket.data.remote.firebase.BackupRemote
+import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
+import vn.edu.vlu.trippocket.data.remote.firebase.FirestoreBackupRemote
+import vn.edu.vlu.trippocket.data.remote.firebase.NoBackupRemote
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
+import vn.edu.vlu.trippocket.data.repository.BackupRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
+import vn.edu.vlu.trippocket.data.repository.RestoreRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -23,6 +35,7 @@ import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
 import vn.edu.vlu.trippocket.work.BackupScheduler
+import vn.edu.vlu.trippocket.work.WorkManagerBackupScheduler
 
 /**
  * Manual dependency injection: one instance of each repository for the whole app.
@@ -35,15 +48,67 @@ class AppContainer(context: Context) {
 
     val database: AppDatabase by lazy { AppDatabase.build(context) }
 
-    /** Replaced by the WorkManager scheduler in A3. */
-    val backupScheduler: BackupScheduler = BackupScheduler { }
+    /**
+     * Backup to Firestore (A3) on WorkManager. Builds without the Firebase config cannot back up,
+     * so their writes just stay PENDING.
+     */
+    val backupScheduler: BackupScheduler by lazy {
+        if (usesDevAuth) BackupScheduler { } else WorkManagerBackupScheduler(context)
+    }
+
+    /** Firestore, shared by backup and restore: its settings can only be set once. */
+    private val backupRemote: BackupRemote by lazy {
+        if (usesDevAuth) NoBackupRemote else FirestoreBackupRemote.create()
+    }
+
+    val backupRepository: BackupRepository by lazy {
+        BackupRepository(database, backupRemote, authRepository, backupScheduler)
+    }
+
+    /**
+     * A4: "Restore from backup". Restored trips get their forecast again in the background,
+     * since the weather cache is not backed up; a place that fails keeps no forecast until
+     * the next refresh.
+     */
+    val restoreRepository: RestoreRepository by lazy {
+        RestoreRepository(
+            database,
+            backupRemote,
+            authRepository,
+            backupScheduler,
+            reconcileReminders = { uid -> reminderReconciler.reconcile(uid) },
+            onRestored = { tripIds ->
+                backgroundScope.launch { tripIds.forEach { weatherRepository.refreshTripForecasts(it) } }
+            },
+        )
+    }
+
+    /** Work started by a repository that must outlive the screen that asked for it. */
+    private val backgroundScope = CoroutineScope(SupervisorJob() + Dispatchers.IO)
 
     val tripWriter: TripWriter by lazy {
         TripWriter(database, TripChangeTracker(database.tripDao()), backupScheduler)
     }
 
-    /** Replaced by the Firebase Auth repository in A1. */
-    val authRepository: AuthRepository = DevAuthRepository()
+    /**
+     * True when the app was built without `app/google-services.json` (CI, a fresh clone), so
+     * Firebase did not initialise and sign-in is the offline stand-in that owns the sample trips.
+     */
+    val usesDevAuth: Boolean by lazy { FirebaseApp.getApps(context).isEmpty() }
+
+    /**
+     * Firebase Auth (A1), created on first use like every Firebase service (docs/ARCHITECTURE.md).
+     * The stand-in, always signed in as DevAuthRepository.DEV_UID, exists only in debug builds:
+     * a release build without the Firebase config fails loudly instead of silently never
+     * signing in or backing up.
+     */
+    val authRepository: AuthRepository by lazy {
+        when {
+            !usesDevAuth -> FirebaseAuthRepository(FirebaseAuth.getInstance())
+            BuildConfig.DEBUG -> DevAuthRepository()
+            else -> error("Release build without app/google-services.json: Firebase is not configured")
+        }
+    }
 
     val tripRepository: TripRepository by lazy {
         TripRepository(

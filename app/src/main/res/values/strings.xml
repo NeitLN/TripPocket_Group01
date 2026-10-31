@@ -45,6 +45,39 @@
     <string name="sign_out_dialog_title">Sign out?</string>
     <string name="sign_out_dialog_message">Your trips stay on this phone. Sign in again to see them.</string>
     <string name="action_cancel">Cancel</string>
+
+    <!-- A4: restore from backup -->
+    <string name="action_restore">Restore from backup</string>
+    <string name="restore_busy">Restoring your trips…</string>
+    <string name="restore_conflict_title">Use the backup version for these trips?</string>
+    <!-- 1: trip name, 2: backup time, 3: restore_conflict_phone or restore_conflict_phone_deleted -->
+    <string name="restore_conflict_item">%1$s\nBackup: %2$s · %3$s</string>
+    <string name="restore_conflict_phone">Phone: %1$s</string>
+    <string name="restore_conflict_phone_deleted">Deleted on this phone</string>
+    <string name="restore_conflict_confirm">Restore</string>
+    <plurals name="restore_done_restored">
+        <item quantity="one">%d trip restored</item>
+        <item quantity="other">%d trips restored</item>
+    </plurals>
+    <plurals name="restore_done_kept">
+        <item quantity="one">%d kept from this phone</item>
+        <item quantity="other">%d kept from this phone</item>
+    </plurals>
+    <plurals name="restore_done_changed">
+        <item quantity="one">%d edited meanwhile, not replaced</item>
+        <item quantity="other">%d edited meanwhile, not replaced</item>
+    </plurals>
+    <plurals name="restore_done_rejected">
+        <item quantity="one">%d skipped: damaged backup</item>
+        <item quantity="other">%d skipped: damaged backup</item>
+    </plurals>
+    <string name="restore_up_to_date">This phone already has everything in your backup</string>
+    <string name="restore_no_backup">No backup found for this account</string>
+    <string name="restore_offline">Can\'t reach your backup. Check your connection and try again.</string>
+    <string name="restore_account_changed">You signed in to another account. Nothing was restored.</string>
+    <string name="restore_cancelled">Restore cancelled. Nothing changed.</string>
+    <string name="restore_failed">Restore failed. Try again.</string>
+
     <string name="action_toggle_empty">Preview empty state</string>
     <string name="sync_synced">Backed up</string>
     <string name="sync_pending">Waiting for backup</string>

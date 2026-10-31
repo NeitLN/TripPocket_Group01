@@ -104,6 +104,17 @@ fallback.
   - Chuyến đã xoá mềm: xoá document trên Firestore trước, rồi xoá local có điều kiện.
   - Upload và restore dùng chung **một mutex cho mỗi tài khoản**.
   - Khi mở app và khi đăng nhập: còn chuyến PENDING thì enqueue lại.
+- **Restore (A4, proposal 6.2)** — menu "Restore from backup" trên Trip List, `RestoreRepository`:
+  - Document được đọc/ghi dưới dạng map qua `TripSnapshotCodec` (Firestore không gán được `val` của data class).
+  - Đọc hết `users/{uid}/trips` từ server; mất mạng thì báo lỗi, không đổi gì.
+  - Mỗi snapshot được `TripSnapshotValidator` kiểm **toàn bộ** (giới hạn, độ dài chữ, ngày/giờ, enum, người trả
+    và phần chia thuộc đúng chuyến, tổng phần chia = số tiền). Hỏng → bỏ riêng chuyến đó, các chuyến khác vẫn về.
+  - Chỉ có trong backup → thêm. Giống hệt bản trên máy → bỏ qua. Khác nhau (kể cả chuyến đã xoá mềm) → một hộp
+    thoại checkbox, tick = lấy bản backup, mặc định giữ bản trên máy. Huỷ hộp thoại → không ghi gì.
+  - Ghi trong mutex của tài khoản; mỗi chuyến cùng mọi bảng con trong **một** transaction, giữ UUID, thành SYNCED
+    với revision của backup. Revision trên máy đổi kể từ lúc đọc → không thay chuyến đó.
+  - Giữ bản trên máy → `touch` (PENDING) để bản trên máy đè lại backup.
+  - Xong thì gọi `ReminderReconciler` và tải lại forecast của các chuyến vừa khôi phục (chạy nền).
 - `android:allowBackup="false"`: Firestore là bản sao lưu duy nhất, và cài lại app phải bắt đầu với DB trống thì
   mới kiểm restore được.
 
