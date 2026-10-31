@@ -55,6 +55,8 @@ data class ItineraryFormUiState(
     val saveFailed: Boolean = false,
     /** One-shot result: the screen closes after reading it, then calls [savedShown]. */
     val saved: Boolean = false,
+    /** One-shot result: the screen closes after deleting, then calls [deletedShown]. */
+    val deleted: Boolean = false,
 ) {
     fun has(problem: ActivityProblem): Boolean = problem in problems
 }
@@ -133,7 +135,7 @@ class ItineraryFormViewModel(
     /** Saves the form; nothing is written when a field is invalid. */
     fun save() {
         val state = _uiState.value
-        if (state.saving || state.saved) return
+        if (state.saving || state.saved || state.deleted) return
 
         val input = try {
             state.toInput()
@@ -176,9 +178,48 @@ class ItineraryFormViewModel(
         }
     }
 
+    /** Deletes an existing activity; does nothing when creating a new one. */
+    fun delete() {
+        val activityId = activityId ?: return
+        val state = _uiState.value
+        if (state.saving || state.saved || state.deleted) return
+
+        _uiState.update { it.copy(saving = true, problems = emptySet(), limitReached = false, saveFailed = false) }
+        viewModelScope.launch {
+            var notFound = false
+            var saveFailed = false
+            try {
+                itineraryRepository.deleteActivity(tripId, activityId)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: InvalidActivityException) {
+                if (e.problem == ActivityProblem.NOT_FOUND) {
+                    notFound = true
+                } else {
+                    saveFailed = true
+                }
+            } catch (e: Exception) {
+                saveFailed = true
+            }
+            _uiState.update {
+                it.copy(
+                    saving = false,
+                    notFound = notFound,
+                    saveFailed = saveFailed,
+                    deleted = !notFound && !saveFailed,
+                )
+            }
+        }
+    }
+
     /** The screen handled [ItineraryFormUiState.saved]; do not close twice. */
     fun savedShown() {
         _uiState.update { it.copy(saved = false) }
+    }
+
+    /** The screen handled [ItineraryFormUiState.deleted]; do not close twice. */
+    fun deletedShown() {
+        _uiState.update { it.copy(deleted = false) }
     }
 
     /** Field checks for immediate feedback; the repository checks the same rules again. */
