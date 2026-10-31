@@ -6,6 +6,8 @@
 - **Đường dẫn có dấu tiếng Việt** (vd `Lập trình ứng dụng di động`) làm Gradle/Java không tìm thấy
   `gradle-wrapper.jar` khi chạy từ terminal. Cách xử lý: clone repo vào đường dẫn không dấu, hoặc gán ổ ảo:
   `subst T: "<đường dẫn repo>"` rồi chạy Gradle từ `T:\`.
+- Robolectric không đọc được cache jar khi thư mục home có dấu cách hoặc dấu tiếng Việt (vd `C:\Users\Viet Tien`);
+  `app/build.gradle.kts` tự chuyển cache sang `C:/Users/Public/robolectric-m2` trên các máy đó.
 - Gradle cần một JDK đầy đủ (có `jlink`). Nếu báo `jlink executable ... does not exist`, đặt
   `JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`.
 

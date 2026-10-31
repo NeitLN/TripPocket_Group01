@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owner: Bảo. Add this module's screens here. The trip id is not a nav argument:
+     use tripViewModels { ... } (ui/detail/TripArgs.kt). -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_itinerary"
+    app:startDestination="@id/itineraryFragment">
+
+    <fragment
+        android:id="@+id/itineraryFragment"
+        android:name="vn.edu.vlu.trippocket.ui.itinerary.ItineraryFragment"
+        android:label="@string/nav_itinerary" />
+
+</navigation>

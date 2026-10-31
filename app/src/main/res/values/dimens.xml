@@ -19,13 +19,12 @@
     <dimen name="form_max_width">480dp</dimen>
 
     <!-- Components -->
-    <dimen name="card_corner_radius">16dp</dimen>
-    <dimen name="card_elevation">1dp</dimen>
+    <dimen name="card_corner_radius">20dp</dimen>
+    <dimen name="card_elevation">0dp</dimen>
     <dimen name="icon_size_sm">16dp</dimen>
     <dimen name="icon_size_md">24dp</dimen>
     <dimen name="icon_badge_size">48dp</dimen>
     <dimen name="avatar_size">40dp</dimen>
-    <dimen name="logo_size">72dp</dimen>
     <dimen name="empty_icon_size">96dp</dimen>
     <dimen name="timeline_divider_width">2dp</dimen>
     <dimen name="fab_clearance">88dp</dimen>
@@ -34,7 +33,15 @@
     <!-- Guideline positions (fractions of the parent).
          Phones keep a narrow 8% gutter; values-sw600dp pulls the form
          to the middle half of a tablet screen. -->
-    <item name="guide_form_start" format="float" type="dimen">0.08</item>
-    <item name="guide_form_end" format="float" type="dimen">0.92</item>
-    <item name="guide_login_top" format="float" type="dimen">0.10</item>
+
+    <!-- Trip sticker (DESIGN.md): 64dp including its 3dp white border, in an 80dp slot. -->
+    <dimen name="sticker_size">64dp</dimen>
+    <dimen name="sticker_slot">80dp</dimen>
+    <dimen name="sticker_corner_radius">18dp</dimen>
+    <dimen name="sticker_border_width">3dp</dimen>
+    <dimen name="sticker_elevation">2dp</dimen>
+    <dimen name="title_highlight_radius">10dp</dimen>
+    <dimen name="title_highlight_pad">8dp</dimen>
+    <dimen name="title_inset">20dp</dimen>
+    <dimen name="login_padding">24dp</dimen>
 </resources>

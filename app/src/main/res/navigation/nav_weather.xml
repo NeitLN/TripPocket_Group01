@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owner: Duy Anh. Add this module's screens here. The trip id is not a nav argument:
+     use tripViewModels { ... } (ui/detail/TripArgs.kt). -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_weather"
+    app:startDestination="@id/weatherFragment">
+
+    <fragment
+        android:id="@+id/weatherFragment"
+        android:name="vn.edu.vlu.trippocket.ui.weather.WeatherFragment"
+        android:label="@string/nav_weather" />
+
+</navigation>

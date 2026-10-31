@@ -52,6 +52,7 @@ Nhiều loại tiền tệ, đặt phòng/vé, thanh toán trong app, bản đ�
 | 6 quyết định kỹ thuật trong ARCHITECTURE/ROADMAP | Duyệt nguyên như đề xuất | Leader, 30/10 |
 | Git | Commit docs lên `main`, tạo `develop`, thêm CI GitHub Actions | Leader, 30/10 |
 | Báo cáo, slide, tài liệu nộp | Leader tự lo, ngoài kế hoạch này | Leader, 30/10 |
+| Phân việc | Chủ module + xoay vòng: mỗi người có commit ở cả 4 module (giảng viên kiểm qua GitHub) | Leader, 31/10 |
 | Mọi quy tắc nghiệp vụ khác | Theo proposal (chia tiền dư, giới hạn, backup, restore...) | Proposal |
 
 ## Câu hỏi đang chờ

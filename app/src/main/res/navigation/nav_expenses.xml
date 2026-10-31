@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Owner: Minh. Add this module's screens here. The trip id is not a nav argument:
+     use tripViewModels { ... } (ui/detail/TripArgs.kt). -->
+<navigation xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/nav_expenses"
+    app:startDestination="@id/expensesFragment">
+
+    <fragment
+        android:id="@+id/expensesFragment"
+        android:name="vn.edu.vlu.trippocket.ui.expenses.ExpensesFragment"
+        android:label="@string/nav_expenses">
+        <action
+            android:id="@+id/action_expenses_to_form"
+            app:destination="@id/expenseFormFragment" />
+        <action
+            android:id="@+id/action_expenses_to_members"
+            app:destination="@id/membersFragment" />
+    </fragment>
+
+    <!-- E2: add (no expenseId) or edit (expenseId of the row). -->
+    <fragment
+        android:id="@+id/expenseFormFragment"
+        android:name="vn.edu.vlu.trippocket.ui.expenses.ExpenseFormFragment"
+        android:label="@string/expense_form_add">
+        <argument
+            android:name="expenseId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
+
+    <!-- E1: members management (add, rename, remove). -->
+    <fragment
+        android:id="@+id/membersFragment"
+        android:name="vn.edu.vlu.trippocket.ui.members.MembersFragment"
+        android:label="@string/members_title" />
+
+</navigation>

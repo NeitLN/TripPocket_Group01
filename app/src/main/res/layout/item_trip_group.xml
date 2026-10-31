@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Group label of the trip list: Happening now / Upcoming / Past. More space above than below. -->
+<TextView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/tvGroup"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:accessibilityHeading="true"
+    tools:targetApi="28"
+    android:paddingHorizontal="@dimen/space_md"
+    android:paddingTop="@dimen/space_lg"
+    android:paddingBottom="@dimen/space_xs"
+    android:textAppearance="@style/TextAppearance.TripPocket.LabelLarge.Heavy"
+    android:textColor="?attr/colorOnSurface"
+    tools:text="Upcoming" />

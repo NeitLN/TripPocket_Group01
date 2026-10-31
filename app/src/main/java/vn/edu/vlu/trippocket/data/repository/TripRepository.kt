@@ -1,33 +1,63 @@
 package vn.edu.vlu.trippocket.data.repository
 
+import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.flow.map
 import vn.edu.vlu.trippocket.data.local.MockData
-import vn.edu.vlu.trippocket.data.model.Expense
-import vn.edu.vlu.trippocket.data.model.ItineraryActivity
+import vn.edu.vlu.trippocket.data.local.dao.TripDao
+import vn.edu.vlu.trippocket.data.local.entity.TripEntity
 import vn.edu.vlu.trippocket.data.model.Trip
-import vn.edu.vlu.trippocket.data.model.TripMember
+import java.time.LocalDate
 
 /**
- * Trips, members, itinerary and expenses for the ViewModels.
- * Reads [MockData] for now; Room DAOs replace it later without changing the ViewModels.
+ * Trips of the signed-in account, read from Room. Owner: Tiến.
+ * The reference for the other repositories: reads are Flows that follow the account,
+ * writes go through TripWriter (create/edit/delete come with A2).
  */
-class TripRepository {
+@OptIn(ExperimentalCoroutinesApi::class)
+class TripRepository(
+    private val tripDao: TripDao,
+    private val auth: AuthRepository,
+) {
+    fun observeTrips(): Flow<List<Trip>> = auth.currentUid.flatMapLatest { uid ->
+        if (uid == null) flowOf(emptyList()) else tripDao.observeTrips(uid).map { rows -> rows.map(::toModel) }
+    }
 
-    fun trips(): List<Trip> = MockData.trips
+    /** null while signed out, or when the trip is missing, deleted or owned by another account. */
+    fun observeTrip(tripId: String): Flow<Trip?> = auth.currentUid.flatMapLatest { uid ->
+        if (uid == null) flowOf(null) else tripDao.observeTrip(tripId, uid).map { it?.let(::toModel) }
+    }
 
-    fun trip(tripId: String): Trip? = MockData.trip(tripId)
+    /**
+     * Debug builds only, until A2 adds the trip form: copies the sample trips into Room for
+     * [ownerUid] so the list and the module screens (still on MockData, same ids) have data.
+     */
+    suspend fun seedSampleTrips(ownerUid: String, now: Long) {
+        if (MockData.trips.any { tripDao.ownerOf(it.tripId) != null }) return
+        MockData.trips.forEach { trip ->
+            tripDao.insert(
+                TripEntity(
+                    tripId = trip.tripId,
+                    ownerUid = ownerUid,
+                    name = trip.name,
+                    destination = trip.destination,
+                    startDate = trip.startDate.toEpochDay(),
+                    endDate = trip.endDate.toEpochDay(),
+                    syncStatus = trip.syncStatus,
+                    updatedAt = now,
+                )
+            )
+        }
+    }
 
-    fun members(tripId: String): List<TripMember> = MockData.membersOf(tripId)
-
-    fun activities(tripId: String, dayIndex: Int): List<ItineraryActivity> =
-        MockData.activitiesOf(tripId, dayIndex)
-
-    /** Sum of the estimated costs of every activity in the trip (the planned budget). */
-    fun estimatedTotal(tripId: String): Long = MockData.estimatedTotal(tripId)
-
-    fun expenses(tripId: String): List<Expense> = MockData.expensesOf(tripId)
-
-    fun spentTotal(tripId: String): Long = MockData.spentTotal(tripId)
-
-    /** Done / total packing items. */
-    fun checklist(tripId: String): Pair<Int, Int> = MockData.checklistOf(tripId)
+    private fun toModel(row: TripEntity) = Trip(
+        tripId = row.tripId,
+        name = row.name,
+        destination = row.destination,
+        startDate = LocalDate.ofEpochDay(row.startDate),
+        endDate = LocalDate.ofEpochDay(row.endDate),
+        syncStatus = row.syncStatus,
+    )
 }

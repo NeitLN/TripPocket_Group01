@@ -9,3 +9,6 @@
 .externalNativeBuild
 .cxx
 .kotlin
+
+# Firebase config is shared privately, never committed (proposal 6.3)
+google-services.json

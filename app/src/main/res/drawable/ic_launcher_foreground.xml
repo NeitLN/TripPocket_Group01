@@ -1,13 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Plane glyph scaled into the 66dp safe zone of the adaptive icon. -->
+<!-- TripPocket symbol: a violet pocket with a broad opening, cut out like a sticker with a
+     white contour. Essential geometry stays inside the 66dp safe zone of the 108dp layer.
+     Source of truth for the shape: docs/brand/trippocket-symbol.svg. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
     android:width="108dp"
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <group android:scaleX="2" android:scaleY="2" android:translateX="30" android:translateY="30">
+    <group android:pivotX="54" android:pivotY="53" android:rotation="-6" android:scaleX="0.86" android:scaleY="0.86">
         <path
             android:fillColor="#FFFFFF"
-            android:pathData="M21,16v-2l-8,-5V3.5c0,-0.83 -0.67,-1.5 -1.5,-1.5S10,2.67 10,3.5V9l-8,5v2l8,-2.5V19l-2,1.5V22l3.5,-1 3.5,1v-1.5L13,19v-5.5l8,2.5z" />
+            android:strokeColor="#FFFFFF"
+            android:strokeWidth="7"
+            android:strokeLineJoin="round"
+            android:pathData="M38,30H70C73.3,30 76,32.7 75.7,36L73.3,63.5C73.1,66 71.6,68.1 69.4,69.2L56.7,75.6C55,76.5 53,76.5 51.3,75.6L38.6,69.2C36.4,68.1 34.9,66 34.7,63.5L32.3,36C32,32.7 34.7,30 38,30Z" />
+        <path
+            android:fillColor="#573AD6"
+            android:fillType="evenOdd"
+            android:pathData="M38,30H70C73.3,30 76,32.7 75.7,36L73.3,63.5C73.1,66 71.6,68.1 69.4,69.2L56.7,75.6C55,76.5 53,76.5 51.3,75.6L38.6,69.2C36.4,68.1 34.9,66 34.7,63.5L32.3,36C32,32.7 34.7,30 38,30Z M41.5,37.5H66.5C68.4,37.5 70,39.1 70,41C70,42.9 68.4,44.5 66.5,44.5H41.5C39.6,44.5 38,42.9 38,41C38,39.1 39.6,37.5 41.5,37.5Z" />
     </group>
 </vector>

@@ -9,7 +9,7 @@ import androidx.core.content.getSystemService
 import androidx.core.view.isVisible
 import androidx.core.widget.doAfterTextChanged
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
@@ -28,7 +28,7 @@ class WeatherFragment : Fragment() {
     private var _binding: FragmentWeatherBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: WeatherViewModel by viewModels { WeatherViewModel.Factory }
+    private val viewModel: WeatherViewModel by tripViewModels { WeatherViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,

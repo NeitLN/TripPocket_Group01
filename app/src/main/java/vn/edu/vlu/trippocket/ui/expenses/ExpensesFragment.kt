@@ -7,17 +7,20 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.ConcatAdapter
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
+import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.databinding.FragmentExpensesBinding
+import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.util.Format
 
 /** Screen 5: budget summary, expenses, member balances and suggested payments. */
@@ -26,7 +29,7 @@ class ExpensesFragment : Fragment() {
     private var _binding: FragmentExpensesBinding? = null
     private val binding get() = _binding!!
 
-    private val viewModel: ExpensesViewModel by viewModels { ExpensesViewModel.Factory }
+    private val viewModel: ExpensesViewModel by tripViewModels { ExpensesViewModel.Factory }
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -39,7 +42,13 @@ class ExpensesFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val expenseAdapter = ExpenseAdapter()
+        val expenseAdapter = ExpenseAdapter { row -> openForm(row.expense.expenseId) }
+        // A new expense lands at the top (newest first); scroll so the user sees it.
+        expenseAdapter.registerAdapterDataObserver(object : RecyclerView.AdapterDataObserver() {
+            override fun onItemRangeInserted(positionStart: Int, itemCount: Int) {
+                if (positionStart == 0) _binding?.rvExpenses?.scrollToPosition(0)
+            }
+        })
         val balanceAdapter = BalanceAdapter()
         val headerAdapter = SectionHeaderAdapter(getString(R.string.expenses_settle_header))
         val settlementAdapter = SettlementAdapter()
@@ -50,10 +59,17 @@ class ExpensesFragment : Fragment() {
             if (isChecked) viewModel.showBalances(checkedId == R.id.btnModeBalances)
         }
         binding.btnShare.setOnClickListener { shareSummary() }
-        binding.fabAddExpense.setOnClickListener {
-            Snackbar.make(it, R.string.msg_not_in_milestone1, Snackbar.LENGTH_SHORT)
-                .setAnchorView(it)
-                .show()
+        binding.btnMembers.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_members) }
+        binding.fabAddExpense.setOnClickListener { fab ->
+            val state = viewModel.uiState.value
+            when {
+                state.loading -> Unit
+                // Members come with E1; until then a trip without members cannot split anything.
+                state.memberCount == 0 -> showMessage(fab, getString(R.string.expenses_need_members))
+                state.atExpenseLimit ->
+                    showMessage(fab, getString(R.string.expenses_limit_reached, Limits.MAX_EXPENSES))
+                else -> openForm(expenseId = null)
+            }
         }
 
         viewLifecycleOwner.lifecycleScope.launch {
@@ -73,7 +89,8 @@ class ExpensesFragment : Fragment() {
 
     private fun render(state: ExpensesUiState) {
         binding.toggleMode.check(if (state.showBalances) R.id.btnModeBalances else R.id.btnModeExpenses)
-        val empty = state.expenses.isEmpty()
+        binding.btnMembers.text = getString(R.string.expenses_members_button, state.memberCount)
+        val empty = !state.loading && state.expenses.isEmpty()
         binding.rvExpenses.isVisible = !empty
         binding.tvEmptyExpenses.isVisible = empty
 
@@ -85,6 +102,15 @@ class ExpensesFragment : Fragment() {
         binding.tvFoodValue.text = total(ExpenseCategory.FOOD)
         binding.tvStayValue.text = total(ExpenseCategory.STAY)
         binding.tvTransportValue.text = total(ExpenseCategory.TRANSPORT)
+    }
+
+    private fun openForm(expenseId: String?) {
+        val args = Bundle().apply { putString(ExpenseFormViewModel.ARG_EXPENSE_ID, expenseId) }
+        findNavController().navigate(R.id.action_expenses_to_form, args)
+    }
+
+    private fun showMessage(anchor: View, text: String) {
+        Snackbar.make(anchor, text, Snackbar.LENGTH_SHORT).setAnchorView(anchor).show()
     }
 
     private fun shareSummary() {

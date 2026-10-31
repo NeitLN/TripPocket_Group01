@@ -1,27 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!--
-    Trip card (row of Screen 2).
-    MaterialCardView needs exactly one child, so the card holds a single flat
-    ConstraintLayout; nothing is nested deeper than that.
-
-    Two Barriers do the adaptive work:
-    - barrierStatusStart (direction=start) sits at the left edge of whichever
-      is wider: the sync chip or the countdown text. The title/destination end
-      there, so a long chip label ("Waiting for backup") shrinks the title
-      instead of overlapping it.
-    - barrierContentBottom (direction=bottom) sits under the tallest of the
-      badge, the dates and the countdown, so the divider never cuts through
-      text when the title wraps to two lines.
-    The footer row (members / spent) is a spread_inside horizontal chain.
+    Trip card (row of Screen 2), sticker identity (DESIGN.md).
+    - Left: an 80dp slot holding the 64dp trip sticker, so its tilt and shadow never touch text.
+    - Right: a column that wraps and grows: name, destination, dates + duration, members + spent,
+      then the backup status row. Nothing here has a fixed height, so large font sizes work.
+    - Backup status is an icon + plain label (+ "Saved on this phone" when not backed up); Retry
+      is its own 48dp text button, shown only when the backup failed.
 -->
 <com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardTrip"
-    style="@style/Widget.Material3.CardView.Elevated"
+    style="@style/Widget.TripPocket.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:layout_margin="@dimen/space_sm"
+    android:layout_marginHorizontal="@dimen/space_sm"
+    android:layout_marginVertical="@dimen/space_xs"
     android:checkable="false"
     android:clickable="true"
     android:focusable="true"
@@ -31,71 +25,46 @@
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="@dimen/space_lg">
+        android:clipChildren="false"
+        android:paddingStart="@dimen/space_sm"
+        android:paddingTop="@dimen/space_md"
+        android:paddingEnd="@dimen/space_lg"
+        android:paddingBottom="@dimen/space_md">
 
-        <ImageView
-            android:id="@+id/ivBadge"
-            android:layout_width="@dimen/icon_badge_size"
-            android:layout_height="@dimen/icon_badge_size"
-            android:background="@drawable/bg_circle_primary_container"
-            android:contentDescription="@null"
-            android:padding="@dimen/space_md"
-            android:src="@drawable/ic_place"
+        <FrameLayout
+            android:id="@+id/stickerSlot"
+            android:layout_width="@dimen/sticker_slot"
+            android:layout_height="@dimen/sticker_slot"
+            android:clipChildren="false"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            app:tint="?attr/colorOnPrimaryContainer" />
+            app:layout_constraintTop_toTopOf="parent">
 
-        <com.google.android.material.chip.Chip
-            android:id="@+id/chipSync"
-            style="@style/Widget.Material3.Chip.Assist"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:clickable="false"
-            android:focusable="false"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
-            app:chipIcon="@drawable/ic_cloud_done"
-            app:chipIconSize="@dimen/icon_size_sm"
-            app:ensureMinTouchTargetSize="false"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
-            tools:text="@string/sync_synced" />
-
-        <TextView
-            android:id="@+id/tvCountdown"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xs"
-            android:textAppearance="?attr/textAppearanceLabelMedium"
-            android:textColor="?attr/colorPrimary"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/chipSync"
-            tools:text="Starts in 8 days" />
-
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/barrierStatusStart"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:barrierDirection="start"
-            app:constraint_referenced_ids="chipSync,tvCountdown" />
+            <vn.edu.vlu.trippocket.ui.common.TripStickerView
+                android:id="@+id/sticker"
+                android:layout_width="@dimen/sticker_size"
+                android:layout_height="@dimen/sticker_size"
+                android:layout_gravity="center" />
+        </FrameLayout>
 
         <TextView
             android:id="@+id/tvTripName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="@dimen/space_md"
+            android:layout_marginStart="@dimen/space_sm"
+            android:layout_marginTop="@dimen/space_xs"
             android:ellipsize="end"
             android:maxLines="2"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
-            app:layout_constraintEnd_toStartOf="@id/barrierStatusStart"
-            app:layout_constraintStart_toEndOf="@id/ivBadge"
+            android:textAppearance="@style/TextAppearance.TripPocket.CardTitle"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/stickerSlot"
             app:layout_constraintTop_toTopOf="parent"
-            tools:text="Đà Lạt Getaway" />
+            tools:text="Phú Quốc Summer" />
 
         <TextView
             android:id="@+id/tvDestination"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xxs"
             android:ellipsize="end"
             android:maxLines="1"
             android:textAppearance="?attr/textAppearanceBodyMedium"
@@ -103,60 +72,80 @@
             app:layout_constraintEnd_toEndOf="@id/tvTripName"
             app:layout_constraintStart_toStartOf="@id/tvTripName"
             app:layout_constraintTop_toBottomOf="@id/tvTripName"
-            tools:text="Đà Lạt, Lâm Đồng" />
+            tools:text="Phú Quốc, Kiên Giang" />
 
         <TextView
             android:id="@+id/tvDates"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_xxs"
             android:textAppearance="?attr/textAppearanceBodyMedium"
             android:textColor="?attr/colorOnSurfaceVariant"
             app:layout_constraintEnd_toEndOf="@id/tvTripName"
             app:layout_constraintStart_toStartOf="@id/tvTripName"
             app:layout_constraintTop_toBottomOf="@id/tvDestination"
-            tools:text="24 Oct - 27 Oct 2026" />
+            tools:text="20 Jun - 24 Jun 2027 · 5 days" />
 
-        <androidx.constraintlayout.widget.Barrier
-            android:id="@+id/barrierContentBottom"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            app:barrierDirection="bottom"
-            app:constraint_referenced_ids="ivBadge,tvDates,tvCountdown" />
-
-        <com.google.android.material.divider.MaterialDivider
-            android:id="@+id/divider"
+        <TextView
+            android:id="@+id/tvMeta"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/barrierContentBottom" />
-
-        <!-- Footer: spread_inside chain pushes the two labels to the edges -->
-        <TextView
-            android:id="@+id/tvMembers"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="@dimen/space_md"
-            android:textAppearance="?attr/textAppearanceLabelLarge"
-            android:textColor="?attr/colorOnSurfaceVariant"
-            app:layout_constraintEnd_toStartOf="@id/tvSpent"
-            app:layout_constraintHorizontal_chainStyle="spread_inside"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/divider"
-            tools:text="3 members" />
-
-        <TextView
-            android:id="@+id/tvSpent"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
             android:textAppearance="@style/TextAppearance.TripPocket.Money"
             android:textColor="?attr/colorOnSurface"
-            app:layout_constraintBaseline_toBaselineOf="@id/tvMembers"
+            android:textSize="14sp"
+            app:layout_constraintEnd_toEndOf="@id/tvTripName"
+            app:layout_constraintStart_toStartOf="@id/tvTripName"
+            app:layout_constraintTop_toBottomOf="@id/tvDates"
+            tools:text="2 members · 0 ₫ spent" />
+
+        <!-- Backup status: icon + label, with the note under the label. -->
+        <ImageView
+            android:id="@+id/ivSync"
+            android:layout_width="@dimen/icon_size_sm"
+            android:layout_height="@dimen/icon_size_sm"
+            android:contentDescription="@null"
+            app:layout_constraintBottom_toBottomOf="@id/tvSync"
+            app:layout_constraintStart_toStartOf="@id/tvTripName"
+            app:layout_constraintTop_toTopOf="@id/tvSync"
+            tools:src="@drawable/ic_cloud_alert"
+            tools:tint="?attr/colorError" />
+
+        <TextView
+            android:id="@+id/tvSync"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_xs"
+            android:layout_marginTop="@dimen/space_sm"
+            android:textAppearance="?attr/textAppearanceLabelLarge"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintEnd_toStartOf="@id/btnRetry"
+            app:layout_constraintStart_toEndOf="@id/ivSync"
+            app:layout_constraintTop_toBottomOf="@id/tvMeta"
+            tools:text="@string/sync_failed" />
+
+        <TextView
+            android:id="@+id/tvSyncNote"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:text="@string/sync_saved_on_phone"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="@id/tvSync"
+            app:layout_constraintStart_toStartOf="@id/tvSync"
+            app:layout_constraintTop_toBottomOf="@id/tvSync" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnRetry"
+            style="@style/Widget.TripPocket.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minHeight="48dp"
+            android:text="@string/sync_retry"
+            android:visibility="gone"
+            app:layout_constraintBottom_toBottomOf="@id/tvSyncNote"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/tvMembers"
-            tools:text="2,150,000 ₫ spent" />
+            app:layout_constraintTop_toTopOf="@id/tvSync"
+            tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>
 </com.google.android.material.card.MaterialCardView>

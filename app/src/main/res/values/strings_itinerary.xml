@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Itinerary strings. Owner: Bảo. -->
+<resources>
+    <string name="itinerary_day_tab">Day %1$d · %2$s</string>
+    <string name="itinerary_estimated">Est. %1$s</string>
+    <string name="itinerary_checklist">Packing %1$d/%2$d</string>
+    <string name="itinerary_add">Add activity</string>
+    <string name="itinerary_empty_title">Nothing planned for this day</string>
+    <string name="itinerary_empty_body">Tap Add activity to plan a stop, a meal or a ride.</string>
+    <string name="itinerary_free">Free</string>
+    <string name="content_desc_reminder">Reminder set</string>
+</resources>

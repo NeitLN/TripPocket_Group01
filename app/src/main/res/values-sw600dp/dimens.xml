@@ -2,9 +2,5 @@
 <resources>
     <!-- Tablets (smallest width >= 600dp): wider margins and a centered form. -->
     <dimen name="screen_margin">32dp</dimen>
-    <dimen name="logo_size">96dp</dimen>
 
-    <item name="guide_form_start" format="float" type="dimen">0.25</item>
-    <item name="guide_form_end" format="float" type="dimen">0.75</item>
-    <item name="guide_login_top" format="float" type="dimen">0.16</item>
 </resources>

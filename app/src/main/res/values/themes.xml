@@ -1,11 +1,13 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
-    <!-- Material 3 theme: every Material component (MaterialCardView, TextInputLayout,
-         FloatingActionButton, BottomNavigationView...) reads its colors from here. -->
-    <style name="Base.Theme.TripPocket" parent="Theme.Material3.Light.NoActionBar">
+    <!-- Material 3 DayNight theme with the sticker identity (DESIGN.md). Every Material component
+         (MaterialCardView, TextInputLayout, FloatingActionButton, BottomNavigationView...) reads
+         its colors, type and corners from here; module layouts need no edits to follow it. -->
+    <style name="Base.Theme.TripPocket" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/md_primary</item>
         <item name="colorOnPrimary">@color/md_on_primary</item>
         <item name="colorPrimaryContainer">@color/md_primary_container</item>
         <item name="colorOnPrimaryContainer">@color/md_on_primary_container</item>
+        <item name="colorPrimaryInverse">@color/md_inverse_primary</item>
         <item name="colorSecondary">@color/md_secondary</item>
         <item name="colorOnSecondary">@color/md_on_secondary</item>
         <item name="colorSecondaryContainer">@color/md_secondary_container</item>
@@ -24,26 +26,245 @@
         <item name="colorOnSurface">@color/md_on_surface</item>
         <item name="colorSurfaceVariant">@color/md_surface_variant</item>
         <item name="colorOnSurfaceVariant">@color/md_on_surface_variant</item>
+        <item name="colorSurfaceContainerLowest">@color/md_surface_container_lowest</item>
         <item name="colorSurfaceContainerLow">@color/md_surface_container_low</item>
         <item name="colorSurfaceContainer">@color/md_surface_container</item>
         <item name="colorSurfaceContainerHigh">@color/md_surface_container_high</item>
+        <item name="colorSurfaceContainerHighest">@color/md_surface_container_highest</item>
+        <item name="colorSurfaceBright">@color/md_surface_bright</item>
+        <item name="colorSurfaceDim">@color/md_surface_dim</item>
+        <item name="colorSurfaceInverse">@color/md_inverse_surface</item>
+        <item name="colorOnSurfaceInverse">@color/md_inverse_on_surface</item>
         <item name="colorOutline">@color/md_outline</item>
         <item name="colorOutlineVariant">@color/md_outline_variant</item>
 
-        <!-- Dark status/navigation bar icons on the light surface (edge-to-edge). -->
-        <item name="android:windowLightStatusBar">true</item>
-        <item name="android:windowLightNavigationBar" tools:targetApi="27">true</item>
+        <!-- Type: Be Vietnam Pro for every role (bundled, works offline). The face comes from the
+             text appearances, never from a theme-level fontFamily: that would override them. -->
+        <item name="android:textAppearance">@style/TextAppearance.TripPocket.BodyMedium</item>
+        <item name="textAppearanceDisplayLarge">@style/TextAppearance.TripPocket.DisplayLarge</item>
+        <item name="textAppearanceDisplayMedium">@style/TextAppearance.TripPocket.DisplayMedium</item>
+        <item name="textAppearanceDisplaySmall">@style/TextAppearance.TripPocket.DisplaySmall</item>
+        <item name="textAppearanceHeadlineLarge">@style/TextAppearance.TripPocket.HeadlineLarge</item>
+        <item name="textAppearanceHeadlineMedium">@style/TextAppearance.TripPocket.HeadlineMedium</item>
+        <item name="textAppearanceHeadlineSmall">@style/TextAppearance.TripPocket.HeadlineSmall</item>
+        <item name="textAppearanceTitleLarge">@style/TextAppearance.TripPocket.TitleLarge</item>
+        <item name="textAppearanceTitleMedium">@style/TextAppearance.TripPocket.TitleMedium</item>
+        <item name="textAppearanceTitleSmall">@style/TextAppearance.TripPocket.TitleSmall</item>
+        <item name="textAppearanceBodyLarge">@style/TextAppearance.TripPocket.BodyLarge</item>
+        <item name="textAppearanceBodyMedium">@style/TextAppearance.TripPocket.BodyMedium</item>
+        <item name="textAppearanceBodySmall">@style/TextAppearance.TripPocket.BodySmall</item>
+        <item name="textAppearanceLabelLarge">@style/TextAppearance.TripPocket.LabelLarge</item>
+        <item name="textAppearanceLabelMedium">@style/TextAppearance.TripPocket.LabelMedium</item>
+        <item name="textAppearanceLabelSmall">@style/TextAppearance.TripPocket.LabelSmall</item>
+
+        <!-- Shape: fields and menus 12dp, chips 8dp, cards 20dp, sheets/dialogs 28dp, buttons pill. -->
+        <item name="shapeAppearanceCornerExtraSmall">@style/ShapeAppearance.TripPocket.Corner12</item>
+        <item name="shapeAppearanceCornerSmall">@style/ShapeAppearance.TripPocket.Corner8</item>
+        <item name="shapeAppearanceCornerMedium">@style/ShapeAppearance.TripPocket.Corner20</item>
+        <item name="shapeAppearanceCornerLarge">@style/ShapeAppearance.TripPocket.Corner20</item>
+        <item name="shapeAppearanceCornerExtraLarge">@style/ShapeAppearance.TripPocket.Corner28</item>
+
+        <!-- Component defaults (explicit styles in a layout still win). -->
+        <item name="materialButtonStyle">@style/Widget.TripPocket.Button</item>
+        <item name="materialButtonOutlinedStyle">@style/Widget.TripPocket.Button.Outlined</item>
+        <item name="borderlessButtonStyle">@style/Widget.TripPocket.Button.Text</item>
+        <item name="materialCardViewStyle">@style/Widget.TripPocket.Card</item>
+        <item name="textInputStyle">@style/Widget.Material3.TextInputLayout.OutlinedBox</item>
+        <item name="toolbarStyle">@style/Widget.TripPocket.Toolbar</item>
+
+        <!-- Edge-to-edge system bar icons: dark on the light lilac, light at night. -->
+        <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
+        <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/light_system_bars</item>
     </style>
 
     <style name="Theme.TripPocket" parent="Base.Theme.TripPocket" />
 
-    <!-- Small reusable text styles so the item layouts stay short. -->
-    <style name="TextAppearance.TripPocket.Money" parent="TextAppearance.Material3.TitleMedium">
-        <item name="android:fontFeatureSettings">tnum</item>
+    <!-- Type scale (sizes / line heights in sp). 900 for the wordmark, the leader title and sticker
+         codes; 800 for headlines; 600 for titles, labels and money; 400 for body. Tracking 0. -->
+    <style name="TextAppearance.TripPocket.DisplayLarge" parent="TextAppearance.Material3.DisplayLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:textSize">57sp</item>
+        <item name="lineHeight">68sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.DisplayMedium" parent="TextAppearance.Material3.DisplayMedium">
+        <item name="fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:textSize">45sp</item>
+        <item name="lineHeight">56sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.DisplaySmall" parent="TextAppearance.Material3.DisplaySmall">
+        <item name="fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:textSize">36sp</item>
+        <item name="lineHeight">46sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.HeadlineLarge" parent="TextAppearance.Material3.HeadlineLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:textSize">32sp</item>
+        <item name="lineHeight">42sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.HeadlineMedium" parent="TextAppearance.Material3.HeadlineMedium">
+        <item name="fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:textSize">28sp</item>
+        <item name="lineHeight">38sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.HeadlineSmall" parent="TextAppearance.Material3.HeadlineSmall">
+        <item name="fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:textSize">24sp</item>
+        <item name="lineHeight">34sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.TitleLarge" parent="TextAppearance.Material3.TitleLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">22sp</item>
+        <item name="lineHeight">30sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.TitleMedium" parent="TextAppearance.Material3.TitleMedium">
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="lineHeight">24sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.TitleSmall" parent="TextAppearance.Material3.TitleSmall">
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">22sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.BodyLarge" parent="TextAppearance.Material3.BodyLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:textSize">16sp</item>
+        <item name="lineHeight">24sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.BodyMedium" parent="TextAppearance.Material3.BodyMedium">
+        <item name="fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">22sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.BodySmall" parent="TextAppearance.Material3.BodySmall">
+        <item name="fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_regular</item>
+        <item name="android:textSize">12sp</item>
+        <item name="lineHeight">18sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.LabelLarge" parent="TextAppearance.Material3.LabelLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">14sp</item>
+        <item name="lineHeight">20sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.LabelMedium" parent="TextAppearance.Material3.LabelMedium">
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">12sp</item>
+        <item name="lineHeight">18sp</item>
+        <item name="android:letterSpacing">0</item>
+    </style>
+    <style name="TextAppearance.TripPocket.LabelSmall" parent="TextAppearance.Material3.LabelSmall">
+        <item name="fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_semibold</item>
+        <item name="android:textSize">11sp</item>
+        <item name="lineHeight">16sp</item>
+        <item name="android:letterSpacing">0</item>
     </style>
 
-    <style name="TextAppearance.TripPocket.Overline" parent="TextAppearance.Material3.LabelMedium">
-        <item name="android:textAllCaps">true</item>
-        <item name="android:letterSpacing">0.08</item>
+    <!-- Brand-specific text styles. -->
+    <style name="TextAppearance.TripPocket.Wordmark" parent="TextAppearance.TripPocket.HeadlineSmall">
+        <item name="fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
+    </style>
+    <style name="TextAppearance.TripPocket.ScreenTitle" parent="TextAppearance.TripPocket.DisplaySmall">
+        <item name="android:textSize">34sp</item>
+        <item name="lineHeight">44sp</item>
+    </style>
+    <style name="TextAppearance.TripPocket.StickerCode" parent="TextAppearance.TripPocket.TitleLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_black</item>
+        <item name="android:textSize">20sp</item>
+        <item name="lineHeight">28sp</item>
+    </style>
+    <style name="TextAppearance.TripPocket.CardTitle" parent="TextAppearance.TripPocket.TitleMedium">
+        <item name="fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_extrabold</item>
+    </style>
+    <!-- Money: 600 with tabular figures so amounts line up. -->
+    <style name="TextAppearance.TripPocket.Money" parent="TextAppearance.TripPocket.TitleMedium">
+        <item name="android:fontFeatureSettings">tnum</item>
+    </style>
+    <!-- Small section label. Sentence case, no tracking (no all-caps eyebrows). -->
+    <style name="TextAppearance.TripPocket.Overline" parent="TextAppearance.TripPocket.LabelLarge">
+        <item name="android:textColor">?attr/colorOnSurfaceVariant</item>
+    </style>
+
+    <!-- Shapes -->
+    <style name="ShapeAppearance.TripPocket.Corner8" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">8dp</item>
+    </style>
+    <style name="ShapeAppearance.TripPocket.Corner12" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">12dp</item>
+    </style>
+    <style name="ShapeAppearance.TripPocket.Corner20" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">20dp</item>
+    </style>
+    <style name="ShapeAppearance.TripPocket.Corner28" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">28dp</item>
+    </style>
+    <style name="ShapeAppearance.TripPocket.Pill" parent="">
+        <item name="cornerFamily">rounded</item>
+        <item name="cornerSize">50%</item>
+    </style>
+
+    <!-- Components -->
+    <style name="Widget.TripPocket.Button" parent="Widget.Material3.Button">
+        <item name="shapeAppearance">@style/ShapeAppearance.TripPocket.Pill</item>
+    </style>
+    <style name="Widget.TripPocket.Button.Outlined" parent="Widget.Material3.Button.OutlinedButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.TripPocket.Pill</item>
+    </style>
+    <style name="Widget.TripPocket.Button.Text" parent="Widget.Material3.Button.TextButton">
+        <item name="shapeAppearance">@style/ShapeAppearance.TripPocket.Pill</item>
+    </style>
+    <style name="Widget.TripPocket.Card" parent="Widget.Material3.CardView.Filled">
+        <item name="cardBackgroundColor">@color/trip_card_surface</item>
+    </style>
+    <style name="Widget.TripPocket.Toolbar" parent="Widget.Material3.Toolbar">
+        <item name="titleTextAppearance">@style/TextAppearance.TripPocket.TitleLarge</item>
+    </style>
+    <!-- The one loud action: lime in both themes, pill, no decorative ring. -->
+    <style name="Widget.TripPocket.ExtendedFab.Lime" parent="Widget.Material3.ExtendedFloatingActionButton.Icon.Primary">
+        <item name="backgroundTint">@color/brand_lime</item>
+        <item name="android:textColor">@color/on_brand_lime</item>
+        <item name="iconTint">@color/on_brand_lime</item>
+        <item name="rippleColor">#331B1B1F</item>
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.TripPocket.Pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.TripPocket.LabelLarge.Heavy</item>
+    </style>
+    <style name="TextAppearance.TripPocket.LabelLarge.Heavy" parent="TextAppearance.TripPocket.LabelLarge">
+        <item name="fontFamily">@font/be_vietnam_pro_extrabold</item>
+        <item name="android:fontFamily">@font/be_vietnam_pro_extrabold</item>
     </style>
 </resources>

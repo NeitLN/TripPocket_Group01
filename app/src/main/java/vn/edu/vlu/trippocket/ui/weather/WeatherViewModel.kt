@@ -1,5 +1,6 @@
 package vn.edu.vlu.trippocket.ui.weather
 
+import vn.edu.vlu.trippocket.appContainer
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
@@ -13,7 +14,7 @@ import kotlinx.coroutines.flow.update
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.Trip
-import vn.edu.vlu.trippocket.data.repository.TripRepository
+import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.LocalDate
@@ -76,7 +77,7 @@ data class ForecastRow(val date: LocalDate, val tripDay: Int?, val forecast: For
  */
 class WeatherViewModel(
     savedStateHandle: SavedStateHandle,
-    tripRepository: TripRepository,
+    tripRepository: SampleTripRepository,
     private val weatherRepository: WeatherRepository,
 ) : ViewModel() {
 
@@ -157,7 +158,7 @@ class WeatherViewModel(
     companion object {
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
-                WeatherViewModel(createSavedStateHandle(), TripRepository(), WeatherRepository())
+                WeatherViewModel(createSavedStateHandle(), appContainer().sampleTripRepository, appContainer().weatherRepository)
             }
         }
     }
