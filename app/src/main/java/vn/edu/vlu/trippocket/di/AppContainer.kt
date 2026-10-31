@@ -46,19 +46,24 @@ class AppContainer(context: Context) {
     }
 
     /**
-     * Firebase Auth (A1) when the app was built with `app/google-services.json`, so Firebase
-     * initialised itself at start-up. Without the file (CI, a fresh clone) the app keeps the
-     * offline stand-in, always signed in as DevAuthRepository.DEV_UID.
+     * True when the app was built without `app/google-services.json` (CI, a fresh clone), so
+     * Firebase did not initialise and sign-in is the offline stand-in that owns the sample trips.
      */
-    val authRepository: AuthRepository =
-        if (FirebaseApp.getApps(context).isNotEmpty()) {
-            FirebaseAuthRepository(FirebaseAuth.getInstance())
-        } else {
-            DevAuthRepository()
-        }
+    val usesDevAuth: Boolean by lazy { FirebaseApp.getApps(context).isEmpty() }
 
-    /** True when sign-in is the offline stand-in; the sample trips belong to it. */
-    val usesDevAuth: Boolean get() = authRepository is DevAuthRepository
+    /**
+     * Firebase Auth (A1), created on first use like every Firebase service (docs/ARCHITECTURE.md).
+     * The stand-in, always signed in as DevAuthRepository.DEV_UID, exists only in debug builds:
+     * a release build without the Firebase config fails loudly instead of silently never
+     * signing in or backing up.
+     */
+    val authRepository: AuthRepository by lazy {
+        when {
+            !usesDevAuth -> FirebaseAuthRepository(FirebaseAuth.getInstance())
+            BuildConfig.DEBUG -> DevAuthRepository()
+            else -> error("Release build without app/google-services.json: Firebase is not configured")
+        }
+    }
 
     val tripRepository: TripRepository by lazy {
         TripRepository(
