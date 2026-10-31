@@ -9,6 +9,22 @@
     <fragment
         android:id="@+id/itineraryFragment"
         android:name="vn.edu.vlu.trippocket.ui.itinerary.ItineraryFragment"
-        android:label="@string/nav_itinerary" />
+        android:label="@string/nav_itinerary">
+        <action
+            android:id="@+id/action_itinerary_to_form"
+            app:destination="@id/activityFormFragment" />
+    </fragment>
+
+    <!-- I1: add (no activityId) or edit (activityId of the row). -->
+    <fragment
+        android:id="@+id/activityFormFragment"
+        android:name="vn.edu.vlu.trippocket.ui.itinerary.ActivityFormFragment"
+        android:label="@string/itinerary_form_add_title">
+        <argument
+            android:name="activityId"
+            android:defaultValue="@null"
+            app:argType="string"
+            app:nullable="true" />
+    </fragment>
 
 </navigation>

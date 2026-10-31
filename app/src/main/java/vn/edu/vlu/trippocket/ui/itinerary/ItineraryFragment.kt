@@ -6,16 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import androidx.core.view.isVisible
 import androidx.fragment.app.Fragment
-import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
+import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.google.android.material.snackbar.Snackbar
 import com.google.android.material.tabs.TabLayout
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.FragmentItineraryBinding
+import vn.edu.vlu.trippocket.domain.Limits
+import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import vn.edu.vlu.trippocket.util.Format
 
 /** Screen 3: day-by-day itinerary. */
@@ -37,7 +39,12 @@ class ItineraryFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        val adapter = ActivityAdapter()
+        val adapter = ActivityAdapter { activity ->
+            findNavController().navigate(
+                R.id.action_itinerary_to_form,
+                Bundle().apply { putString(ARG_ACTIVITY_ID, activity.activityId) },
+            )
+        }
         binding.rvActivities.layoutManager = LinearLayoutManager(requireContext())
         binding.rvActivities.adapter = adapter
 
@@ -47,7 +54,11 @@ class ItineraryFragment : Fragment() {
             override fun onTabReselected(tab: TabLayout.Tab) = Unit
         })
         binding.btnChecklist.setOnClickListener { showNotYetAvailable(it) }
-        binding.fabAddActivity.setOnClickListener { showNotYetAvailable(it) }
+        binding.fabAddActivity.setOnClickListener {
+            if (viewModel.uiState.value.canAdd) {
+                findNavController().navigate(R.id.action_itinerary_to_form)
+            }
+        }
 
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
@@ -89,6 +100,13 @@ class ItineraryFragment : Fragment() {
 
         binding.rvActivities.isVisible = state.activities.isNotEmpty()
         binding.groupEmptyDay.isVisible = state.activities.isEmpty()
+
+        binding.fabAddActivity.isEnabled = state.canAdd
+        binding.fabAddActivity.text = if (state.canAdd) {
+            getString(R.string.itinerary_add)
+        } else {
+            getString(R.string.itinerary_limit_count, state.activityCount, Limits.MAX_ACTIVITIES)
+        }
     }
 
     private fun showNotYetAvailable(anchor: View) {

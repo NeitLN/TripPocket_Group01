@@ -212,4 +212,28 @@ class ItineraryFormViewModelTest {
         assertTrue(loadedForm(other).uiState.value.notFound)
         assertTrue(loadedForm("missing").uiState.value.notFound)
     }
+
+    @Test
+    fun deletingAnActivity_setsDeletedTrue_andRemovesFromRoom() = runBlocking {
+        val id = repository.addActivity(trip, input())
+        val viewModel = loadedForm(id)
+
+        viewModel.delete()
+        val state = withTimeout(5_000) { viewModel.uiState.first { it.deleted } }
+        assertTrue(state.deleted)
+        assertFalse(state.saving)
+        assertEquals(0, t.db.activityDao().countByTrip(trip))
+    }
+
+    @Test
+    fun deletingAnAlreadyDeletedActivity_setsNotFoundTrue() = runBlocking {
+        val id = repository.addActivity(trip, input())
+        val viewModel = loadedForm(id)
+
+        repository.deleteActivity(trip, id)
+        viewModel.delete()
+        val state = withTimeout(5_000) { viewModel.uiState.first { it.notFound } }
+        assertTrue(state.notFound)
+        assertFalse(state.deleted)
+    }
 }
