@@ -11,9 +11,11 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.domain.TripGroup
@@ -51,6 +53,7 @@ class TripListViewModel(
     tripRepository: TripRepository,
     // Member count and spent total move to Minh's ExpenseRepository with E1/E2.
     private val sampleRepository: SampleTripRepository,
+    private val auth: AuthRepository,
     private val today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
 
@@ -75,6 +78,18 @@ class TripListViewModel(
         savedStateHandle[KEY_EMPTY] = !(savedStateHandle.get<Boolean>(KEY_EMPTY) ?: false)
     }
 
+    /**
+     * Overflow menu > "Sign out" (A1). The session ends, so [AuthRepository.currentUid] turns
+     * null and the list hides the trips; the rows stay in Room for the next sign-in.
+     */
+    fun signOut() {
+        viewModelScope.launch {
+            auth.signOut()
+            // TODO(A1): cancel this device's reminders through ReminderReconciler once its
+            // module (Bảo/Minh) is merged; no reconciler exists on this branch yet.
+        }
+    }
+
     private fun toCard(trip: Trip) = TripCard(
         trip = trip,
         memberCount = sampleRepository.members(trip.tripId).size,
@@ -87,7 +102,12 @@ class TripListViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                TripListViewModel(createSavedStateHandle(), container.tripRepository, container.sampleTripRepository)
+                TripListViewModel(
+                    createSavedStateHandle(),
+                    container.tripRepository,
+                    container.sampleTripRepository,
+                    container.authRepository,
+                )
             }
         }
     }

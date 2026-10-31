@@ -3,7 +3,6 @@ package vn.edu.vlu.trippocket.ui.trips
 import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
@@ -12,6 +11,7 @@ import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -19,7 +19,7 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.model.SyncStatus
-import vn.edu.vlu.trippocket.data.repository.AuthRepository
+import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 
@@ -29,10 +29,7 @@ import vn.edu.vlu.trippocket.data.repository.TripRepository
 class TripListViewModelTest {
 
     private val t = TestDatabase()
-    private val uid = MutableStateFlow<String?>(TestDatabase.OWNER)
-    private val auth = object : AuthRepository {
-        override val currentUid = uid
-    }
+    private val auth = FakeAuthRepository(TestDatabase.OWNER)
 
     @Before
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -44,7 +41,7 @@ class TripListViewModelTest {
     }
 
     private fun viewModel() =
-        TripListViewModel(SavedStateHandle(), TripRepository(t.db.tripDao(), auth), SampleTripRepository())
+        TripListViewModel(SavedStateHandle(), TripRepository(t.db.tripDao(), auth), SampleTripRepository(), auth)
 
     private suspend fun TripListViewModel.loaded(trips: Int) =
         withTimeout(5_000) { uiState.first { !it.loading && it.trips.size == trips } }
@@ -79,7 +76,22 @@ class TripListViewModelTest {
         val viewModel = viewModel()
         viewModel.loaded(trips = 1)
 
-        uid.value = null
+        auth.setUid(null)
         viewModel.loaded(trips = 0)
+    }
+
+    @Test
+    fun theSignOutAction_endsTheSession_andKeepsTheLocalTrips(): Unit = runBlocking {
+        t.db.tripDao().insert(t.trip("mine"))
+        val viewModel = viewModel()
+        viewModel.loaded(trips = 1)
+
+        viewModel.signOut()
+
+        assertEquals(1, auth.signOutCalls)
+        assertNull(auth.currentUid.value)
+        viewModel.loaded(trips = 0)
+        // Still in Room for the next sign-in of the same account.
+        assertEquals(1, t.db.tripDao().observeTrips(TestDatabase.OWNER).first().size)
     }
 }
