@@ -15,12 +15,17 @@ interface ForecastApi {
      * Daily forecast for a coordinate. `timezone=auto` makes the API return local dates, the
      * same calendar days the trip uses. Sixteen days is the API maximum and matches
      * [vn.edu.vlu.trippocket.domain.ForecastMatcher].
+     *
+     * The hourly fields are asked too: east of UTC the last local day is only partly covered by
+     * the model run (about 20 of 24 hours in Vietnam), so Open-Meteo sends null daily values for
+     * it, and [toForecastDays] builds that day from its hours instead of dropping it.
      */
     @GET("v1/forecast")
     suspend fun daily(
         @Query("latitude") latitude: Double,
         @Query("longitude") longitude: Double,
         @Query("daily") daily: String = DAILY_FIELDS,
+        @Query("hourly") hourly: String = HOURLY_FIELDS,
         @Query("timezone") timezone: String = "auto",
         @Query("forecast_days") forecastDays: Int = DEFAULT_FORECAST_DAYS,
     ): ForecastResponse
@@ -28,6 +33,7 @@ interface ForecastApi {
     companion object {
         const val DAILY_FIELDS =
             "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+        const val HOURLY_FIELDS = "weather_code,temperature_2m,precipitation_probability"
         const val DEFAULT_FORECAST_DAYS = 16
     }
 }
