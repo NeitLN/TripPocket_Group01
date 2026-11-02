@@ -13,7 +13,6 @@ import androidx.lifecycle.lifecycleScope
 import androidx.lifecycle.repeatOnLifecycle
 import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.FragmentTripListBinding
@@ -43,8 +42,7 @@ class TripListFragment : Fragment() {
 
         val adapter = TripAdapter(
             onClick = { card -> startActivity(TripDetailActivity.newIntent(requireContext(), card.trip.tripId)) },
-            // Retry backup arrives with A3 (BackupWorker).
-            onRetry = { showNotYet(binding.fabNewTrip) },
+            onRetry = { card -> viewModel.retryBackup(card.trip.tripId) },
         )
 
         // 1 column on phones, 2 in landscape / on tablets (res/values*/integers.xml); labels span them all.
@@ -116,11 +114,6 @@ class TripListFragment : Fragment() {
         },
     ).joinToString(" · ")
 
-    private fun showNotYet(anchor: View) {
-        Snackbar.make(anchor, R.string.msg_not_in_milestone1, Snackbar.LENGTH_SHORT)
-            .setAnchorView(binding.fabNewTrip)
-            .show()
-    }
 
     override fun onDestroyView() {
         super.onDestroyView()
