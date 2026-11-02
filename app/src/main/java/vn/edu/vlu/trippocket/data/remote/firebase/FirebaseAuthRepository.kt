@@ -1,6 +1,5 @@
 package vn.edu.vlu.trippocket.data.remote.firebase
 
-import com.google.android.gms.tasks.Task
 import com.google.firebase.FirebaseNetworkException
 import com.google.firebase.FirebaseTooManyRequestsException
 import com.google.firebase.auth.FirebaseAuth
@@ -9,12 +8,9 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.suspendCancellableCoroutine
 import vn.edu.vlu.trippocket.data.repository.AuthException
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.domain.AuthProblem
-import kotlin.coroutines.resume
-import kotlin.coroutines.resumeWithException
 
 /**
  * A1: the real account, on Firebase Auth. The session survives an app restart because
@@ -69,22 +65,5 @@ class FirebaseAuthRepository(private val auth: FirebaseAuth) : AuthRepository {
         is FirebaseTooManyRequestsException -> AuthProblem.TOO_MANY_REQUESTS
         is FirebaseAuthException -> FirebaseAuthErrorMapper.problem(e.errorCode)
         else -> AuthProblem.UNKNOWN
-    }
-}
-
-/**
- * [Task] as a suspend call without kotlinx-coroutines-play-services, which is not a project
- * dependency: the listener resumes the coroutine when the task finishes, and a cancelled
- * coroutine simply drops the result.
- */
-private suspend fun <T> Task<T>.awaitResult(): T = suspendCancellableCoroutine { continuation ->
-    addOnCompleteListener { task ->
-        if (!continuation.isActive) return@addOnCompleteListener
-        val error = task.exception
-        if (error != null) {
-            continuation.resumeWithException(error)
-        } else {
-            continuation.resume(task.result)
-        }
     }
 }
