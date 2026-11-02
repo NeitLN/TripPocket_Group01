@@ -89,6 +89,12 @@ class WeatherRepository(
         }
 
     /**
+     * Forgets the cached forecast of [placeId] so the screen shows no forecast until the next
+     * refresh. The saved place is kept; returns false when there was nothing cached.
+     */
+    suspend fun clearForecast(placeId: String): Boolean = cacheDao.delete(placeId) > 0
+
+    /**
      * Reloads the forecast of every place saved to [tripId], one after another, and reports how
      * many were refreshed and how many kept their previous cache. A failing place does not stop
      * the places after it.

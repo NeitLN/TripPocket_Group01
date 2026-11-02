@@ -6,6 +6,7 @@ import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
@@ -123,6 +124,18 @@ class WeatherRepositoryTest {
 
         assertTrue(cached.days.isEmpty())
         assertEquals(42L, cached.fetchedAt)
+    }
+
+    @Test
+    fun clearForecast_removesTheCache_andKeepsThePlace() = runBlocking {
+        val place = saved()
+        weather.refreshForecast(place)
+
+        assertTrue(weather.clearForecast(place.placeId))
+
+        assertNull(weather.observeForecast(place.placeId).first())
+        assertEquals(listOf(place.placeId), places.observePlaces("t1").first().map { it.placeId })
+        assertFalse(weather.clearForecast(place.placeId))
     }
 
     @Test
