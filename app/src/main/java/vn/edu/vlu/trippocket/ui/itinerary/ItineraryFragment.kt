@@ -166,13 +166,15 @@ class ItineraryFragment : Fragment() {
 
         val date = state.selectedDate ?: return
         binding.tvDayDate.text = date.format(Format.weekdayDayMonth)
+        // W5: no place yet -> how to get a forecast; a day outside the cache -> not available yet.
         val forecast = state.forecast
-        binding.tvDayWeather.text = if (forecast == null) {
-            getString(R.string.weather_not_available)
-        } else {
-            getString(R.string.weather_temp_range, forecast.maxTemp, forecast.minTemp) + " · " +
+        binding.tvDayWeather.text = when {
+            !state.hasSavedPlace -> getString(R.string.itinerary_weather_no_place)
+            forecast == null -> getString(R.string.weather_not_available)
+            else -> getString(R.string.weather_temp_range, forecast.maxTemp, forecast.minTemp) + " · " +
                 getString(R.string.weather_rain_chance, forecast.rainChance)
         }
+        binding.tvDayWeather.setCompoundDrawablesRelativeWithIntrinsicBounds(forecast?.condition?.iconRes ?: 0, 0, 0, 0)
         binding.tvDayCost.isVisible = state.estimatedCost > 0
         binding.tvDayCost.text = getString(R.string.itinerary_estimated, Format.vnd(state.estimatedCost))
 

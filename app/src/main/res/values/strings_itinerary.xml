@@ -56,4 +56,7 @@
     <string name="reminder_status_blocked">Notifications are off for TripPocket reminders, so this reminder will not show</string>
     <string name="reminder_allow_notifications">Allow notifications</string>
     <string name="reminder_open_settings">Open notification settings</string>
+
+    <!-- W5: the trip has no saved place, so there is no forecast to show yet -->
+    <string name="itinerary_weather_no_place">Save a place in the Weather tab to see the forecast</string>
 </resources>

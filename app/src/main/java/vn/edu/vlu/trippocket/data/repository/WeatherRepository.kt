@@ -10,7 +10,6 @@ import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import retrofit2.HttpException
-import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.dao.SavedPlaceDao
 import vn.edu.vlu.trippocket.data.local.dao.WeatherCacheDao
 import vn.edu.vlu.trippocket.data.local.entity.SavedPlaceEntity
@@ -141,15 +140,6 @@ class WeatherRepository(
                 }
             }
         }
-
-    /**
-     * Sample places of [tripId] (MockData). Kept so the itinerary keeps working until W5
-     * replaces this and [forecast] with [observeDailyWeather].
-     */
-    fun savedPlaces(tripId: String): List<Place> = MockData.savedPlacesOf(tripId)
-
-    /** Sample forecast of [place] (MockData); W5 uses [observeDailyWeather] instead. */
-    fun forecast(place: Place): List<ForecastDay> = MockData.forecastFor(place)
 
     /**
      * Reads the JSON written by [refreshForecast]. A row with broken JSON (an older format, a
