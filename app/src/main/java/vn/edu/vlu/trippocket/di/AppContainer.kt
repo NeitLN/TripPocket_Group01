@@ -36,7 +36,7 @@ import vn.edu.vlu.trippocket.work.BackupScheduler
  */
 class AppContainer(context: Context) {
 
-    val database: AppDatabase by lazy { AppDatabase.build(context) }
+    val database: AppDatabase by lazy { AppDatabase.getInstance(context) }
 
     /** Replaced by the WorkManager scheduler in A3. */
     val backupScheduler: BackupScheduler = BackupScheduler { }

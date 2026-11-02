@@ -18,4 +18,8 @@ interface WeatherCacheDao {
 
     @Upsert
     suspend fun upsert(row: WeatherCacheEntity)
+
+    /** Drops the cached forecast of one place; the place itself stays saved. Returns the rows removed. */
+    @Query("DELETE FROM weather_cache WHERE placeId = :placeId")
+    suspend fun delete(placeId: String): Int
 }
