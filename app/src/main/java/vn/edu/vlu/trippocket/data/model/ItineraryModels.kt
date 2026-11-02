@@ -31,3 +31,11 @@ data class ActivityInput(
     /** null = no reminder; I4 sets the alarm. */
     val reminderMinutesBefore: Int? = null,
 )
+
+/** One item of the trip's packing list (I2): something to bring or to prepare. */
+data class ChecklistItem(
+    val itemId: String,
+    val tripId: String,
+    val title: String,
+    val isDone: Boolean,
+)

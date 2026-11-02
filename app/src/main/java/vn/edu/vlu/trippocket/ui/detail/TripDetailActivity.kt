@@ -3,6 +3,7 @@ package vn.edu.vlu.trippocket.ui.detail
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.view.View
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
 import androidx.appcompat.app.AppCompatActivity
@@ -93,6 +94,14 @@ class TripDetailActivity : AppCompatActivity() {
         graphSet = true
         navController.setGraph(R.navigation.nav_trip_detail)
         binding.bottomNav.setupWithNavController(navController)
+    }
+
+    /** Snackbars in the tabs sit above the bottom navigation instead of covering it. */
+    val snackbarAnchor: View get() = binding.bottomNav
+
+    /** Switches the bottom navigation to another tab, e.g. Itinerary's "Packing" button -> Checklist. */
+    fun showTab(menuItemId: Int) {
+        binding.bottomNav.selectedItemId = menuItemId
     }
 
     companion object {

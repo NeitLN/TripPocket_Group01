@@ -25,7 +25,7 @@ import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
@@ -71,7 +71,7 @@ class ItineraryViewModelTest {
     )
 
     private fun viewModel(handle: SavedStateHandle = handle()) =
-        ItineraryViewModel(handle, tripRepository, SampleTripRepository(), weather(), repository)
+        ItineraryViewModel(handle, tripRepository, ChecklistRepository(t.db.checklistDao(), t.writer), weather(), repository)
 
     private fun insert(id: String, dayIndex: Int, startTime: Int, cost: Long, orderIndex: Int) =
         ActivityEntity(id, MockData.TRIP_DALAT, dayIndex, "Activity $id", "", startTime, cost, "", orderIndex, null)
@@ -128,7 +128,7 @@ class ItineraryViewModelTest {
         val viewModel = ItineraryViewModel(
             SavedStateHandle(mapOf(ARG_TRIP_ID to "missing")),
             tripRepository,
-            SampleTripRepository(),
+            ChecklistRepository(t.db.checklistDao(), t.writer),
             weather(),
             repository,
         )
