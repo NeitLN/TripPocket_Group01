@@ -8,6 +8,7 @@ import androidx.appcompat.app.AppCompatActivity
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.databinding.ActivityMainBinding
+import vn.edu.vlu.trippocket.ui.ideas.TripIdeasActivity
 import vn.edu.vlu.trippocket.ui.login.LoginActivity
 import vn.edu.vlu.trippocket.util.applySystemBarPadding
 
@@ -30,6 +31,10 @@ class MainActivity : AppCompatActivity() {
             when (item.itemId) {
                 R.id.action_toggle_empty -> {
                     tripListViewModel.toggleEmptyPreview()
+                    true
+                }
+                R.id.action_trip_ideas -> {
+                    startActivity(TripIdeasActivity.newIntent(this))
                     true
                 }
                 R.id.action_sign_out -> {

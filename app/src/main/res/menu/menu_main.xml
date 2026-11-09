@@ -2,6 +2,13 @@
 <menu xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
+    <!-- Milestone 4: trips other users shared (MockAPI.io). -->
+    <item
+        android:id="@+id/action_trip_ideas"
+        android:icon="@drawable/ic_lightbulb"
+        android:title="@string/ideas_title"
+        app:showAsAction="ifRoom" />
+
     <!-- Demo helper so the empty state can be shown during review. -->
     <item
         android:id="@+id/action_toggle_empty"

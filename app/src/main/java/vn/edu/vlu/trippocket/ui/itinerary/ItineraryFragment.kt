@@ -130,6 +130,7 @@ class ItineraryFragment : Fragment() {
             override fun onTabReselected(tab: TabLayout.Tab) = Unit
         })
         binding.btnChecklist.setOnClickListener { (activity as? TripDetailActivity)?.showTab(R.id.nav_checklist) }
+        binding.btnSights.setOnClickListener { openNearbySights() }
         binding.fabAddActivity.setOnClickListener {
             if (viewModel.uiState.value.canAdd) {
                 findNavController().navigate(R.id.action_itinerary_to_form)
@@ -185,6 +186,17 @@ class ItineraryFragment : Fragment() {
         } else {
             getString(R.string.itinerary_limit_count, state.activityCount, Limits.MAX_ACTIVITIES)
         }
+    }
+
+    /**
+     * Opens the nearby sights of the trip's saved place. The day now selected in this tab is
+     * carried as a nav argument, so "Add to day" there writes to the same day the user sees.
+     */
+    private fun openNearbySights() {
+        findNavController().navigate(
+            R.id.action_itinerary_to_sights,
+            Bundle().apply { putInt(ARG_DAY_INDEX, viewModel.uiState.value.selectedDay) },
+        )
     }
 
     override fun onDestroyView() {

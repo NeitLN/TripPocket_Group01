@@ -151,11 +151,23 @@ class TripFormDialogFragment : DialogFragment() {
         const val RESULT_TRIP_ID = "trip_id"
         private const val TAG_DATE_PICKER = "trip_dates_picker"
 
-        /** [tripId] null = new trip. */
-        fun show(fragmentManager: FragmentManager, tripId: String? = null) {
+        /**
+         * [tripId] null = new trip. A new trip can start from [prefillName] and
+         * [prefillDestination] (a trip idea's "Plan this trip").
+         */
+        fun show(
+            fragmentManager: FragmentManager,
+            tripId: String? = null,
+            prefillName: String? = null,
+            prefillDestination: String? = null,
+        ) {
             if (fragmentManager.findFragmentByTag(TAG) != null) return
             TripFormDialogFragment().apply {
-                arguments = bundleOf(ARG_EDIT_TRIP_ID to tripId)
+                arguments = bundleOf(
+                    ARG_EDIT_TRIP_ID to tripId,
+                    ARG_PREFILL_NAME to prefillName,
+                    ARG_PREFILL_DESTINATION to prefillDestination,
+                )
             }.show(fragmentManager, TAG)
         }
 
