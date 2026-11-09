@@ -80,6 +80,9 @@ class TripIdeaFormViewModel(
     /** What the inputs hold now; kept here so rotation does not lose it. */
     private var fields = TripIdeaFields()
 
+    /** The idea as the GET returned it (edit only), so the PUT keeps its author. */
+    private var original: TripIdea? = null
+
     init {
         if (ideaId != null && !filled) loadIdea(ideaId)
     }
@@ -94,6 +97,7 @@ class TripIdeaFormViewModel(
         viewModelScope.launch {
             when (val result = repository.idea(id)) {
                 is ApiResult.Success -> {
+                    original = result.data
                     fields = result.data.toFields()
                     _uiState.update { it.copy(loading = false, fillFields = fields) }
                 }
@@ -128,7 +132,8 @@ class TripIdeaFormViewModel(
         }
         _uiState.update { it.copy(saving = true, saveError = null, problems = emptySet()) }
         viewModelScope.launch {
-            val result = if (ideaId == null) repository.share(input) else repository.update(ideaId, input)
+            // After process death [original] is gone; the repository then reads the idea again.
+            val result = if (ideaId == null) repository.share(input) else repository.update(ideaId, input, original)
             _uiState.update {
                 when (result) {
                     is ApiResult.Success -> it.copy(saving = false, saved = true)

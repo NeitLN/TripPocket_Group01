@@ -10,6 +10,8 @@ import vn.edu.vlu.trippocket.R
  * - [OFFLINE]: no connection (airplane mode, Wi-Fi off, DNS failure, connection refused).
  * - [TIMEOUT]: the server did not answer within the OkHttp timeouts.
  * - [BAD_REQUEST]: HTTP 400, the app sent something the server refused.
+ * - [FORBIDDEN]: HTTP 401 / 403, or a change the app refuses before sending it: no signed-in
+ *   account, or an item that another account owns (MockAPI itself does not check owners).
  * - [NOT_FOUND]: HTTP 404, the item or endpoint no longer exists.
  * - [RATE_LIMITED]: HTTP 429, too many requests for now.
  * - [SERVER]: HTTP 5xx, the service is having trouble.
@@ -19,6 +21,7 @@ enum class ApiError(@param:StringRes val messageRes: Int) {
     OFFLINE(R.string.api_error_offline),
     TIMEOUT(R.string.api_error_timeout),
     BAD_REQUEST(R.string.api_error_bad_request),
+    FORBIDDEN(R.string.api_error_forbidden),
     NOT_FOUND(R.string.api_error_not_found),
     RATE_LIMITED(R.string.api_error_rate_limited),
     SERVER(R.string.api_error_server),
@@ -28,6 +31,7 @@ enum class ApiError(@param:StringRes val messageRes: Int) {
         /** The error for an HTTP status that is not 2xx. */
         fun fromHttpStatus(code: Int): ApiError = when (code) {
             400 -> BAD_REQUEST
+            401, 403 -> FORBIDDEN
             404 -> NOT_FOUND
             429 -> RATE_LIMITED
             in 500..599 -> SERVER

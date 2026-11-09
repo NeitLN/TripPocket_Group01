@@ -25,6 +25,10 @@ import vn.edu.vlu.trippocket.data.repository.TripIdeaRepositoryTest.Companion.si
 import vn.edu.vlu.trippocket.data.repository.TripIdeaRepositoryTest.Companion.tripIdeaApiOn
 import vn.edu.vlu.trippocket.domain.ApiError
 import vn.edu.vlu.trippocket.domain.TripIdeaProblem
+import java.util.concurrent.TimeUnit
+import okhttp3.mockwebserver.RecordedRequest
+import okhttp3.mockwebserver.MockResponse
+import okhttp3.mockwebserver.Dispatcher
 
 /**
  * Milestone 4: the Loading / Success / Error states of the Trip Ideas list and form, with the
@@ -187,7 +191,7 @@ class TripIdeasViewModelTest {
 
     @Test
     fun form_edit_loadsTheIdea_thenPuts() = runBlocking {
-        server.enqueue(json(200, """{"id":"7","title":"Hoi An","destination":"Quang Nam","days":2,"budgetVnd":0}"""))
+        server.enqueue(json(200, """{"id":"7","title":"Hoi An","destination":"Quang Nam","days":2,"budgetVnd":0,"authorUid":"uid-1"}"""))
         server.enqueue(json(200, """{"id":"7","title":"Hoi An by night"}"""))
         val vm = form("7")
 
@@ -212,5 +216,40 @@ class TripIdeasViewModelTest {
         val state = form("7").uiState.await { !it.loading }
 
         assertTrue(state.notFound)
+    }
+
+    @Test
+    fun form_edit_ofAnotherAccountsIdea_isRefused_withoutAPut() = runBlocking {
+        server.enqueue(json(200, """{"id":"7","title":"Hoi An","destination":"Quang Nam","days":2,"authorUid":"uid-2"}"""))
+        val vm = form("7")
+        val loaded = vm.uiState.await { !it.loading }
+        vm.fieldsShown()
+        vm.onFieldsChanged(loaded.fillFields!!)
+
+        vm.save()
+
+        val state = vm.uiState.await { !it.saving && it.saveError != null }
+        assertEquals(ApiError.FORBIDDEN, state.saveError)
+        assertEquals(1, server.requestCount)
+    }
+
+    @Test
+    fun delete_duringAReload_theOldListDoesNotBringTheRowBack() = runBlocking {
+        server.enqueue(json(200, IDEAS_JSON))
+        val vm = TripIdeasViewModel(repository)
+        vm.uiState.await { !it.loading }
+        // From now on a GET answers late with the old list (row "1" still in it), a DELETE at once.
+        server.dispatcher = object : Dispatcher() {
+            override fun dispatch(request: RecordedRequest): MockResponse =
+                if (request.method == "GET") json(200, IDEAS_JSON).setBodyDelay(500, TimeUnit.MILLISECONDS)
+                else json(200, """{"id":"1","title":"x"}""")
+        }
+
+        vm.refresh()
+        vm.delete("1")
+
+        vm.uiState.await { it.message == TripIdeasMessage.Deleted }
+        val state = vm.uiState.await { !it.refreshing }
+        assertEquals(listOf("2"), state.ideas.map { it.idea.id })
     }
 }

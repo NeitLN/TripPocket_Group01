@@ -10,6 +10,7 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import vn.edu.vlu.trippocket.data.model.TripIdea
 import vn.edu.vlu.trippocket.data.model.TripIdeaInput
 import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.remote.mockapi.TripIdeaApi
@@ -80,17 +81,49 @@ class TripIdeaRepositoryTest {
     }
 
     @Test
-    fun update_putsToTheIdea() = runBlocking {
+    fun share_withoutAProfileName_isAnonymous_neverPartOfTheEmail() = runBlocking {
+        val noName = TripIdeaRepository(tripIdeaApiOn(server), FakeAuthRepository("uid-1"))
+        server.enqueue(json(201, """{"id":"9","title":"3 days in Da Lat"}"""))
+
+        noName.share(input)
+
+        assertTrue(server.takeRequest().body.readUtf8().contains("\"author\":\"Anonymous\""))
+    }
+
+    @Test
+    fun share_signedOut_isForbidden_andSendsNothing() = runBlocking {
+        val signedOut = TripIdeaRepository(tripIdeaApiOn(server), FakeAuthRepository(null))
+
+        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), signedOut.share(input))
+        assertEquals(0, server.requestCount)
+    }
+
+    @Test
+    fun update_readsTheIdea_thenPutsWithItsOriginalAuthor() = runBlocking {
+        server.enqueue(json(200, """{"id":"7","title":"Hoi An","author":"Tien V","authorUid":"uid-1"}"""))
         server.enqueue(json(200, """{"id":"7","title":"3 days in Da Lat","authorUid":"uid-1"}"""))
 
         val result = repository.update("7", input)
 
+        assertEquals("GET", server.takeRequest().method)
         val request = server.takeRequest()
         assertEquals("PUT", request.method)
         assertEquals("/ideas/7", request.path)
+        val body = request.body.readUtf8()
+        // The author stays the one who shared it, not the current profile name ("tien").
+        assertTrue(body, body.contains("\"author\":\"Tien V\""))
+        assertTrue(body, body.contains("\"authorUid\":\"uid-1\""))
         // An edit keeps the original date: createdAt is not sent.
-        assertTrue(!request.body.readUtf8().contains("createdAt"))
+        assertTrue(!body.contains("createdAt"))
         assertTrue(result is ApiResult.Success)
+    }
+
+    @Test
+    fun update_ofAnotherAccountsIdea_isForbidden_andSendsNothing() = runBlocking {
+        val theirs = idea(authorUid = "uid-2")
+
+        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), repository.update("7", input, theirs))
+        assertEquals(0, server.requestCount)
     }
 
     @Test
@@ -112,19 +145,38 @@ class TripIdeaRepositoryTest {
     @Test
     fun delete_sendsDelete_andAnAlreadyDeletedIdeaCountsAsDone() = runBlocking {
         server.enqueue(json(200, """{"id":"7","title":"x"}"""))
-        assertEquals(ApiResult.Success(Unit), repository.delete("7"))
+        assertEquals(ApiResult.Success(Unit), repository.delete("7", idea()))
         val request = server.takeRequest()
         assertEquals("DELETE", request.method)
         assertEquals("/ideas/7", request.path)
 
         server.enqueue(json(404, "\"Not found\""))
+        assertEquals(ApiResult.Success(Unit), repository.delete("7", idea()))
+    }
+
+    @Test
+    fun delete_withoutTheRow_readsItFirst_andAMissingIdeaIsDone() = runBlocking {
+        server.enqueue(json(200, """{"id":"7","title":"x","authorUid":"uid-1"}"""))
+        server.enqueue(json(200, """{"id":"7","title":"x"}"""))
         assertEquals(ApiResult.Success(Unit), repository.delete("7"))
+        assertEquals("GET", server.takeRequest().method)
+        assertEquals("DELETE", server.takeRequest().method)
+
+        server.enqueue(json(404, "\"Not found\""))
+        assertEquals(ApiResult.Success(Unit), repository.delete("8"))
+        assertEquals(3, server.requestCount)
+    }
+
+    @Test
+    fun delete_ofAnotherAccountsIdea_isForbidden_andSendsNothing() = runBlocking {
+        assertEquals(ApiResult.Failure(ApiError.FORBIDDEN), repository.delete("7", idea(authorUid = "uid-2")))
+        assertEquals(0, server.requestCount)
     }
 
     @Test
     fun delete_serverError_isReported() = runBlocking {
         server.enqueue(json(500, "{}"))
-        assertEquals(ApiResult.Failure(ApiError.SERVER), repository.delete("7"))
+        assertEquals(ApiResult.Failure(ApiError.SERVER), repository.delete("7", idea()))
     }
 
     @Test
@@ -132,6 +184,11 @@ class TripIdeaRepositoryTest {
         server.enqueue(json(400, """{"msg":"bad"}"""))
         assertEquals(ApiResult.Failure(ApiError.BAD_REQUEST), repository.share(input))
     }
+
+    private fun idea(authorUid: String? = "uid-1") = TripIdea(
+        id = "7", title = "Hoi An", destination = "Quang Nam", days = 2, budgetVnd = 0,
+        coverUrl = null, summary = "", author = "tien", authorUid = authorUid,
+    )
 
     companion object {
         val IDEAS_JSON = """

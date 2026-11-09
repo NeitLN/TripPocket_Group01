@@ -65,8 +65,9 @@ class TripFormViewModel(
         TripFormUiState(
             editing = tripId != null,
             loading = tripId != null,
-            name = savedStateHandle.get<String>(ARG_PREFILL_NAME).orEmpty(),
-            destination = savedStateHandle.get<String>(ARG_PREFILL_DESTINATION).orEmpty(),
+            // The prefill comes from a remote trip idea, so it is cut to what the form accepts.
+            name = savedStateHandle.get<String>(ARG_PREFILL_NAME).orEmpty().trim().take(Limits.MAX_TEXT),
+            destination = savedStateHandle.get<String>(ARG_PREFILL_DESTINATION).orEmpty().trim().take(Limits.MAX_TEXT),
         )
     )
     val uiState: StateFlow<TripFormUiState> = _uiState.asStateFlow()

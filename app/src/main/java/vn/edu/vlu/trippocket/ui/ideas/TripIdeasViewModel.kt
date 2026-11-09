@@ -57,6 +57,12 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
 
     private var loadJob: Job? = null
 
+    /**
+     * Ideas deleted from this screen. A load that started before the DELETE finished could still
+     * carry them, so every load result leaves them out.
+     */
+    private val deletedIds = mutableSetOf<String>()
+
     init {
         load()
     }
@@ -87,7 +93,7 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
                     is ApiResult.Success -> state.copy(
                         loading = false,
                         refreshing = false,
-                        ideas = result.data.map { it.toCard() },
+                        ideas = result.data.filterNot { it.id in deletedIds }.map { it.toCard() },
                         error = null,
                     )
                     // Keep the rows of the last good load so a failed refresh hides nothing.
@@ -97,12 +103,17 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
         }
     }
 
-    /** DELETE /ideas/{id}; the row leaves the list only once the server confirms. */
+    /**
+     * DELETE /ideas/{id}; the row leaves the list only once the server confirms. The repository
+     * refuses an idea another account shared (only the owner's rows offer Delete anyway).
+     */
     fun delete(id: String) {
         if (id in _uiState.value.deleting) return
+        val known = _uiState.value.ideas.firstOrNull { it.idea.id == id }?.idea
         _uiState.update { it.copy(deleting = it.deleting + id) }
         viewModelScope.launch {
-            val result = repository.delete(id)
+            val result = repository.delete(id, known)
+            if (result is ApiResult.Success) deletedIds += id
             _uiState.update { state ->
                 when (result) {
                     is ApiResult.Success -> state.copy(
