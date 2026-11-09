@@ -13,6 +13,7 @@ import vn.edu.vlu.trippocket.data.local.entity.ExpenseShareEntity
 import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.Expense
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
+import vn.edu.vlu.trippocket.data.model.TripBalances
 import vn.edu.vlu.trippocket.data.model.TripMember
 import vn.edu.vlu.trippocket.data.model.TripTotals
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
@@ -55,6 +56,13 @@ class ExpenseRepository(
     /** Newest first, each with its shares. */
     fun observeExpenses(tripId: String): Flow<List<Expense>> =
         expenseDao.observeWithShares(tripId).map { rows -> rows.map(::toModel) }
+
+    /**
+     * E3 (Bảo): who paid what, who owes whom, and the suggested payments, recomputed from Room
+     * whenever a member or an expense of the trip changes.
+     */
+    fun observeBalances(tripId: String): Flow<TripBalances> =
+        combine(observeMembers(tripId), observeExpenses(tripId), ExpenseCalculator::summarize)
 
     /** tripId -> member count and total spent, for the trip cards (Tiến). Missing trips have neither. */
     fun observeTripTotals(): Flow<Map<String, TripTotals>> = combine(
@@ -150,6 +158,9 @@ class ExpenseRepository(
      * Debug builds only, until E1 adds the members screen: copies the sample members and
      * expenses of the sample trips into Room (same ids as TripRepository.seedSampleTrips).
      * Not a user change, so it does not go through TripWriter.
+     *
+     * Each expense gets its own createdAt, 1 ms apart in sample order, as if typed in one by
+     * one: ordering by createdAt (the list, the backup snapshot) then has no ties.
      */
     suspend fun seedSampleExpenses(now: Long) {
         MockData.trips.forEach { trip ->
@@ -157,12 +168,12 @@ class ExpenseRepository(
             MockData.membersOf(trip.tripId).forEach {
                 memberDao.insert(TripMemberEntity(it.memberId, it.tripId, it.name, it.orderIndex))
             }
-            MockData.expensesOf(trip.tripId).forEach { expense ->
+            MockData.expensesOf(trip.tripId).forEachIndexed { index, expense ->
                 val input = ExpenseInput(
                     expense.title, expense.amount, expense.payerId, expense.category,
                     expense.splitType, expense.spentAt, expense.shares,
                 )
-                expenseDao.insert(toEntity(expense.expenseId, trip.tripId, input, createdAt = now))
+                expenseDao.insert(toEntity(expense.expenseId, trip.tripId, input, createdAt = now + index))
                 expenseDao.insertShares(toShares(expense.expenseId, input))
             }
         }

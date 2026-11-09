@@ -2,16 +2,18 @@ package vn.edu.vlu.trippocket.reminder
 
 import vn.edu.vlu.trippocket.data.local.dao.ActivityDao
 import vn.edu.vlu.trippocket.data.local.dao.ReminderCandidate
-import java.time.LocalDate
+import vn.edu.vlu.trippocket.domain.ReminderTime
 import java.time.ZoneId
 
 /**
  * I5 (proposal 3.2, docs/ARCHITECTURE.md "Thời gian"): rebuilds every reminder alarm from Room.
  *
- * Called after a reboot, a time zone change or a clock change (BootReceiver), and by the
- * Auth/Trips module on sign-in, sign-out, restore and when a trip's dates change.
- * Alarms do not survive a reboot, and times are floating local time ("09:00 on day 2" is
- * 09:00 wherever the phone is now), so every alarm is worked out again from the current zone.
+ * Called after a reboot, a time zone change, a clock change, or when the user allows exact
+ * alarms (BootReceiver), and by the Auth/Trips module on sign-in, sign-out, restore and when a
+ * trip's dates change. Alarms do not survive a reboot, and times are floating local time
+ * ("09:00 on day 2" is 09:00 wherever the phone is now), so every alarm is worked out again
+ * from the current zone. An alarm also keeps the mode it was set with, so setting it again is
+ * what turns an inexact reminder into an exact one once exact alarms are allowed.
  */
 class ReminderReconciler(
     private val activityDao: ActivityDao,
@@ -34,21 +36,32 @@ class ReminderReconciler(
         val now = now()
         val upcoming = candidates
             .filter { it.ownerUid == uid && !it.isDeleted }
-            .map { ScheduledReminder(it.activityId, it.tripId, it.title, triggerAtMillis(it, zone)) }
+            .map { it.toReminder(zone) }
             .filter { it.triggerAtMillis > now }
         upcoming.forEach(scheduler::schedule)
         return upcoming.size
     }
 
     /**
-     * Trip start date + dayIndex, at startTime on the wall clock of [zone], minus the lead time.
-     * Same rule as Bảo's ReminderTime.triggerAtMillis (I4); use that once it is merged.
+     * I4: brings the alarm of one activity in line with Room after it was added, edited or
+     * deleted. The old alarm is always cancelled; a new one is set only when the activity still
+     * has a reminder, belongs to [uid], its trip is not deleted and the time is still ahead.
+     * Returns true when an alarm is set.
      */
-    private fun triggerAtMillis(c: ReminderCandidate, zone: ZoneId): Long =
-        LocalDate.ofEpochDay(c.startDate + c.dayIndex)
-            .atTime(c.startTime / 60, c.startTime % 60)
-            .atZone(zone)
-            .minusMinutes(c.reminderMinutesBefore.toLong())
-            .toInstant()
-            .toEpochMilli()
+    suspend fun syncActivity(activityId: String, uid: String?): Boolean {
+        scheduler.cancel(activityId)
+        val candidate = activityDao.reminderCandidate(activityId) ?: return false
+        if (uid == null || candidate.ownerUid != uid || candidate.isDeleted) return false
+        val reminder = candidate.toReminder(zone())
+        if (reminder.triggerAtMillis <= now()) return false
+        scheduler.schedule(reminder)
+        return true
+    }
+
+    private fun ReminderCandidate.toReminder(zone: ZoneId) = ScheduledReminder(
+        activityId = activityId,
+        tripId = tripId,
+        title = title,
+        triggerAtMillis = ReminderTime.triggerAtMillis(startDate, dayIndex, startTime, reminderMinutesBefore, zone),
+    )
 }

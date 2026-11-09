@@ -1,7 +1,9 @@
 package vn.edu.vlu.trippocket.domain
 
 import vn.edu.vlu.trippocket.data.model.Expense
+import vn.edu.vlu.trippocket.data.model.MemberPosition
 import vn.edu.vlu.trippocket.data.model.Settlement
+import vn.edu.vlu.trippocket.data.model.TripBalances
 import vn.edu.vlu.trippocket.data.model.TripMember
 
 /**
@@ -53,6 +55,27 @@ object ExpenseCalculator {
 
     fun shareOf(memberId: String, expenses: List<Expense>): Long =
         expenses.sumOf { it.shares[memberId] ?: 0L }
+
+    /**
+     * E3: balances and suggested payments of a trip in one pass. Members come out in their
+     * fixed order (`orderIndex`), which also breaks ties in [settle], so the same data always
+     * gives the same payments.
+     */
+    fun summarize(members: List<TripMember>, expenses: List<Expense>): TripBalances {
+        val ordered = members.sortedBy { it.orderIndex }
+        val balances = balances(ordered, expenses)
+        return TripBalances(
+            positions = ordered.map { member ->
+                MemberPosition(
+                    member = member,
+                    paid = paidBy(member.memberId, expenses),
+                    share = shareOf(member.memberId, expenses),
+                    balance = balances[member.memberId] ?: 0L,
+                )
+            },
+            settlements = settle(balances),
+        )
+    }
 
     /**
      * Greedy settlement: repeatedly match the member who owes the most with the

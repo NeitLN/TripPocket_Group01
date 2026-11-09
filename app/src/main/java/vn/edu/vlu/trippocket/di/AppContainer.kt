@@ -1,6 +1,8 @@
 package vn.edu.vlu.trippocket.di
 
 import android.content.Context
+import com.google.firebase.FirebaseApp
+import com.google.firebase.auth.FirebaseAuth
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
@@ -9,9 +11,11 @@ import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
+import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
+import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
@@ -19,9 +23,9 @@ import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
-import vn.edu.vlu.trippocket.reminder.ScheduledReminder
 import vn.edu.vlu.trippocket.work.BackupScheduler
 
 /**
@@ -33,7 +37,7 @@ import vn.edu.vlu.trippocket.work.BackupScheduler
  */
 class AppContainer(context: Context) {
 
-    val database: AppDatabase by lazy { AppDatabase.build(context) }
+    val database: AppDatabase by lazy { AppDatabase.getInstance(context) }
 
     /** Replaced by the WorkManager scheduler in A3. */
     val backupScheduler: BackupScheduler = BackupScheduler { }
@@ -42,8 +46,25 @@ class AppContainer(context: Context) {
         TripWriter(database, TripChangeTracker(database.tripDao()), backupScheduler)
     }
 
-    /** Replaced by the Firebase Auth repository in A1. */
-    val authRepository: AuthRepository = DevAuthRepository()
+    /**
+     * True when the app was built without `app/google-services.json` (CI, a fresh clone), so
+     * Firebase did not initialise and sign-in is the offline stand-in that owns the sample trips.
+     */
+    val usesDevAuth: Boolean by lazy { FirebaseApp.getApps(context).isEmpty() }
+
+    /**
+     * Firebase Auth (A1), created on first use like every Firebase service (docs/ARCHITECTURE.md).
+     * The stand-in, always signed in as DevAuthRepository.DEV_UID, exists only in debug builds:
+     * a release build without the Firebase config fails loudly instead of silently never
+     * signing in or backing up.
+     */
+    val authRepository: AuthRepository by lazy {
+        when {
+            !usesDevAuth -> FirebaseAuthRepository(FirebaseAuth.getInstance())
+            BuildConfig.DEBUG -> DevAuthRepository()
+            else -> error("Release build without app/google-services.json: Firebase is not configured")
+        }
+    }
 
     val tripRepository: TripRepository by lazy {
         TripRepository(
@@ -60,8 +81,14 @@ class AppContainer(context: Context) {
     }
 
     /** I1: the activities of a trip, in Room. */
+    val checklistRepository: ChecklistRepository by lazy {
+        ChecklistRepository(database.checklistDao(), tripWriter)
+    }
+
     val itineraryRepository: ItineraryRepository by lazy {
-        ItineraryRepository(database.activityDao(), tripWriter)
+        ItineraryRepository(database.activityDao(), tripWriter) { activityId ->
+            reminderReconciler.syncActivity(activityId, authRepository.currentUid.value)
+        }
     }
 
     /** Mock data for the module screens until they move to Room. */
@@ -86,11 +113,8 @@ class AppContainer(context: Context) {
     /** Retrofit for https://api.open-meteo.com/ (daily forecast). */
     val forecastRetrofit: Retrofit by lazy { retrofit("https://api.open-meteo.com/") }
 
-    /** Replaced by the AlarmManager scheduler in I4. */
-    val reminderScheduler: ReminderScheduler = object : ReminderScheduler {
-        override fun schedule(reminder: ScheduledReminder) = Unit
-        override fun cancel(activityId: String) = Unit
-    }
+    /** I4: activity alarms on AlarmManager (exact when allowed, inexact otherwise). */
+    val reminderScheduler: ReminderScheduler = AlarmReminderScheduler(context)
 
     /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
     val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
