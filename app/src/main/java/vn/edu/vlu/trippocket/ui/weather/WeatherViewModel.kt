@@ -10,6 +10,9 @@ import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,6 +22,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flow
@@ -33,17 +37,19 @@ import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.CachedForecast
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.Place
+import vn.edu.vlu.trippocket.data.model.PlaceInfo
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.repository.InvalidPlaceException
+import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
-import vn.edu.vlu.trippocket.data.repository.toWeatherError
+import vn.edu.vlu.trippocket.domain.ApiError
 import vn.edu.vlu.trippocket.domain.LimitExceededException
 import vn.edu.vlu.trippocket.domain.Limits
-import vn.edu.vlu.trippocket.domain.WeatherError
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.Instant
 import java.time.LocalDate
@@ -57,15 +63,30 @@ sealed interface SearchState {
 
     data object Loading : SearchState
 
-    /** Matches from Open-Meteo; never empty (that is [Empty]). */
-    data class Results(val places: List<Place>) : SearchState
+    /**
+     * Matches from Open-Meteo, never empty (that is [Empty]). [results] carry the Wikipedia
+     * photo of each place; it is filled in a moment after the list itself appears.
+     */
+    data class Results(val results: List<SearchResult>) : SearchState {
+        /** The places alone, for code that only saves one. */
+        val places: List<Place> get() = results.map { it.place }
+    }
 
     /** The API answered with no match: "No places found". */
     data object Empty : SearchState
 
     /** The request failed; the screen offers Try again and the sentence for [error]. */
-    data class Error(val error: WeatherError) : SearchState
+    data class Error(val error: ApiError) : SearchState
 }
+
+/**
+ * One row of the search dropdown (Milestone 4): the place and its Wikipedia photo. [photoUrl]
+ * is null when there is no article or no thumbnail, and the row then shows the default image.
+ */
+data class SearchResult(
+    val place: Place,
+    val photoUrl: String? = null,
+)
 
 /**
  * The result of saving a search result, shown once as a snackbar and then cleared with
@@ -110,6 +131,28 @@ data class SavedPlacesUiState(
     val selectedNote: String get() = selected?.note.orEmpty()
 }
 
+/**
+ * The "About this place" card (Milestone 4): the Wikipedia summary of the selected place. Kept
+ * apart from [ForecastUiState], with its own Loading / Error, so a slow or missing article never
+ * changes the forecast. Every field is null when the trip has no selected place: the card is
+ * then hidden.
+ */
+data class PlaceInfoUiState(
+    /** null when there is no selected place. */
+    val placeName: String? = null,
+    val loading: Boolean = false,
+    /** null when Wikipedia has no article for this place: the card shows nothing. */
+    val info: PlaceInfo? = null,
+    /** Why the summary failed; null when it did not. */
+    val error: ApiError? = null,
+) {
+    /** true when there is a place to describe; the screen hides the whole card otherwise. */
+    val visible: Boolean get() = placeName != null
+
+    /** true when there is an introduction to show under the photo. */
+    val hasExtract: Boolean get() = !info?.extract.isNullOrBlank()
+}
+
 data class ForecastUiState(
     /** null when the trip has no saved place yet. */
     val place: SavedPlace? = null,
@@ -118,7 +161,7 @@ data class ForecastUiState(
     /** true while a download runs but the cache below is still displayed. */
     val refreshing: Boolean = false,
     /** Why the last download failed; null when it did not. */
-    val error: WeatherError? = null,
+    val error: ApiError? = null,
     val lastUpdated: LocalDateTime? = null,
     val rows: List<ForecastRow> = emptyList(),
 ) {
@@ -168,12 +211,17 @@ data class ForecastRow(val date: LocalDate, val tripDay: Int?, val forecast: For
  * H: a forecast older than [FORECAST_MAX_AGE_MS] is downloaded again when its place is shown,
  * once per place, and a failure keeps the cache on screen. Every download goes through
  * [download], which drops a second request for a place that is already downloading.
+ *
+ * Milestone 4: each search result also carries a Wikipedia photo (the first
+ * [MAX_PHOTO_LOOKUPS] places, side by side), and the selected place has its own "About this
+ * place" state from [placeInfoRepository]. One place whose summary fails only loses its photo.
  */
 class WeatherViewModel(
     savedStateHandle: SavedStateHandle,
     tripRepository: TripRepository,
     private val weatherRepository: WeatherRepository,
     private val savedPlaceRepository: SavedPlaceRepository,
+    private val placeInfoRepository: PlaceInfoRepository,
     private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
@@ -246,6 +294,21 @@ class WeatherViewModel(
     )
         .stateIn(viewModelScope, SharingStarted.Eagerly, ForecastUiState())
 
+    /** Retry needs its own signal: the same place emitted again would change nothing. */
+    private val placeInfoRetry = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+
+    /**
+     * The "About this place" card follows the selected place, with its own Loading / Success /
+     * Error. A rename changes the Wikipedia title, so it loads again; a note edit does not.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val placeInfo: StateFlow<PlaceInfoUiState> = merge(
+        _places.map { it.selected }
+            .distinctUntilChangedBy { place -> place?.let { it.placeId to it.name } },
+        placeInfoRetry.map { _places.value.selected },
+    )
+        .flatMapLatest(::placeInfoFlow)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, PlaceInfoUiState())
 
     init {
         if (tripId.isNotEmpty()) {
@@ -268,6 +331,11 @@ class WeatherViewModel(
     /** The Try again button under a [SearchState.Error]: runs the current query once more. */
     fun retrySearch() {
         searchRetry.tryEmit(Unit)
+    }
+
+    /** The Try again button of the About card: loads the selected place's summary again. */
+    fun retryPlaceInfo() {
+        placeInfoRetry.tryEmit(Unit)
     }
 
     /**
@@ -381,7 +449,9 @@ class WeatherViewModel(
 
     /**
      * One search per query: blank clears the dropdown, otherwise Loading then Results/Empty.
-     * A cancelled search (the user typed on) is not an error and is rethrown.
+     * Results are emitted twice: once as soon as the places arrive (photo placeholders) and once
+     * with the Wikipedia photos, which download side by side. [safeApiCall] returns the failure
+     * instead of throwing, so every emit below stays outside a try (flow exception transparency).
      */
     private fun searchFlow(query: String): Flow<SearchState> = flow {
         if (query.isBlank()) {
@@ -389,19 +459,57 @@ class WeatherViewModel(
             return@flow
         }
         emit(SearchState.Loading)
-        // emit stays outside the try, so a failure downstream is never caught here (flow
-        // exception transparency).
-        val result = try {
-            val places = weatherRepository.searchPlaces(query)
-            if (places.isEmpty()) SearchState.Empty else SearchState.Results(places)
-        } catch (e: CancellationException) {
-            throw e
-        } catch (e: Exception) {
-            // IOException, HttpException and JSON errors keep their kind, so the screen can say
-            // whether it is the connection, the rate limit or the service.
-            SearchState.Error(e.toWeatherError())
+        val places = when (val result = weatherRepository.searchPlaces(query)) {
+            is ApiResult.Success -> result.data
+            is ApiResult.Failure -> {
+                emit(SearchState.Error(result.error))
+                return@flow
+            }
         }
-        emit(result)
+        if (places.isEmpty()) {
+            emit(SearchState.Empty)
+            return@flow
+        }
+        emit(SearchState.Results(places.map { SearchResult(it) }))
+        emit(SearchState.Results(withPhotos(places)))
+    }
+
+    /**
+     * The first [MAX_PHOTO_LOOKUPS] places with their Wikipedia photo, loaded side by side in
+     * this flow's scope (the ViewModel scope). A place whose summary fails, or that has no
+     * article, keeps a null [SearchResult.photoUrl]: one bad row never hides the others.
+     */
+    private suspend fun withPhotos(places: List<Place>): List<SearchResult> = coroutineScope {
+        places.mapIndexed { index, place ->
+            async {
+                val photo = if (index < MAX_PHOTO_LOOKUPS) photoOf(place.name) else null
+                SearchResult(place, photo)
+            }
+        }.awaitAll()
+    }
+
+    private suspend fun photoOf(name: String): String? =
+        when (val result = placeInfoRepository.placeInfo(name)) {
+            is ApiResult.Success -> result.data?.imageUrl
+            // No article (404 is already Success(null)) or a failed request: default image.
+            is ApiResult.Failure -> null
+        }
+
+    /**
+     * The About card of [place]: Loading, then the summary or the reason it could not be loaded.
+     * Cancelled and restarted by [flatMapLatest] when the selected place changes.
+     */
+    private fun placeInfoFlow(place: SavedPlace?): Flow<PlaceInfoUiState> = flow {
+        if (place == null) {
+            emit(PlaceInfoUiState())
+            return@flow
+        }
+        emit(PlaceInfoUiState(placeName = place.name, loading = true))
+        val state = when (val result = placeInfoRepository.placeInfo(place.name)) {
+            is ApiResult.Success -> PlaceInfoUiState(placeName = place.name, info = result.data)
+            is ApiResult.Failure -> PlaceInfoUiState(placeName = place.name, error = result.error)
+        }
+        emit(state)
     }
 
     /** Finds the stored place (W2 may have cleaned its name) and downloads its forecast. */
@@ -423,13 +531,9 @@ class WeatherViewModel(
         if (!downloading.add(place.placeId)) return
         try {
             refresh.value = Refresh(place.placeId, RefreshStatus.LOADING)
-            var error: WeatherError? = null
-            try {
-                weatherRepository.refreshForecast(place)
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
-                error = e.toWeatherError()
+            val error = when (val result = weatherRepository.refreshForecast(place)) {
+                is ApiResult.Success -> null
+                is ApiResult.Failure -> result.error
             }
             refresh.value = Refresh(
                 place.placeId,
@@ -483,6 +587,9 @@ class WeatherViewModel(
         /** A cached forecast older than this is downloaded again when its place is shown. */
         private const val FORECAST_MAX_AGE_MS = 6L * 60 * 60 * 1000
 
+        /** Only the first search results get a Wikipedia photo, like the API will show. */
+        private const val MAX_PHOTO_LOOKUPS = 10
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 WeatherViewModel(
@@ -490,6 +597,7 @@ class WeatherViewModel(
                     appContainer().tripRepository,
                     appContainer().weatherRepository,
                     appContainer().savedPlaceRepository,
+                    appContainer().placeInfoRepository,
                 )
             }
         }
@@ -502,7 +610,7 @@ private data class Loaded(val place: SavedPlace?, val cached: CachedForecast?)
 private data class Refresh(
     val placeId: String,
     val status: RefreshStatus,
-    val error: WeatherError? = null,
+    val error: ApiError? = null,
 )
 
 private enum class RefreshStatus { IDLE, LOADING, FAILED }

@@ -9,5 +9,4 @@
     <string name="api_error_server">The server is having trouble (5xx). Try again later.</string>
     <string name="api_error_bad_response">The server sent an answer the app could not read.</string>
     <string name="api_retry">Retry</string>
-    <string name="cd_image_loading_failed">Image could not be loaded</string>
 </resources>
