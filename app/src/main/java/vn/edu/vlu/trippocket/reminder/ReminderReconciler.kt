@@ -8,10 +8,12 @@ import java.time.ZoneId
 /**
  * I5 (proposal 3.2, docs/ARCHITECTURE.md "Thời gian"): rebuilds every reminder alarm from Room.
  *
- * Called after a reboot, a time zone change or a clock change (BootReceiver), and by the
- * Auth/Trips module on sign-in, sign-out, restore and when a trip's dates change.
- * Alarms do not survive a reboot, and times are floating local time ("09:00 on day 2" is
- * 09:00 wherever the phone is now), so every alarm is worked out again from the current zone.
+ * Called after a reboot, a time zone change, a clock change, or when the user allows exact
+ * alarms (BootReceiver), and by the Auth/Trips module on sign-in, sign-out, restore and when a
+ * trip's dates change. Alarms do not survive a reboot, and times are floating local time
+ * ("09:00 on day 2" is 09:00 wherever the phone is now), so every alarm is worked out again
+ * from the current zone. An alarm also keeps the mode it was set with, so setting it again is
+ * what turns an inexact reminder into an exact one once exact alarms are allowed.
  */
 class ReminderReconciler(
     private val activityDao: ActivityDao,

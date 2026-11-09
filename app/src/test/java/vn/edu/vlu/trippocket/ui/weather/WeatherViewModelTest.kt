@@ -38,12 +38,14 @@ import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.Trip
+import vn.edu.vlu.trippocket.data.model.TripInput
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi.Companion.of
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingResult
 import vn.edu.vlu.trippocket.data.repository.PlaceProblem
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
+import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
@@ -85,8 +87,22 @@ class WeatherViewModelTest {
         now = { clock },
     )
 
+    private var newTripId = 0
+    private val trips = TripRepository(
+        t.db.tripDao(),
+        FakeAuthRepository(TestDatabase.OWNER),
+        t.writer,
+        newId = { "new-${++newTripId}" },
+    )
+
     @Before
-    fun setUp() = runBlocking { t.db.tripDao().insert(t.trip(tripId)) }
+    fun setUp() = runBlocking {
+        // The sample trip's dates, so the forecast days line up with the trip days below.
+        val sample = MockData.trip(tripId)!!
+        t.db.tripDao().insert(
+            t.trip(tripId).copy(startDate = sample.startDate.toEpochDay(), endDate = sample.endDate.toEpochDay())
+        )
+    }
 
     @After
     fun tearDown() {
@@ -99,13 +115,14 @@ class WeatherViewModelTest {
     /** Main uses the runTest scheduler, so debounce and requests run on virtual time. */
     private fun TestScope.newViewModel(
         api: FakeGeocodingApi = FakeGeocodingApi { listOf(dalat) },
+        trip: String = tripId,
     ): WeatherViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
         val factory = viewModelFactory {
             initializer {
                 WeatherViewModel(
-                    SavedStateHandle(mapOf(ARG_TRIP_ID to tripId)),
-                    SampleTripRepository(),
+                    SavedStateHandle(mapOf(ARG_TRIP_ID to trip)),
+                    trips,
                     WeatherRepository(api, forecastApi, t.db.weatherCacheDao(), t.db.savedPlaceDao(), now = { clock }),
                     savedPlaces,
                     now = { clock },
@@ -276,6 +293,50 @@ class WeatherViewModelTest {
         assertEquals(1, places.places.size)
         assertEquals(places.places.single().placeId, places.selectedPlaceId)
         assertEquals(places.places.single().placeId, state.place?.placeId)
+    }
+
+    @Test
+    fun aTripCreatedInTheApp_savesAPlace_andShowsItsForecastOnTheTripDays(): Unit = runTest {
+        // A2: a trip that exists only in Room, not in the sample data.
+        val created = trips.createTrip(TripInput("Da Lat Test", "Da Lat", day1, day1.plusDays(2)))
+        val viewModel = newViewModel(trip = created)
+        forecastApi.response = of(day1, day1.plusDays(1), maxTemp = 24)
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+
+        val state = viewModel.forecast.first { it.hasForecast }
+        assertEquals("Da Lat", state.place?.name)
+        assertEquals(SaveMessage.Saved("Da Lat"), viewModel.places.value.message)
+        assertEquals(1, savedPlaces.observePlaces(created).first().size)
+        // Two forecast days, then the third trip day with no forecast yet.
+        assertEquals(listOf(1, 2, 3), state.rows.map { it.tripDay })
+        assertNull(state.rows.last().forecast)
+    }
+
+    @Test
+    fun editingTheTripDates_movesTheTripDayLabels(): Unit = runTest {
+        val created = trips.createTrip(TripInput("Da Lat Test", "Da Lat", day1, day1.plusDays(1)))
+        forecastApi.response = of(day1, day1.plusDays(1))
+        val viewModel = newViewModel(trip = created)
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+        viewModel.forecast.first { it.hasForecast && it.rows.map(ForecastRow::tripDay) == listOf(1, 2) }
+
+        // The trip now starts a day later: the first forecast day is before the trip.
+        trips.updateTrip(created, TripInput("Da Lat Test", "Da Lat", day1.plusDays(1), day1.plusDays(2)))
+
+        val moved = viewModel.forecast.first { it.rows.firstOrNull()?.tripDay == null && it.hasForecast }
+        assertEquals(listOf(null, 1, 2), moved.rows.map { it.tripDay })
+    }
+
+    @Test
+    fun aTripThatDoesNotExist_reportsTheSaveAsFailed(): Unit = runTest {
+        val viewModel = newViewModel(trip = "missing")
+
+        viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
+
+        assertEquals(SaveMessage.Failed, viewModel.places.first { it.message != null }.message)
+        assertEquals(ForecastUiState(), viewModel.forecast.value)
+        assertTrue(forecastApi.requests.isEmpty())
     }
 
     @Test

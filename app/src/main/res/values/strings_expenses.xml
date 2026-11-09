@@ -27,6 +27,7 @@
 
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>
+    <string name="expenses_of_planned_over">of %1$s planned · %2$s over</string>
     <string name="expenses_category_food">Food</string>
     <string name="expenses_category_stay">Stay</string>
     <string name="expenses_category_transport">Transport</string>
@@ -76,6 +77,7 @@
     <string name="expense_error_amount">Enter an amount above 0</string>
     <string name="expense_error_payer">Choose who paid</string>
     <string name="expense_error_participants">Pick at least one person to split with</string>
+    <string name="expense_error_equal_too_small">Each person needs at least 1 ₫. Raise the amount or split with fewer people.</string>
     <string name="expense_error_custom_sum">The shares must add up to the amount</string>
     <string name="expense_error_custom_number">Enter each share as a whole number of dong</string>
     <string name="expense_error_member">A member in this split is no longer in the trip</string>

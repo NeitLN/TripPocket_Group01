@@ -149,7 +149,9 @@ class ExpenseFormFragment : Fragment() {
             row.tvShare.text = equalShares[memberId]?.let(Format::vnd).orEmpty()
         }
 
+        // Someone at 0 dong is refused on save; say so while the amount is typed, not only then.
         val error = state.splitError
+            ?: R.string.expense_error_equal_too_small.takeIf { !custom && equalShares.values.any { it == 0L } }
         binding.tvSplitStatus.text = when {
             error != null -> getString(error)
             !custom -> equalShares.values.maxOrNull()?.let { getString(R.string.expense_split_equal_status, Format.vnd(it)) }.orEmpty()

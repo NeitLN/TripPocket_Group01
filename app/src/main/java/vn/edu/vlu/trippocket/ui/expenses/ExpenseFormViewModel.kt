@@ -124,7 +124,8 @@ class ExpenseFormViewModel(
 
     fun setTitle(text: String) = _state.update { it.copy(title = text, titleError = null) }
 
-    fun setAmount(text: String) = _state.update { it.copy(amountText = text.trim(), amountError = null) }
+    // The split errors depend on the amount too, so a new amount clears them.
+    fun setAmount(text: String) = _state.update { it.copy(amountText = text.trim(), amountError = null, splitError = null) }
 
     fun setPayer(memberId: String) = _state.update { it.copy(payerId = memberId, payerError = null) }
 
@@ -156,6 +157,9 @@ class ExpenseFormViewModel(
         val splitError = when {
             amount == null -> null
             state.splitType == SplitType.EQUAL && shares == null -> R.string.expense_error_participants
+            // A 0 dong share is not stored, so editing later would drop that person from the split.
+            state.splitType == SplitType.EQUAL && shares != null && shares.values.any { it == 0L } ->
+                R.string.expense_error_equal_too_small
             shares == null -> R.string.expense_error_custom_number
             ExpenseCalculator.validateCustomSplit(amount, shares) != null -> R.string.expense_error_custom_sum
             else -> null

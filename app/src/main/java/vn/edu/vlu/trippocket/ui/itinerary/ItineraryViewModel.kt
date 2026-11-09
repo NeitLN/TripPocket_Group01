@@ -13,7 +13,9 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.appContainer
@@ -76,22 +78,28 @@ class ItineraryViewModel(
     /**
      * Eagerly, so the screen always has a state to read and a tab tap is never missed.
      * [flatMapLatest] cancels the queries of the previous day when another day is selected.
+     *
+     * Each list of activities carries the day it was read for. Right after a tab change the
+     * selected day is already new while Room is still answering for the old one; that moment
+     * emits nothing, so the screen never shows the old day's activities and "Est." under the new
+     * tab (issue #35, 3.2), nor an empty day in between: it goes straight to the new day's list.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<ItineraryUiState> = combine(
         tripRepository.observeTrip(tripId),
         selectedDay,
-        selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day) },
+        selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day).map { DayActivities(day, it) } },
         itineraryRepository.observeActivities(tripId),
         checklistRepository.observe(tripId),
-    ) { trip, day, activities, all, checklist ->
+    ) { trip, day, dayActivities, all, checklist ->
         dayCount = trip?.dayCount ?: 0
         if (trip == null) return@combine ItineraryUiState()
         // A trip made shorter (A2) or a restored tab past the end: fall back to the last day.
         val shown = day.coerceIn(0, dayCount - 1)
         if (shown != day) selectDay(shown)
-        state(trip, shown, if (shown == day) activities else emptyList(), all.size, checklist)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
+        if (dayActivities.day != shown) return@combine null
+        state(trip, shown, dayActivities.activities, all.size, checklist)
+    }.filterNotNull().stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
 
     fun selectDay(dayIndex: Int) {
         val day = dayIndex.coerceIn(0, (dayCount - 1).coerceAtLeast(0))
@@ -170,3 +178,6 @@ class ItineraryViewModel(
         }
     }
 }
+
+/** The activities of one day, tagged with the day they were read for. */
+private data class DayActivities(val day: Int, val activities: List<ItineraryActivity>)
