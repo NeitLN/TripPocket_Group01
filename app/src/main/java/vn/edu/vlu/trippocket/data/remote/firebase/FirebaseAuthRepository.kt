@@ -49,6 +49,9 @@ class FirebaseAuthRepository(private val auth: FirebaseAuth) : AuthRepository {
         auth.signOut()
     }
 
+    override val displayName: String?
+        get() = auth.currentUser?.email?.substringBefore('@')
+
     /** One Firebase call, with its error translated; a cancelled screen is not an auth error. */
     private suspend fun call(block: suspend () -> Unit) {
         try {

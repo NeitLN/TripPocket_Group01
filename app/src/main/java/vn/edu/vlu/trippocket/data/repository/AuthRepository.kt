@@ -27,6 +27,9 @@ interface AuthRepository {
 
     /** Ends the session; trips saved on this phone stay in Room (proposal 6.2). */
     suspend fun signOut()
+
+    /** Short name of the signed-in account for what it shares (Trip Ideas): the part of the email before "@". */
+    val displayName: String? get() = null
 }
 
 /** A failed auth call, already translated to an app-level [problem]. */
@@ -53,6 +56,8 @@ class DevAuthRepository : AuthRepository {
     override suspend fun signOut() {
         _currentUid.value = null
     }
+
+    override val displayName: String? get() = currentUid.value?.let { "dev" }
 
     companion object {
         const val DEV_UID = "dev-user"
