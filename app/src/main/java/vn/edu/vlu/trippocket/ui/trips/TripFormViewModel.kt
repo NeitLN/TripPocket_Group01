@@ -24,6 +24,10 @@ import java.time.LocalDate
 /** Argument of the trip to edit; absent when creating one. */
 const val ARG_EDIT_TRIP_ID = "edit_trip_id"
 
+/** Name and destination a new trip starts with ("Plan this trip" on a trip idea, Milestone 4). */
+const val ARG_PREFILL_NAME = "prefill_name"
+const val ARG_PREFILL_DESTINATION = "prefill_destination"
+
 data class TripFormUiState(
     val editing: Boolean = false,
     /** true while the trip to edit is read from Room. */
@@ -57,7 +61,14 @@ class TripFormViewModel(
 
     private val tripId: String? = savedStateHandle[ARG_EDIT_TRIP_ID]
 
-    private val _uiState = MutableStateFlow(TripFormUiState(editing = tripId != null, loading = tripId != null))
+    private val _uiState = MutableStateFlow(
+        TripFormUiState(
+            editing = tripId != null,
+            loading = tripId != null,
+            name = savedStateHandle.get<String>(ARG_PREFILL_NAME).orEmpty(),
+            destination = savedStateHandle.get<String>(ARG_PREFILL_DESTINATION).orEmpty(),
+        )
+    )
     val uiState: StateFlow<TripFormUiState> = _uiState.asStateFlow()
 
     init {

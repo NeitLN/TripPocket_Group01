@@ -12,6 +12,7 @@ import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
+import vn.edu.vlu.trippocket.data.remote.mockapi.TripIdeaApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.remote.wikipedia.PageSummaryApi
@@ -23,12 +24,14 @@ import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
+import vn.edu.vlu.trippocket.data.repository.TripIdeaRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
 import vn.edu.vlu.trippocket.work.BackupScheduler
+import vn.edu.vlu.trippocket.util.APP_USER_AGENT
 import java.util.concurrent.TimeUnit
 
 /**
@@ -140,6 +143,11 @@ class AppContainer(context: Context) {
     /** Retrofit for the team's MockAPI.io project (Trip Ideas CRUD, Milestone 4). */
     val mockApiRetrofit: Retrofit by lazy { retrofit(BuildConfig.MOCKAPI_BASE_URL) }
 
+    /** Trip Ideas on MockAPI.io (Milestone 4, Tiến). */
+    val tripIdeaRepository: TripIdeaRepository by lazy {
+        TripIdeaRepository(mockApiRetrofit.create(TripIdeaApi::class.java), authRepository)
+    }
+
     /**
      * One OkHttp client for every API (Milestone 4): explicit timeouts so a dead network ends in
      * ApiError.TIMEOUT instead of a spinner that never stops, and a User-Agent naming the app
@@ -153,7 +161,7 @@ class AppContainer(context: Context) {
             .addInterceptor { chain ->
                 chain.proceed(
                     chain.request().newBuilder()
-                        .header("User-Agent", "TripPocket/${BuildConfig.VERSION_NAME} (Android; VLU student project)")
+                        .header("User-Agent", APP_USER_AGENT)
                         .build()
                 )
             }

@@ -43,6 +43,11 @@
             android:exported="false"
             android:parentActivityName=".ui.trips.MainActivity" />
 
+        <activity
+            android:name=".ui.ideas.TripIdeasActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trips.MainActivity" />
+
         <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false" />
