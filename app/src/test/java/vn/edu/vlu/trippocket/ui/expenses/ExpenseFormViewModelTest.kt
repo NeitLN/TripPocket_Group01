@@ -292,13 +292,46 @@ class ExpenseFormViewModelTest {
         viewModel.setPaidInAmount("10")
         assertEquals("250000", viewModel.state.value.amountText)
 
-        // User manually edits VND: VND stays as edited
+        // User manually edits VND: VND stays as edited, and the USD amount follows it
         viewModel.setAmount("300000")
+        assertEquals("300000", viewModel.state.value.amountText)
+        assertEquals("12", viewModel.state.value.paidInAmountText)
+
+        // The field echoing the new USD amount back does not convert it again
+        viewModel.setPaidInAmount("12")
         assertEquals("300000", viewModel.state.value.amountText)
 
         // Modifying foreign amount again recalculates and overwrites VND
         viewModel.setPaidInAmount("20")
         assertEquals("500000", viewModel.state.value.amountText)
+    }
+
+    @Test
+    fun paidIn_currencyChangeAfterAVndEdit_convertsWhatTheFormShows() = runBlocking {
+        val viewModel = form()
+        viewModel.setPaidInCurrency("USD")
+        viewModel.setPaidInAmount("10")
+        viewModel.setAmount("270000")
+        assertEquals("10.8", viewModel.state.value.paidInAmountText)
+
+        // 10.8 EUR at 25000 / 0.9 = 27,777.78 VND each -> 300,000 VND, not the stale 10 USD
+        viewModel.setPaidInCurrency("EUR")
+        assertEquals("300000", viewModel.state.value.amountText)
+    }
+
+    @Test
+    fun paidIn_vndEditedBeforeRatesArrive_isNotOverwrittenByThem() = runBlocking {
+        fakeExchangeRateApi.error = IOException("Offline")
+        val viewModel = form()
+        viewModel.setPaidInCurrency("USD")
+        viewModel.setPaidInAmount("10")
+
+        viewModel.setAmount("300000")
+        assertEquals("", viewModel.state.value.paidInAmountText)
+
+        fakeExchangeRateApi.error = null
+        viewModel.retryRates()
+        assertEquals("300000", viewModel.state.value.amountText)
     }
 
     @Test

@@ -1,5 +1,7 @@
 package vn.edu.vlu.trippocket.domain
 
+import java.math.BigDecimal
+import java.math.RoundingMode
 import kotlin.math.roundToLong
 
 /**
@@ -19,5 +21,17 @@ object CurrencyConverter {
     fun toVnd(amount: Double, rateToVnd: Double): Long {
         if (amount.isNaN() || rateToVnd.isNaN() || rateToVnd <= 0.0 || amount <= 0.0) return 0L
         return (amount * rateToVnd).roundToLong()
+    }
+
+    /**
+     * The foreign amount worth [vnd] at [rateToVnd], rounded to 2 decimals and written the way the
+     * "Paid in" field accepts it ("12", "10.5", "29.99"). "" when the rate is not usable.
+     */
+    fun fromVnd(vnd: Long, rateToVnd: Double): String {
+        if (rateToVnd.isNaN() || rateToVnd.isInfinite() || rateToVnd <= 0.0 || vnd <= 0L) return ""
+        return BigDecimal.valueOf(vnd)
+            .divide(BigDecimal.valueOf(rateToVnd), 2, RoundingMode.HALF_UP)
+            .stripTrailingZeros()
+            .toPlainString()
     }
 }

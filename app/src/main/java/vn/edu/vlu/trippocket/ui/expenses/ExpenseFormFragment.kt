@@ -85,6 +85,11 @@ class ExpenseFormFragment : Fragment() {
             binding.etAmount.setText(state.amountText)
             binding.etAmount.setSelection(state.amountText.length)
         }
+        // The ViewModel rewrites the "Paid in" amount after a VND edit, so it is rendered too.
+        if (binding.etPaidInAmount.text?.toString() != state.paidInAmountText) {
+            binding.etPaidInAmount.setText(state.paidInAmountText)
+            binding.etPaidInAmount.setSelection(state.paidInAmountText.length)
+        }
 
         when {
             state.paidInCurrency == null -> {

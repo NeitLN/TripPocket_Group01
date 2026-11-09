@@ -59,4 +59,20 @@ class CurrencyConverterTest {
         // 1,000,000 USD
         assertEquals(25_611_000_000L, CurrencyConverter.toVnd(1_000_000.0, 25611.0))
     }
+
+    @Test
+    fun fromVnd_twoDecimals_withoutTrailingZeros() {
+        assertEquals("12", CurrencyConverter.fromVnd(300_000, 25_000.0))
+        assertEquals("10.8", CurrencyConverter.fromVnd(270_000, 25_000.0))
+        // 768,347 / 25,612 = 29.99996... -> 30
+        assertEquals("30", CurrencyConverter.fromVnd(768_347, 25_612.0))
+        assertEquals("1851.85", CurrencyConverter.fromVnd(300_000, 162.0))
+    }
+
+    @Test
+    fun fromVnd_unusableRateOrAmount_isBlank() {
+        assertEquals("", CurrencyConverter.fromVnd(300_000, 0.0))
+        assertEquals("", CurrencyConverter.fromVnd(300_000, Double.NaN))
+        assertEquals("", CurrencyConverter.fromVnd(0, 25_000.0))
+    }
 }

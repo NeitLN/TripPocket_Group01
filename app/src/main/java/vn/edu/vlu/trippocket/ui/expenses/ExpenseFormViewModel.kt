@@ -137,8 +137,18 @@ class ExpenseFormViewModel(
 
     fun setTitle(text: String) = _state.update { it.copy(title = text, titleError = null) }
 
-    // The split errors depend on the amount too, so a new amount clears them.
-    fun setAmount(text: String) = _state.update { it.copy(amountText = text.trim(), amountError = null, splitError = null) }
+    /**
+     * The VND amount as typed. The split errors depend on the amount too, so a new amount clears
+     * them. The field also echoes back what [recalculateVndFromPaidIn] wrote; that echo changes
+     * nothing. A real edit makes VND the source: the "Paid in" amount follows it
+     * ([syncPaidInFromVnd]), so a later currency change converts what the form shows.
+     */
+    fun setAmount(text: String) {
+        val typed = text.trim()
+        if (typed == _state.value.amountText) return
+        _state.update { it.copy(amountText = typed, amountError = null, splitError = null) }
+        syncPaidInFromVnd()
+    }
 
     fun setPayer(memberId: String) = _state.update { it.copy(payerId = memberId, payerError = null) }
 
@@ -166,6 +176,8 @@ class ExpenseFormViewModel(
     }
 
     fun setPaidInAmount(text: String) {
+        // Echo of a value [syncPaidInFromVnd] wrote: converting it back would undo the VND edit.
+        if (text == _state.value.paidInAmountText) return
         _state.update { it.copy(paidInAmountText = text) }
         recalculateVndFromPaidIn()
     }
@@ -199,6 +211,21 @@ class ExpenseFormViewModel(
         if (vnd > 0L) {
             _state.update { it.copy(amountText = vnd.toString(), amountError = null, splitError = null) }
         }
+    }
+
+    /**
+     * After the user typed VND: the "Paid in" amount becomes VND / rate (2 decimals), so both
+     * fields agree. Without a rate yet the old foreign amount is cleared instead; otherwise the
+     * rates arriving later would convert it and overwrite the VND just typed.
+     */
+    private fun syncPaidInFromVnd() {
+        val state = _state.value
+        val currency = state.paidInCurrency ?: return
+        if (state.paidInAmountText.isBlank() && state.amount == null) return
+        val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd?.takeIf { it > 0.0 }
+        val vnd = state.amount
+        val foreign = if (rate == null || vnd == null) "" else CurrencyConverter.fromVnd(vnd, rate)
+        _state.update { it.copy(paidInAmountText = foreign) }
     }
 
     private fun parseForeignAmount(text: String): Double? {
