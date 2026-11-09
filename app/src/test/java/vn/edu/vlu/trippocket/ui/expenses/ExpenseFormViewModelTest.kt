@@ -24,8 +24,13 @@ import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
 import vn.edu.vlu.trippocket.data.model.SplitType
+import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateApi
+import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateResponse
+import vn.edu.vlu.trippocket.data.repository.ExchangeRateRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
+import vn.edu.vlu.trippocket.domain.ApiError
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
+import java.io.IOException
 import java.time.LocalDate
 
 /** E2 form: validation, equal/custom split and saving through the repository. Owner: Minh. */
@@ -33,13 +38,49 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 class ExpenseFormViewModelTest {
 
+    private class FakeExchangeRateApi : ExchangeRateApi {
+        var callCount = 0
+        var response: ExchangeRateResponse? = null
+        var error: Exception? = null
+
+        override suspend fun getLatestRates(base: String): ExchangeRateResponse {
+            callCount++
+            error?.let { throw it }
+            return response ?: ExchangeRateResponse(
+                result = "success",
+                timeLastUpdateUtc = "Fri, 08 Nov 2026 00:00:00 +0000",
+                rates = mapOf(
+                    "USD" to 1.0,
+                    "VND" to 25_000.0,
+                    "EUR" to 0.9,
+                    "JPY" to 150.0,
+                    "KRW" to 1350.0,
+                    "THB" to 35.0,
+                    "SGD" to 1.35,
+                    "GBP" to 0.8,
+                    "AUD" to 1.5,
+                    "CNY" to 7.2,
+                    "TWD" to 32.0,
+                    "MYR" to 4.5,
+                    "IDR" to 16_000.0,
+                ),
+            )
+        }
+    }
+
     private val t = TestDatabase()
     private val repository = ExpenseRepository(t.db.tripMemberDao(), t.db.expenseDao(), t.writer)
+    private val fakeExchangeRateApi = FakeExchangeRateApi()
+    private val testDispatcher = UnconfinedTestDispatcher()
+    private val exchangeRateRepository = ExchangeRateRepository(fakeExchangeRateApi, testDispatcher)
     private val day = LocalDate.of(2026, 10, 16)
 
     @Before
     fun setUp() = runBlocking {
-        Dispatchers.setMain(UnconfinedTestDispatcher())
+        Dispatchers.setMain(testDispatcher)
+        fakeExchangeRateApi.callCount = 0
+        fakeExchangeRateApi.error = null
+        fakeExchangeRateApi.response = null
         t.db.tripDao().insert(t.trip("t1"))
         listOf("a", "b", "c").forEachIndexed { i, id ->
             t.db.tripMemberDao().insert(TripMemberEntity(id, "t1", id.uppercase(), i))
@@ -55,7 +96,7 @@ class ExpenseFormViewModelTest {
     private suspend fun form(expenseId: String? = null): ExpenseFormViewModel {
         val args = mutableMapOf<String, Any?>(ARG_TRIP_ID to "t1")
         if (expenseId != null) args[ExpenseFormViewModel.ARG_EXPENSE_ID] = expenseId
-        val viewModel = ExpenseFormViewModel(SavedStateHandle(args), repository) { day }
+        val viewModel = ExpenseFormViewModel(SavedStateHandle(args), repository, exchangeRateRepository) { day }
         withTimeout(5_000) { viewModel.state.first { !it.loading } }
         return viewModel
     }
@@ -193,5 +234,96 @@ class ExpenseFormViewModelTest {
         viewModel.delete()
         viewModel.awaitDone()
         assertEquals(0, t.db.expenseDao().countByTrip("t1"))
+    }
+
+    @Test
+    fun init_doesNotCallExchangeRates() = runBlocking {
+        form()
+        assertEquals(0, fakeExchangeRateApi.callCount)
+    }
+
+    @Test
+    fun editExpense_preservesAmountTextAndDoesNotCallExchangeRates() = runBlocking {
+        val id = repository.addExpense(
+            "t1",
+            ExpenseInput("Cà phê", 140_000, "a", ExpenseCategory.FOOD, SplitType.CUSTOM, day,
+                mapOf("a" to 40_000L, "b" to 50_000L, "c" to 50_000L)),
+        )
+        val viewModel = form(id)
+        val loaded = viewModel.state.value
+        assertEquals("140000", loaded.amountText)
+        assertNull(loaded.paidInCurrency)
+        assertEquals(0, fakeExchangeRateApi.callCount)
+    }
+
+    @Test
+    fun paidIn_commaAndDotBothConvert() = runBlocking {
+        val viewModel = form()
+        viewModel.setPaidInCurrency("USD")
+        assertEquals(1, fakeExchangeRateApi.callCount)
+
+        // 1 USD = 25,000 VND -> 10.5 USD = 262,500 VND
+        viewModel.setPaidInAmount("10.5")
+        assertEquals("262500", viewModel.state.value.amountText)
+
+        // Comma decimal separator: 10,5 USD = 262,500 VND
+        viewModel.setPaidInAmount("10,5")
+        assertEquals("262500", viewModel.state.value.amountText)
+
+        // Invalid or non-positive strings do not overwrite amountText
+        viewModel.setPaidInAmount("invalid")
+        assertEquals("262500", viewModel.state.value.amountText)
+
+        viewModel.setPaidInAmount("-5")
+        assertEquals("262500", viewModel.state.value.amountText)
+
+        // Switching currency recalculates using already fetched rates without calling API again
+        // 9 EUR: EUR rate is 25000 / 0.9 = 27777.777... -> 9 * rate = 250,000 VND
+        viewModel.setPaidInAmount("9")
+        viewModel.setPaidInCurrency("EUR")
+        assertEquals(1, fakeExchangeRateApi.callCount)
+        assertEquals("250000", viewModel.state.value.amountText)
+    }
+
+    @Test
+    fun paidIn_manualVndEditWins() = runBlocking {
+        val viewModel = form()
+        viewModel.setPaidInCurrency("USD")
+        viewModel.setPaidInAmount("10")
+        assertEquals("250000", viewModel.state.value.amountText)
+
+        // User manually edits VND: VND stays as edited
+        viewModel.setAmount("300000")
+        assertEquals("300000", viewModel.state.value.amountText)
+
+        // Modifying foreign amount again recalculates and overwrites VND
+        viewModel.setPaidInAmount("20")
+        assertEquals("500000", viewModel.state.value.amountText)
+    }
+
+    @Test
+    fun paidIn_ratesError_allowsRetryAndDoesNotBlockSave() = runBlocking {
+        fakeExchangeRateApi.error = IOException("Offline")
+        val viewModel = form()
+
+        viewModel.setPaidInCurrency("USD")
+        assertEquals(1, fakeExchangeRateApi.callCount)
+        assertEquals(ApiError.OFFLINE, viewModel.state.value.ratesError)
+        assertFalse(viewModel.state.value.ratesLoading)
+
+        // Retrying triggers network call again
+        viewModel.retryRates()
+        assertEquals(2, fakeExchangeRateApi.callCount)
+
+        // Network error does not block entering VND and saving to Room
+        viewModel.setTitle("Bữa tối")
+        viewModel.setAmount("200000")
+        viewModel.save()
+        viewModel.awaitDone()
+
+        assertEquals(1, t.db.expenseDao().countByTrip("t1"))
+        val saved = repository.observeExpenses("t1").first().first()
+        assertEquals("Bữa tối", saved.title)
+        assertEquals(200_000L, saved.amount)
     }
 }

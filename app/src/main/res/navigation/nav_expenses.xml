@@ -16,6 +16,9 @@
         <action
             android:id="@+id/action_expenses_to_members"
             app:destination="@id/membersFragment" />
+        <action
+            android:id="@+id/action_expenses_to_exchangeRates"
+            app:destination="@id/exchangeRatesFragment" />
     </fragment>
 
     <!-- E2: add (no expenseId) or edit (expenseId of the row). -->
@@ -35,5 +38,11 @@
         android:id="@+id/membersFragment"
         android:name="vn.edu.vlu.trippocket.ui.members.MembersFragment"
         android:label="@string/members_title" />
+
+    <!-- M4: exchange rates and foreign currency conversion (Minh/Duy Anh). -->
+    <fragment
+        android:id="@+id/exchangeRatesFragment"
+        android:name="vn.edu.vlu.trippocket.ui.expenses.ExchangeRatesFragment"
+        android:label="@string/exchange_rates_title" />
 
 </navigation>
