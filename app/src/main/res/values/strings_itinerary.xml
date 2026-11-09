@@ -77,4 +77,21 @@
     <string name="checklist_error_too_long">Keep it under 80 characters.</string>
     <string name="checklist_error_limit">The list is full: 100 items per trip.</string>
     <string name="checklist_error_generic">Could not save that change. Try again.</string>
+
+    <!-- Nearby sights (Milestone 4) -->
+    <string name="sights_title">Nearby sights</string>
+    <string name="sights_subtitle">Within 10 km of %1$s</string>
+    <string name="sights_subtitle_any">Within 10 km of this trip\'s place</string>
+    <string name="sights_entry_desc">Nearby sights</string>
+    <string name="sights_loading">Looking for nearby sights</string>
+    <string name="sights_distance_m">%1$d m</string>
+    <string name="sights_distance_km">%1$.1f km</string>
+    <string name="sights_add_to_day">Add to day</string>
+    <string name="sights_add_desc">Add %1$s to the day</string>
+    <string name="sights_added">Added to Day %1$d</string>
+    <string name="sights_add_failed">Could not add this sight. Try again.</string>
+    <string name="sights_empty_title">No sights nearby</string>
+    <string name="sights_empty_body">Wikipedia has no article within 10 km of this place. Pull down to check again.</string>
+    <string name="sights_no_place_title">Add a place first</string>
+    <string name="sights_no_place_body">Save a place in Weather, then come back to see what is nearby.</string>
 </resources>

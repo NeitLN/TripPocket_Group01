@@ -15,6 +15,7 @@ import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
 import vn.edu.vlu.trippocket.data.remote.mockapi.TripIdeaApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
+import vn.edu.vlu.trippocket.data.remote.wikipedia.GeoSearchApi
 import vn.edu.vlu.trippocket.data.remote.wikipedia.PageSummaryApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
@@ -24,6 +25,7 @@ import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
+import vn.edu.vlu.trippocket.data.repository.SightRepository
 import vn.edu.vlu.trippocket.data.repository.TripIdeaRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
@@ -116,6 +118,11 @@ class AppContainer(context: Context) {
     /** M4: photos and a short introduction of a place, from Wikipedia. */
     val placeInfoRepository by lazy {
         PlaceInfoRepository(wikipediaRetrofit.create(PageSummaryApi::class.java))
+    }
+
+    /** M4: nearby sights around the trip's saved place, from Wikipedia GeoSearch. */
+    val sightRepository by lazy {
+        SightRepository(wikipediaRetrofit.create(GeoSearchApi::class.java))
     }
 
     /** Retrofit for https://geocoding-api.open-meteo.com/ (place search). */
