@@ -666,6 +666,9 @@ class WeatherViewModelTest {
         viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
         val first = viewModel.places.first { it.places.size == 1 }.places.single()
         viewModel.forecast.first { it.place?.placeId == first.placeId && it.hasForecast }
+        // The screen clears the snackbar message; without this, Room's list of two places can
+        // arrive before the second save selects its place, still carrying the first Saved message.
+        viewModel.messageShown()
 
         viewModel.pickPlace(Place("Da Lat", "Oregon", "United States", oregon.first, oregon.second))
 

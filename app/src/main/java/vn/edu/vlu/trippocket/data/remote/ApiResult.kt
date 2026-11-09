@@ -26,7 +26,9 @@ sealed interface ApiResult<out T> {
  * - [HttpException] (a non-2xx status) by its code: 400, 404, 429, 5xx, anything else.
  * - [SocketTimeoutException] to TIMEOUT, any other [IOException] (no network, airplane mode,
  *   unknown host) to OFFLINE.
- * - JSON the converter could not read to BAD_RESPONSE.
+ * - JSON the converter could not read to BAD_RESPONSE. Broken JSON is an IOException inside
+ *   Gson, so the app's Retrofits use [ReadFirstConverterFactory], which turns it into an
+ *   [UnreadableResponseException] before it gets here.
  *
  * Cancellation is rethrown so leaving the screen still cancels the request.
  */

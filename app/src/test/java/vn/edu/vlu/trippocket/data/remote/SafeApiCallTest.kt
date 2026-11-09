@@ -12,7 +12,6 @@ import org.junit.Assert.assertEquals
 import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import retrofit2.http.GET
 import vn.edu.vlu.trippocket.domain.ApiError
 import java.util.concurrent.TimeUnit
@@ -20,7 +19,7 @@ import java.util.concurrent.TimeUnit
 /**
  * Milestone 4: [safeApiCall] against a real HTTP server on localhost (MockWebServer), so the
  * status codes, the timeout and the broken JSON go through the same Retrofit + OkHttp + Gson
- * stack as the app.
+ * stack as the app, with the same converter (ReadFirstConverterFactory over Gson).
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 class SafeApiCallTest {
@@ -42,7 +41,7 @@ class SafeApiCallTest {
         api = Retrofit.Builder()
             .baseUrl(server.url("/"))
             .client(OkHttpClient.Builder().readTimeout(300, TimeUnit.MILLISECONDS).build())
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(ReadFirstConverterFactory.gson())
             .build()
             .create(ItemApi::class.java)
     }
@@ -117,6 +116,38 @@ class SafeApiCallTest {
         enqueue(200, """{"not":"a list"}""")
         call()
         assertEquals(ApiResult.Failure(ApiError.BAD_RESPONSE), lastResult)
+    }
+
+    @Test
+    fun jsonCutShort_isBadResponse_notOffline() {
+        enqueue(200, """[{"id":"1","title":"Da""")
+        call()
+        assertEquals(ApiResult.Failure(ApiError.BAD_RESPONSE), lastResult)
+    }
+
+    @Test
+    fun anAnswerThatIsNotJson_isBadResponse_notOffline() {
+        enqueue(200, "<html>Bad gateway</html>")
+        call()
+        assertEquals(ApiResult.Failure(ApiError.BAD_RESPONSE), lastResult)
+    }
+
+    @Test
+    fun anEmptyBody_isBadResponse_notOffline() {
+        enqueue(200, "")
+        call()
+        assertEquals(ApiResult.Failure(ApiError.BAD_RESPONSE), lastResult)
+    }
+
+    @Test
+    fun theConnectionDroppingWhileTheBodyArrives_isStillOffline() {
+        server.enqueue(
+            MockResponse()
+                .setBody("""[{"id":"1","title":"Da Lat"},{"id":"2","title":"Hoi An"}]""")
+                .setSocketPolicy(SocketPolicy.DISCONNECT_DURING_RESPONSE_BODY),
+        )
+        call()
+        assertEquals(ApiResult.Failure(ApiError.OFFLINE), lastResult)
     }
 
     @Test
