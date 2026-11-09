@@ -3,7 +3,8 @@
     One Geocoding search result in the Weather search dropdown.
     The whole row is the flat ConstraintLayout itself (no card), with a
     ripple background and a 56dp minimum height for an easy touch target.
-    Name and region end where the coordinates begin.
+    The Wikipedia photo (or the default image) comes first, then the name and
+    region, which end where the coordinates begin.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -16,16 +17,18 @@
     android:paddingVertical="@dimen/space_sm"
     tools:ignore="Overdraw">
 
-    <ImageView
-        android:id="@+id/ivPin"
-        android:layout_width="@dimen/icon_size_md"
-        android:layout_height="@dimen/icon_size_md"
+    <!-- Milestone 4: Wikipedia thumbnail, replaced with a default image when there is no photo -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivThumbnail"
+        android:layout_width="56dp"
+        android:layout_height="56dp"
         android:contentDescription="@null"
-        android:src="@drawable/ic_place"
+        android:scaleType="centerCrop"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:tint="?attr/colorPrimary" />
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.TripPocket.Corner12"
+        tools:src="@drawable/ic_photo" />
 
     <TextView
         android:id="@+id/tvResultName"
@@ -35,7 +38,7 @@
         android:textAppearance="?attr/textAppearanceBodyLarge"
         app:layout_constraintBottom_toTopOf="@id/tvResultRegion"
         app:layout_constraintEnd_toStartOf="@id/tvResultCoords"
-        app:layout_constraintStart_toEndOf="@id/ivPin"
+        app:layout_constraintStart_toEndOf="@id/ivThumbnail"
         app:layout_constraintTop_toTopOf="parent"
         app:layout_constraintVertical_chainStyle="packed"
         tools:text="Đà Lạt" />

@@ -27,6 +27,8 @@ import vn.edu.vlu.trippocket.ui.detail.TripDetailViewModel
 import vn.edu.vlu.trippocket.ui.detail.TripGate
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import vn.edu.vlu.trippocket.util.Format
+import vn.edu.vlu.trippocket.util.clearRemote
+import vn.edu.vlu.trippocket.util.loadRemote
 
 /** Screen 4: place search, saved places and the cached forecast (see [WeatherViewModel]). */
 class WeatherFragment : Fragment() {
@@ -102,6 +104,7 @@ class WeatherFragment : Fragment() {
         }
         binding.btnRetry.setOnClickListener { viewModel.retry() }
         binding.btnSearchRetry.setOnClickListener { viewModel.retrySearch() }
+        binding.btnAboutRetry.setOnClickListener { viewModel.retryPlaceInfo() }
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
         binding.btnEmptySearch.setOnClickListener {
             binding.etSearch.requestFocus()
@@ -123,11 +126,12 @@ class WeatherFragment : Fragment() {
                 }
                 launch {
                     viewModel.search.collect { state ->
-                        resultAdapter.submitList((state as? SearchState.Results)?.places.orEmpty())
+                        resultAdapter.submitList((state as? SearchState.Results)?.results.orEmpty())
                         renderSearch(state)
                     }
                 }
                 launch { viewModel.places.collect(::renderPlaces) }
+                launch { viewModel.placeInfo.collect(::renderPlaceInfo) }
                 launch {
                     viewModel.forecast.collect { state ->
                         forecastAdapter.submitList(state.rows)
@@ -147,13 +151,53 @@ class WeatherFragment : Fragment() {
     }
 
     private fun renderSearch(state: SearchState) {
-        val results = (state as? SearchState.Results)?.places.orEmpty()
+        val results = (state as? SearchState.Results)?.results.orEmpty()
         binding.rvResults.isVisible = results.isNotEmpty()
         binding.progressSearch.isVisible = state is SearchState.Loading
         binding.tvNoResults.isVisible = state is SearchState.Empty
         binding.layoutSearchError.isVisible = state is SearchState.Error
         if (state is SearchState.Error) {
             binding.tvSearchError.setText(state.error.messageRes)
+        }
+    }
+
+    /**
+     * The "About this place" card (Wikipedia). Only three states reach the screen: Loading, Info
+     * (the article arrived, even if it has no introduction) and Error. A load that finished with
+     * no article at all (HTTP 404, or a page with no summary and no photo, so info == null) hides
+     * the whole card: no empty card, no error.
+     */
+    private fun renderPlaceInfo(state: PlaceInfoUiState) {
+        val info = state.info
+        val error = state.error
+        val loading = state.loading
+
+        binding.vAboutPanel.isVisible = loading || info != null || error != null
+        binding.progressAbout.isVisible = loading
+
+        // Info: the photo stays even when the article has no introduction; the text lines then
+        // hide on their own and the card is exactly as tall as the photo.
+        binding.ivAboutPhoto.isVisible = info != null
+        binding.tvAboutExtract.isVisible = info != null && state.hasExtract
+        // The photo is Wikipedia content too, so the source line stays even without an introduction.
+        binding.tvAboutSource.isVisible = info != null
+
+        binding.tvAboutError.isVisible = error != null
+        binding.btnAboutRetry.isVisible = error != null
+        if (error != null) binding.tvAboutError.setText(error.messageRes)
+
+        if (info != null) {
+            val placeName = state.placeName.orEmpty()
+            binding.ivAboutPhoto.loadRemote(info.imageUrl, R.drawable.ic_photo, R.drawable.ic_photo)
+            // A missing thumbnail shows the default image, which needs no description.
+            binding.ivAboutPhoto.contentDescription = info.imageUrl?.let {
+                getString(R.string.weather_photo_of, placeName)
+            }
+            binding.tvAboutExtract.text = info.extract
+        } else {
+            // Loading, error or hidden: the photo of the previous place must not stay behind.
+            binding.ivAboutPhoto.clearRemote()
+            binding.ivAboutPhoto.contentDescription = null
         }
     }
 
@@ -268,6 +312,7 @@ class WeatherFragment : Fragment() {
     }
 
     override fun onDestroyView() {
+        binding.ivAboutPhoto.clearRemote()
         super.onDestroyView()
         _binding = null
     }

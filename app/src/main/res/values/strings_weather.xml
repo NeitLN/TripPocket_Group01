@@ -37,6 +37,10 @@
     <string name="weather_place_not_found">This place is no longer in the trip</string>
     <string name="weather_coordinates">%1$.2f, %2$.2f</string>
 
+    <!-- Wikipedia photo and "About this place" card (Milestone 4) -->
+    <string name="weather_about_source">From Wikipedia</string>
+    <string name="weather_photo_of">Photo of %1$s</string>
+
     <!-- Saved place options and dialogs (WP) -->
     <string name="weather_place_action_rename">Rename place</string>
     <string name="weather_place_action_note">Edit note</string>
