@@ -12,9 +12,16 @@
     - Header: 80dp FrameLayout slot (@dimen/sticker_slot) with clipChildren=false
       containing TripStickerView 64dp, title + subtitle, barrierHeaderBottom.
     - Last updated + "Offline copy" badge: packed horizontal chain, bias 0.
-    - barrierForecastTop (direction=bottom) sits under the panel OR under the
-      error row when it is visible, so the swipeRefresh moves down only when
-      there is an error to show.
+    - barrierTodaySection (direction=bottom) sits under the panel OR under the
+      error row when it is visible, so the "About this place" card moves down
+      only when there is an error to show.
+    - The About card is a second flat panel (vAboutPanel) with the same
+      technique: its bottom follows barrierAboutBottom, which references the
+      views of all three states (Loading, Info, Error) and ignores the GONE
+      ones, so the card is only as tall as the state on screen.
+    - barrierForecastTop sits under the whole block above and ignores the GONE
+      views (barrierAllowsGoneWidgets=false), so hiding the About card leaves
+      no empty gap before the swipeRefresh.
     - SwipeRefreshLayout only wraps rvForecast, preserving the flat barrier layout.
     - Search results (rvResults / tvNoResults / layoutSearchError) are declared last
       and have elevation, so they float over the screen like a dropdown.
@@ -420,13 +427,149 @@
         app:layout_constraintTop_toTopOf="@id/tvForecastError"
         tools:visibility="visible" />
 
+    <!-- Bottom of the today panel + the forecast error row: top of the About card -->
     <androidx.constraintlayout.widget.Barrier
-        android:id="@+id/barrierForecastTop"
+        android:id="@+id/barrierTodaySection"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
         app:barrierMargin="@dimen/space_sm"
         app:constraint_referenced_ids="vTodayPanel,tvForecastError,btnRetry" />
+
+    <!-- ===== "About this place" card (flat, from Wikipedia) ===== -->
+    <View
+        android:id="@+id/vAboutPanel"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:background="@drawable/bg_about_panel"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/spaceAboutBottom"
+        app:layout_constraintEnd_toEndOf="@id/tilSearch"
+        app:layout_constraintStart_toStartOf="@id/tilSearch"
+        app:layout_constraintTop_toBottomOf="@id/barrierTodaySection"
+        tools:visibility="visible" />
+
+    <!-- Loading state -->
+    <com.google.android.material.progressindicator.CircularProgressIndicator
+        android:id="@+id/progressAbout"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_lg"
+        android:visibility="gone"
+        app:indicatorSize="@dimen/icon_size_md"
+        app:layout_constraintEnd_toEndOf="@id/vAboutPanel"
+        app:layout_constraintStart_toStartOf="@id/vAboutPanel"
+        app:layout_constraintTop_toTopOf="@id/vAboutPanel"
+        app:layout_goneMarginTop="0dp"
+        app:trackThickness="2dp" />
+
+    <!-- Info state: photo + up to three lines of summary. Both can hide on their own (no
+         thumbnail -> default image, no introduction -> photo alone) -->
+    <com.google.android.material.imageview.ShapeableImageView
+        android:id="@+id/ivAboutPhoto"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        android:contentDescription="@null"
+        android:scaleType="centerCrop"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="@id/vAboutPanel"
+        app:layout_constraintTop_toTopOf="@id/vAboutPanel"
+        app:layout_goneMarginTop="0dp"
+        app:shapeAppearanceOverlay="@style/ShapeAppearance.TripPocket.Corner12"
+        tools:src="@drawable/ic_photo"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tvAboutExtract"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginEnd="@dimen/space_lg"
+        android:ellipsize="end"
+        android:maxLines="3"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/vAboutPanel"
+        app:layout_constraintStart_toEndOf="@id/ivAboutPhoto"
+        app:layout_constraintTop_toTopOf="@id/ivAboutPhoto"
+        tools:text="Đà Lạt is the capital of Lâm Đồng Province in the Central Highlands of Vietnam, known for its lakes, waterfalls and French colonial architecture."
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tvAboutSource"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:text="@string/weather_about_source"
+        android:textAppearance="?attr/textAppearanceLabelSmall"
+        android:textColor="?attr/colorOnSurfaceVariant"
+        android:visibility="gone"
+        app:layout_constraintEnd_toEndOf="@id/tvAboutExtract"
+        app:layout_constraintStart_toStartOf="@id/tvAboutExtract"
+        app:layout_constraintTop_toBottomOf="@id/tvAboutExtract"
+        tools:visibility="visible" />
+
+    <!-- Error state -->
+    <TextView
+        android:id="@+id/tvAboutError"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="@dimen/space_lg"
+        android:layout_marginTop="@dimen/space_lg"
+        android:textAppearance="?attr/textAppearanceBodyMedium"
+        android:textColor="?attr/colorError"
+        android:visibility="gone"
+        app:layout_constraintEnd_toStartOf="@id/btnAboutRetry"
+        app:layout_constraintStart_toStartOf="@id/vAboutPanel"
+        app:layout_constraintTop_toTopOf="@id/vAboutPanel"
+        app:layout_goneMarginTop="0dp"
+        tools:text="Can\'t reach Wikipedia. Check your connection and try again."
+        tools:visibility="visible" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnAboutRetry"
+        style="@style/Widget.Material3.Button.TextButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="@dimen/space_sm"
+        android:minHeight="48dp"
+        android:text="@string/weather_retry"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/tvAboutError"
+        app:layout_constraintEnd_toEndOf="@id/vAboutPanel"
+        app:layout_constraintTop_toTopOf="@id/tvAboutError"
+        tools:visibility="visible" />
+
+    <!-- Lowest visible view of the card: with barrierAllowsGoneWidgets=false the states that are
+         not on screen do not push the bottom, so the card follows the one that is. -->
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierAboutBottom"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierAllowsGoneWidgets="false"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="ivAboutPhoto,tvAboutExtract,tvAboutSource,progressAbout,tvAboutError,btnAboutRetry" />
+
+    <Space
+        android:id="@+id/spaceAboutBottom"
+        android:layout_width="0dp"
+        android:layout_height="@dimen/space_lg"
+        app:layout_constraintEnd_toEndOf="@id/vAboutPanel"
+        app:layout_constraintStart_toStartOf="@id/vAboutPanel"
+        app:layout_constraintTop_toBottomOf="@id/barrierAboutBottom" />
+
+    <!-- Top of the forecast list: the whole block above, without the views that are GONE -->
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierForecastTop"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierAllowsGoneWidgets="false"
+        app:barrierDirection="bottom"
+        app:barrierMargin="@dimen/space_sm"
+        app:constraint_referenced_ids="vTodayPanel,tvForecastError,btnRetry,vAboutPanel" />
 
     <!-- SwipeRefreshLayout wraps ONLY rvForecast, inheriting its exact constraints -->
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout

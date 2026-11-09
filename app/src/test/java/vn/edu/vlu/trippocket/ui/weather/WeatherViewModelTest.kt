@@ -43,13 +43,15 @@ import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi.Companion.of
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingResult
+import vn.edu.vlu.trippocket.data.remote.wikipedia.FakePageSummaryApi
+import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceProblem
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.domain.ApiError
 import vn.edu.vlu.trippocket.domain.Limits
-import vn.edu.vlu.trippocket.domain.WeatherError
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.io.IOException
 import java.time.LocalDate
@@ -57,6 +59,7 @@ import java.time.LocalDate
 /**
  * W1 search and W3 saved places + cached forecast of the Weather screen.
  * Owner: Duy Anh. W4 cases (same name, rename, empty cache, retry): Bảo.
+ * Milestone 4: each search row gets a Wikipedia photo and the selected place its About card.
  */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
@@ -115,16 +118,27 @@ class WeatherViewModelTest {
     /** Main uses the runTest scheduler, so debounce and requests run on virtual time. */
     private fun TestScope.newViewModel(
         api: FakeGeocodingApi = FakeGeocodingApi { listOf(dalat) },
+        pageApi: FakePageSummaryApi = FakePageSummaryApi(),
         trip: String = tripId,
     ): WeatherViewModel {
         Dispatchers.setMain(StandardTestDispatcher(testScheduler))
+        // Both repositories do their requests on the test scheduler, like Retrofit on IO.
+        val io = StandardTestDispatcher(testScheduler)
         val factory = viewModelFactory {
             initializer {
                 WeatherViewModel(
                     SavedStateHandle(mapOf(ARG_TRIP_ID to trip)),
                     trips,
-                    WeatherRepository(api, forecastApi, t.db.weatherCacheDao(), t.db.savedPlaceDao(), now = { clock }),
+                    WeatherRepository(
+                        api,
+                        forecastApi,
+                        t.db.weatherCacheDao(),
+                        t.db.savedPlaceDao(),
+                        now = { clock },
+                        io = io,
+                    ),
                     savedPlaces,
+                    PlaceInfoRepository(pageApi, io),
                     now = { clock },
                 )
             }
@@ -196,7 +210,7 @@ class WeatherViewModelTest {
 
         viewModel.onQueryChanged("da lat")
         runSearch()
-        assertEquals(SearchState.Error(WeatherError.NETWORK), viewModel.search.value)
+        assertEquals(SearchState.Error(ApiError.OFFLINE), viewModel.search.value)
 
         api.failWith = null
         viewModel.onQueryChanged("da nang")
@@ -214,7 +228,7 @@ class WeatherViewModelTest {
 
         viewModel.onQueryChanged("da lat")
         runSearch()
-        assertEquals(SearchState.Error(WeatherError.NETWORK), viewModel.search.value)
+        assertEquals(SearchState.Error(ApiError.OFFLINE), viewModel.search.value)
 
         api.failWith = null
         viewModel.retrySearch()
@@ -271,7 +285,7 @@ class WeatherViewModelTest {
         viewModel.onQueryChanged("da lat")
         runSearch()
 
-        assertEquals(SearchState.Error(WeatherError.NETWORK), viewModel.search.value)
+        assertEquals(SearchState.Error(ApiError.OFFLINE), viewModel.search.value)
         assertEquals(before, viewModel.forecast.value)
         assertEquals(place.placeId, viewModel.places.value.selectedPlaceId)
     }
@@ -411,7 +425,7 @@ class WeatherViewModelTest {
         assertEquals(26, state.today?.maxTemp)
         assertTrue(state.fromCache)
         assertFalse(state.loading)
-        assertEquals(WeatherError.NETWORK, state.error)
+        assertEquals(ApiError.OFFLINE, state.error)
     }
 
     @Test
@@ -481,7 +495,7 @@ class WeatherViewModelTest {
         assertEquals(20, state.today?.maxTemp)
         assertTrue(state.hasForecast)
         assertTrue(state.fromCache)
-        assertEquals(WeatherError.NETWORK, state.error)
+        assertEquals(ApiError.OFFLINE, state.error)
         assertEquals(1, forecastApi.requests.size)
     }
 
@@ -517,7 +531,7 @@ class WeatherViewModelTest {
         viewModel.onQueryChanged("da lat")
         runSearch()
 
-        assertEquals(SearchState.Error(WeatherError.RATE_LIMITED), viewModel.search.value)
+        assertEquals(SearchState.Error(ApiError.RATE_LIMITED), viewModel.search.value)
     }
 
     @Test
@@ -531,7 +545,7 @@ class WeatherViewModelTest {
         val viewModel = newViewModel()
         val state = viewModel.forecast.first { it.failed }
 
-        assertEquals(WeatherError.SERVER, state.error)
+        assertEquals(ApiError.SERVER, state.error)
         // The old cache is still shown, marked as the offline copy.
         assertTrue(state.hasForecast)
         assertTrue(state.fromCache)
@@ -730,7 +744,7 @@ class WeatherViewModelTest {
         viewModel.pickPlace(Place("Da Lat", "Lam Dong", "Vietnam", vietnam.first, vietnam.second))
 
         val state = viewModel.forecast.first { it.failed }
-        assertEquals(WeatherError.NETWORK, state.error)
+        assertEquals(ApiError.OFFLINE, state.error)
         assertFalse(state.hasForecast)
         // Nothing was cached, so there is no offline copy to show.
         assertFalse(state.fromCache)
@@ -837,6 +851,140 @@ class WeatherViewModelTest {
         assertEquals(before, revision())
     }
 
+    @Test
+    fun theFirstTenResults_getAPhoto_theRestKeepTheDefaultOne(): Unit = runTest {
+        val places = (1..12).map { FakeGeocodingApi.result("City$it") }
+        val api = FakeGeocodingApi { places }
+        val pageApi = FakePageSummaryApi().apply {
+            responseFor = { title -> FakePageSummaryApi.page(title, image = "https://img/$title.jpg") }
+        }
+        val viewModel = newViewModel(api, pageApi)
+
+        viewModel.onQueryChanged("city")
+        runSearch()
+
+        val state = viewModel.search.value as SearchState.Results
+        assertEquals(12, state.results.size)
+        // Only the first ten results are looked up, side by side.
+        assertEquals(10, pageApi.titles.size)
+        assertEquals((1..10).map { "City$it" }.toSet(), pageApi.titles.toSet())
+        assertTrue(state.results.take(10).all { it.photoUrl == "https://img/${it.place.name}.jpg" })
+        assertNull(state.results[10].photoUrl)
+        assertNull(state.results[11].photoUrl)
+    }
+
+    @Test
+    fun aFailedSummary_leavesThatRowWithoutAPhoto_andKeepsTheList(): Unit = runTest {
+        val api = FakeGeocodingApi {
+            listOf(FakeGeocodingApi.result("Da Lat"), FakeGeocodingApi.result("Da Nang"))
+        }
+        val pageApi = FakePageSummaryApi().apply {
+            responseFor = { title -> FakePageSummaryApi.page(title) }
+            // The repository asks Wikipedia with underscores, so the failing title is Da_Nang.
+            failFor = { title -> if (title == "Da_Nang") httpError(500) else null }
+        }
+        val viewModel = newViewModel(api, pageApi)
+
+        viewModel.onQueryChanged("da")
+        runSearch()
+
+        val state = viewModel.search.value
+        assertTrue(state is SearchState.Results)
+        assertEquals(
+            listOf(FakePageSummaryApi.page("Da Lat").thumbnail?.source, null),
+            (state as SearchState.Results).results.map { it.photoUrl },
+        )
+    }
+
+    @Test
+    fun aMissingArticle_isNoPhoto_notAnError(): Unit = runTest {
+        val pageApi = FakePageSummaryApi().apply { failWith = httpError(404) }
+        val viewModel = newViewModel(pageApi = pageApi)
+
+        viewModel.onQueryChanged("da lat")
+        runSearch()
+
+        val state = viewModel.search.value
+        assertTrue(state is SearchState.Results)
+        assertNull((state as SearchState.Results).results.single().photoUrl)
+    }
+
+    @Test
+    fun theSelectedPlace_loadsItsAboutCard(): Unit = runTest {
+        seedPlace()
+        val pageApi = FakePageSummaryApi().apply {
+            response = FakePageSummaryApi.page("Da Lat")
+            gate = CompletableDeferred()
+        }
+        val viewModel = newViewModel(pageApi = pageApi)
+
+        val loading = viewModel.placeInfo.first { it.loading }
+        assertTrue(loading.visible)
+        assertEquals("Da Lat", loading.placeName)
+        assertNull(loading.info)
+
+        pageApi.gate?.complete(Unit)
+        val state = viewModel.placeInfo.first { it.info != null }
+        assertEquals("Da Lat", state.info?.title)
+        assertEquals(
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/dalat.jpg",
+            state.info?.imageUrl,
+        )
+        assertTrue(state.hasExtract)
+        assertNull(state.error)
+    }
+
+    @Test
+    fun theAboutCard_whenWikipediaFails_saysWhy_andRetryLoadsIt(): Unit = runTest {
+        seedPlace()
+        val pageApi = FakePageSummaryApi().apply { failWith = httpError(503) }
+        val viewModel = newViewModel(pageApi = pageApi)
+
+        val failed = viewModel.placeInfo.first { it.error != null }
+        assertEquals(ApiError.SERVER, failed.error)
+        assertEquals("Da Lat", failed.placeName)
+        assertNull(failed.info)
+
+        pageApi.failWith = null
+        pageApi.response = FakePageSummaryApi.page("Da Lat")
+        viewModel.retryPlaceInfo()
+
+        val state = viewModel.placeInfo.first { it.info != null }
+        assertEquals("Da Lat", state.info?.title)
+        assertEquals(2, pageApi.titles.size)
+    }
+
+    @Test
+    fun theAboutCard_keepsAPhotoWithoutAnIntroduction(): Unit = runTest {
+        seedPlace()
+        val pageApi = FakePageSummaryApi().apply {
+            response = FakePageSummaryApi.page("Da Lat", extract = null)
+        }
+        val viewModel = newViewModel(pageApi = pageApi)
+
+        val state = viewModel.placeInfo.first { it.info != null }
+
+        assertFalse(state.hasExtract)
+        assertEquals(
+            "https://upload.wikimedia.org/wikipedia/commons/thumb/dalat.jpg",
+            state.info?.imageUrl,
+        )
+    }
+
+    @Test
+    fun withoutASelectedPlace_theAboutCardIsHidden(): Unit = runTest {
+        val pageApi = FakePageSummaryApi()
+        val viewModel = newViewModel(pageApi = pageApi)
+        viewModel.places.first { it.places.isEmpty() }
+
+        val state = viewModel.placeInfo.value
+
+        assertFalse(state.visible)
+        assertNull(state.info)
+        assertNull(state.error)
+        assertTrue(pageApi.titles.isEmpty())
+    }
+
     private suspend fun revision() =
         t.db.tripDao().observeTrip(tripId, TestDatabase.OWNER).first()!!.localRevision
 
@@ -847,3 +995,4 @@ class WeatherViewModelTest {
         const val SEARCH_DEBOUNCE_MS = 300L
     }
 }
+
