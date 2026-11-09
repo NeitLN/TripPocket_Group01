@@ -114,6 +114,16 @@ class AppContainer(context: Context) {
     /** Retrofit for https://api.open-meteo.com/ (daily forecast). */
     val forecastRetrofit: Retrofit by lazy { retrofit("https://api.open-meteo.com/") }
 
+    /**
+     * Retrofit for https://en.wikipedia.org/ (Milestone 4): GeoSearch for nearby sights (Bảo,
+     * Itinerary) and the page summary with a photo for a place (Duy Anh, Weather). Each feature
+     * creates its own interface from this instance.
+     */
+    val wikipediaRetrofit: Retrofit by lazy { retrofit("https://en.wikipedia.org/") }
+
+    /** Retrofit for https://open.er-api.com/ (Milestone 4): exchange rates for expenses (Minh). */
+    val exchangeRateRetrofit: Retrofit by lazy { retrofit("https://open.er-api.com/") }
+
     /** I4: activity alarms on AlarmManager (exact when allowed, inexact otherwise). */
     val reminderScheduler: ReminderScheduler = AlarmReminderScheduler(context)
 
