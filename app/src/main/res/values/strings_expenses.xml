@@ -88,6 +88,11 @@
     <string name="exchange_rates_updated">Updated: %1$s</string>
     <string name="exchange_rates_rate_format">1 %1$s ≈ %2$s</string>
     <string name="exchange_rates_empty">No exchange rates available</string>
+    <string name="expense_field_paid_in">Paid in</string>
+    <string name="expense_field_foreign_amount">Foreign amount</string>
+    <string name="expense_rates_loading_short">Loading exchange rates…</string>
+    <string name="expense_rates_offline_short">Rates unavailable. Enter VND directly.</string>
+    <string name="expense_paid_in_none">None (VND)</string>
 
     <string name="currency_usd">US dollar</string>
     <string name="currency_eur">Euro</string>

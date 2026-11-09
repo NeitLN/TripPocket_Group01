@@ -22,34 +22,34 @@ import vn.edu.vlu.trippocket.domain.ApiError
  *    prone to floating-point precision loss when converting between currencies.
  * 3. Consistent endpoint contracts for testing (GET /v6/latest/USD).
  */
+data class SupportedCurrency(
+    val code: String,
+    @param:StringRes val nameRes: Int,
+    val flagCountryCode: String,
+)
+
 class ExchangeRateRepository(
     private val api: ExchangeRateApi,
     private val dispatcher: CoroutineDispatcher = Dispatchers.IO,
 ) {
 
-    private data class CurrencyMeta(
-        val code: String,
-        @param:StringRes val nameRes: Int,
-        val flagCountryCode: String,
-    )
-
     companion object {
         private const val BASE_CURRENCY = "USD"
         private const val TARGET_CURRENCY = "VND"
 
-        private val SUPPORTED_CURRENCIES = listOf(
-            CurrencyMeta("USD", R.string.currency_usd, "us"),
-            CurrencyMeta("EUR", R.string.currency_eur, "eu"),
-            CurrencyMeta("JPY", R.string.currency_jpy, "jp"),
-            CurrencyMeta("KRW", R.string.currency_krw, "kr"),
-            CurrencyMeta("THB", R.string.currency_thb, "th"),
-            CurrencyMeta("SGD", R.string.currency_sgd, "sg"),
-            CurrencyMeta("GBP", R.string.currency_gbp, "gb"),
-            CurrencyMeta("AUD", R.string.currency_aud, "au"),
-            CurrencyMeta("CNY", R.string.currency_cny, "cn"),
-            CurrencyMeta("TWD", R.string.currency_twd, "tw"),
-            CurrencyMeta("MYR", R.string.currency_myr, "my"),
-            CurrencyMeta("IDR", R.string.currency_idr, "id"),
+        val SUPPORTED_CURRENCIES: List<SupportedCurrency> = listOf(
+            SupportedCurrency("USD", R.string.currency_usd, "us"),
+            SupportedCurrency("EUR", R.string.currency_eur, "eu"),
+            SupportedCurrency("JPY", R.string.currency_jpy, "jp"),
+            SupportedCurrency("KRW", R.string.currency_krw, "kr"),
+            SupportedCurrency("THB", R.string.currency_thb, "th"),
+            SupportedCurrency("SGD", R.string.currency_sgd, "sg"),
+            SupportedCurrency("GBP", R.string.currency_gbp, "gb"),
+            SupportedCurrency("AUD", R.string.currency_aud, "au"),
+            SupportedCurrency("CNY", R.string.currency_cny, "cn"),
+            SupportedCurrency("TWD", R.string.currency_twd, "tw"),
+            SupportedCurrency("MYR", R.string.currency_myr, "my"),
+            SupportedCurrency("IDR", R.string.currency_idr, "id"),
         )
     }
 

@@ -8,13 +8,9 @@ import androidx.recyclerview.widget.RecyclerView
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.CurrencyRateItem
 import vn.edu.vlu.trippocket.databinding.ItemCurrencyBinding
+import vn.edu.vlu.trippocket.util.Format
 import vn.edu.vlu.trippocket.util.clearRemote
 import vn.edu.vlu.trippocket.util.loadRemote
-import java.text.DecimalFormat
-import java.text.DecimalFormatSymbols
-import java.text.NumberFormat
-import java.util.Locale
-import kotlin.math.roundToLong
 
 /**
  * RecyclerView adapter for foreign currency exchange rates (Milestone 4).
@@ -46,7 +42,7 @@ class CurrencyAdapter : ListAdapter<CurrencyRateItem, CurrencyAdapter.ViewHolder
             binding.tvCurrencyCode.text = item.code
             binding.tvCurrencyName.setText(item.nameRes)
 
-            val rateFormatted = formatRateToVnd(item.rateToVnd)
+            val rateFormatted = Format.rateToVnd(item.rateToVnd)
             binding.tvRateToVnd.text = binding.root.context.getString(
                 R.string.exchange_rates_rate_format,
                 item.code,
@@ -59,22 +55,6 @@ class CurrencyAdapter : ListAdapter<CurrencyRateItem, CurrencyAdapter.ViewHolder
     }
 
     companion object {
-        private val integerFormat = NumberFormat.getIntegerInstance(Locale.US)
-        private val decimalFormat = DecimalFormat("#,##0.##", DecimalFormatSymbols(Locale.US))
-
-        /**
-         * Formats a conversion rate to VND string for display.
-         * Values >= 100 (e.g. USD, EUR, JPY) are displayed rounded to the nearest dong.
-         * Values < 100 (e.g. IDR, KRW, THB) retain up to 2 decimal places to avoid precision loss.
-         */
-        fun formatRateToVnd(rate: Double): String {
-            return if (rate >= 100.0) {
-                "${integerFormat.format(rate.roundToLong())} ₫"
-            } else {
-                "${decimalFormat.format(rate)} ₫"
-            }
-        }
-
         private val DiffCallback = object : DiffUtil.ItemCallback<CurrencyRateItem>() {
             override fun areItemsTheSame(oldItem: CurrencyRateItem, newItem: CurrencyRateItem): Boolean {
                 return oldItem.code == newItem.code
