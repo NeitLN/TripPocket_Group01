@@ -218,6 +218,9 @@ private fun SavedPlaceEntity.toSavedPlace() = SavedPlace(
  * because only this layer knows Retrofit: [HttpException] for an HTTP error, [IOException] when
  * the phone could not reach the service, anything else (JSON of an unexpected shape) as
  * [WeatherError.BAD_RESPONSE].
+ *
+ * Broken JSON is an IOException inside Gson; ReadFirstConverterFactory turns it into an
+ * UnreadableResponseException before it gets here, so only the connection is NETWORK.
  */
 internal fun Throwable.toWeatherError(): WeatherError = when {
     this is IOException -> WeatherError.NETWORK

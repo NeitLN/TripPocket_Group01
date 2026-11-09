@@ -6,7 +6,6 @@ import com.google.firebase.auth.FirebaseAuth
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
 import retrofit2.Retrofit
-import retrofit2.converter.gson.GsonConverterFactory
 import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
@@ -14,6 +13,7 @@ import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
+import vn.edu.vlu.trippocket.data.remote.openmeteo.ReadFirstConverterFactory
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
@@ -132,6 +132,6 @@ class AppContainer(context: Context) {
     private fun retrofit(baseUrl: String): Retrofit = Retrofit.Builder()
         .baseUrl(baseUrl)
         .client(okHttp)
-        .addConverterFactory(GsonConverterFactory.create())
+        .addConverterFactory(ReadFirstConverterFactory.gson())
         .build()
 }
