@@ -61,7 +61,8 @@ class SightAdapter(
 
     private companion object {
         /** "350 m" up close, "2.4 km" further away, which reads better than 2400 m. */
-        fun distanceText(context: Context, meters: Double): String = if (meters < 1_000) {
+        fun distanceText(context: Context, meters: Double): String = if (meters.roundToInt() < 1_000) {
+            // Compare the rounded value: 999.6 m would otherwise read "1000 m" instead of "1.0 km".
             context.getString(R.string.sights_distance_m, meters.roundToInt())
         } else {
             context.getString(R.string.sights_distance_km, meters / 1_000)
