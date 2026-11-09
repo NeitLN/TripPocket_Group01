@@ -27,6 +27,7 @@ import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
 import vn.edu.vlu.trippocket.work.BackupScheduler
+import java.util.concurrent.TimeUnit
 
 /**
  * Manual dependency injection: one instance of each repository for the whole app.
@@ -119,8 +120,26 @@ class AppContainer(context: Context) {
     /** I5: rebuilds every reminder alarm (boot, time zone, clock, sign-in/out, restore, trip dates). */
     val reminderReconciler: ReminderReconciler by lazy { ReminderReconciler(database.activityDao(), reminderScheduler) }
 
+    /** Retrofit for the team's MockAPI.io project (Trip Ideas CRUD, Milestone 4). */
+    val mockApiRetrofit: Retrofit by lazy { retrofit(BuildConfig.MOCKAPI_BASE_URL) }
+
+    /**
+     * One OkHttp client for every API (Milestone 4): explicit timeouts so a dead network ends in
+     * ApiError.TIMEOUT instead of a spinner that never stops, and a User-Agent naming the app
+     * (Wikipedia's API policy asks for one).
+     */
     private val okHttp: OkHttpClient by lazy {
         OkHttpClient.Builder()
+            .connectTimeout(10, TimeUnit.SECONDS)
+            .readTimeout(15, TimeUnit.SECONDS)
+            .writeTimeout(15, TimeUnit.SECONDS)
+            .addInterceptor { chain ->
+                chain.proceed(
+                    chain.request().newBuilder()
+                        .header("User-Agent", "TripPocket/${BuildConfig.VERSION_NAME} (Android; VLU student project)")
+                        .build()
+                )
+            }
             .apply {
                 if (BuildConfig.DEBUG) {
                     addInterceptor(HttpLoggingInterceptor().setLevel(HttpLoggingInterceptor.Level.BASIC))
