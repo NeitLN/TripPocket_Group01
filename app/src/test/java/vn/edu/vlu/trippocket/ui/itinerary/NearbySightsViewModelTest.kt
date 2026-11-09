@@ -108,6 +108,37 @@ class NearbySightsViewModelTest {
     }
 
     @Test
+    fun savingAPlaceWhileTheScreenIsOpen_loadsTheSights(): Unit = runTest {
+        val api = FakeGeoSearchApi(FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương")))
+        val viewModel = newViewModel(api)
+        assertTrue(viewModel.uiState.first { !it.loading }.noPlace)
+
+        // The Weather tab saves a place; this screen (still open, same trip) follows.
+        seedPlace()
+
+        val state = viewModel.uiState.first { it.sights.isNotEmpty() }
+        assertFalse(state.noPlace)
+        assertEquals("Da Lat", state.placeName)
+        assertEquals(listOf("Hồ Xuân Hương"), state.sights.map { it.title })
+        assertEquals(1, api.requests.size)
+    }
+
+    @Test
+    fun deletingThePlace_goesBackToNoPlace(): Unit = runTest {
+        seedPlace()
+        val api = FakeGeoSearchApi(FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương")))
+        val viewModel = newViewModel(api)
+        viewModel.uiState.first { it.sights.isNotEmpty() }
+
+        savedPlaces.deletePlace(tripId, savedPlaces.observePlaces(tripId).first().single().placeId)
+
+        val state = viewModel.uiState.first { it.noPlace }
+        assertTrue(state.sights.isEmpty())
+        assertNull(state.placeName)
+        assertEquals(1, api.requests.size)
+    }
+
+    @Test
     fun aSavedPlace_showsLoading_thenTheSights(): Unit = runTest {
         seedPlace()
         val api = FakeGeoSearchApi(FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương")))

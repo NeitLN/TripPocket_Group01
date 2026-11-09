@@ -12,7 +12,9 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.appContainer
@@ -70,8 +72,10 @@ data class NearbySightsUiState(
  * "Add to day" writes through [ItineraryRepository], so the trip is backed up like any other
  * activity.
  *
- * The list is loaded once in [init], so rotating the screen keeps it; only pull-to-refresh and
- * Retry ask Wikipedia again. A trip without a saved place never calls the API.
+ * The list is loaded when the trip's first saved place is known, so rotating the screen keeps
+ * it; pull-to-refresh and Retry ask Wikipedia again. The place is watched: saving one in the
+ * Weather tab while this screen is open (it shares the trip's ViewModels) loads the list
+ * instead of staying on "Add a place first". A trip without a saved place never calls the API.
  */
 class NearbySightsViewModel(
     savedStateHandle: SavedStateHandle,
@@ -94,8 +98,18 @@ class NearbySightsViewModel(
     /** true while one "Add to day" write runs, so a double tap adds one activity. */
     private var addingSight = false
 
+    /** The saved place the list was loaded around, so another place starts from an empty list. */
+    private var centreId: String? = null
+
     init {
-        load()
+        // Room sends the first saved place now and again whenever it changes: saved in the
+        // Weather tab, deleted, or replaced. Each change starts a new search around it.
+        viewModelScope.launch {
+            savedPlaceRepository.observePlaces(tripId)
+                .map { places -> places.firstOrNull()?.placeId }
+                .distinctUntilChanged()
+                .collect { load(newPlace = true) }
+        }
     }
 
     /** Pull-to-refresh and the Retry button: one new request around the same place. */
@@ -144,13 +158,19 @@ class NearbySightsViewModel(
         _uiState.update { it.copy(message = null) }
     }
 
-    private fun load() {
-        if (loadJob?.isActive == true) return
+    /**
+     * Searches around the first saved place. A second Retry or pull while a request runs is
+     * dropped; a [newPlace] cancels the old request, whose answer is for the old place.
+     */
+    private fun load(newPlace: Boolean = false) {
+        if (!newPlace && loadJob?.isActive == true) return
+        loadJob?.cancel()
         loadJob = viewModelScope.launch {
             // The banner of an earlier failure goes away while the new request runs.
             _uiState.update { it.copy(error = null) }
             val place = savedPlaceRepository.observePlaces(tripId).first().firstOrNull()
             if (place == null) {
+                centreId = null
                 _uiState.update {
                     it.copy(
                         loading = false,
@@ -161,6 +181,10 @@ class NearbySightsViewModel(
                     )
                 }
                 return@launch
+            }
+            if (place.placeId != centreId) {
+                centreId = place.placeId
+                _uiState.update { it.copy(sights = emptyList()) }
             }
             _uiState.update {
                 it.copy(
