@@ -12,6 +12,7 @@ import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
+import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateApi
 import vn.edu.vlu.trippocket.data.remote.mockapi.TripIdeaApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
@@ -19,6 +20,7 @@ import vn.edu.vlu.trippocket.data.remote.wikipedia.PageSummaryApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
+import vn.edu.vlu.trippocket.data.repository.ExchangeRateRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
@@ -133,6 +135,7 @@ class AppContainer(context: Context) {
 
     /** Retrofit for https://open.er-api.com/ (Milestone 4): exchange rates for expenses (Minh). */
     val exchangeRateRetrofit: Retrofit by lazy { retrofit("https://open.er-api.com/") }
+    val exchangeRateRepository: ExchangeRateRepository by lazy { ExchangeRateRepository(exchangeRateRetrofit.create(ExchangeRateApi::class.java)) }
 
     /** I4: activity alarms on AlarmManager (exact when allowed, inexact otherwise). */
     val reminderScheduler: ReminderScheduler = AlarmReminderScheduler(context)

@@ -20,6 +20,9 @@ import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
 import vn.edu.vlu.trippocket.data.model.SplitType
+import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateApi
+import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateResponse
+import vn.edu.vlu.trippocket.data.repository.ExchangeRateRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
@@ -38,8 +41,15 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 class ExpenseFlowCrossCheckTest {
 
+    private class FakeExchangeRateApi : ExchangeRateApi {
+        override suspend fun getLatestRates(base: String): ExchangeRateResponse {
+            error("Not needed for cross-check test")
+        }
+    }
+
     private val t = TestDatabase()
     private val repository = ExpenseRepository(t.db.tripMemberDao(), t.db.expenseDao(), t.writer)
+    private val exchangeRateRepository = ExchangeRateRepository(FakeExchangeRateApi(), UnconfinedTestDispatcher())
     private val args = SavedStateHandle(mapOf(ARG_TRIP_ID to "t1"))
 
     @Before
@@ -73,7 +83,7 @@ class ExpenseFlowCrossCheckTest {
         notTaking: Set<String> = emptySet(),
         custom: Map<String, String>? = null,
     ): ExpenseFormViewModel {
-        val form = ExpenseFormViewModel(SavedStateHandle(mapOf(ARG_TRIP_ID to "t1")), repository) { LocalDate.of(2026, 10, 15) }
+        val form = ExpenseFormViewModel(SavedStateHandle(mapOf(ARG_TRIP_ID to "t1")), repository, exchangeRateRepository) { LocalDate.of(2026, 10, 15) }
         withTimeout(5_000) { form.state.first { !it.loading } }
         form.setTitle(title)
         form.setAmount(amount)

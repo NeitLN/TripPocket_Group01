@@ -16,13 +16,18 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.appContainer
+import vn.edu.vlu.trippocket.data.model.ExchangeRates
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.model.TripMember
+import vn.edu.vlu.trippocket.data.remote.ApiResult
+import vn.edu.vlu.trippocket.data.repository.ExchangeRateRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseProblem
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.InvalidExpenseException
+import vn.edu.vlu.trippocket.domain.ApiError
+import vn.edu.vlu.trippocket.domain.CurrencyConverter
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import vn.edu.vlu.trippocket.domain.LimitExceededException
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
@@ -53,6 +58,13 @@ data class ExpenseFormState(
     /** One-off message for a snackbar; cleared by [ExpenseFormViewModel.messageShown]. */
     @param:StringRes val message: Int? = null,
     val messageArg: Int? = null,
+
+    // Paid in / foreign currency fields (M4)
+    val ratesLoading: Boolean = false,
+    val ratesError: ApiError? = null,
+    val exchangeRates: ExchangeRates? = null,
+    val paidInCurrency: String? = null,
+    val paidInAmountText: String = "",
 ) {
     val amount: Long? get() = amountText.toLongOrNull()?.takeIf { it > 0 }
 
@@ -82,6 +94,7 @@ data class ExpenseFormState(
 class ExpenseFormViewModel(
     savedStateHandle: SavedStateHandle,
     private val repository: ExpenseRepository,
+    private val exchangeRateRepository: ExchangeRateRepository,
     today: () -> LocalDate = LocalDate::now,
 ) : ViewModel() {
 
@@ -141,6 +154,56 @@ class ExpenseFormViewModel(
 
     fun setCustomShare(memberId: String, text: String) = _state.update {
         it.copy(customShares = it.customShares + (memberId to text), splitError = null)
+    }
+
+    fun setPaidInCurrency(currency: String?) {
+        _state.update { it.copy(paidInCurrency = currency) }
+        if (currency != null && _state.value.exchangeRates == null && !_state.value.ratesLoading) {
+            fetchExchangeRates()
+        } else {
+            recalculateVndFromPaidIn()
+        }
+    }
+
+    fun setPaidInAmount(text: String) {
+        _state.update { it.copy(paidInAmountText = text) }
+        recalculateVndFromPaidIn()
+    }
+
+    fun retryRates() {
+        fetchExchangeRates()
+    }
+
+    private fun fetchExchangeRates() {
+        _state.update { it.copy(ratesLoading = true, ratesError = null) }
+        viewModelScope.launch {
+            when (val result = exchangeRateRepository.getExchangeRates()) {
+                is ApiResult.Success -> {
+                    _state.update { it.copy(ratesLoading = false, exchangeRates = result.data, ratesError = null) }
+                    recalculateVndFromPaidIn()
+                }
+                is ApiResult.Failure -> {
+                    _state.update { it.copy(ratesLoading = false, ratesError = result.error) }
+                }
+            }
+        }
+    }
+
+    private fun recalculateVndFromPaidIn() {
+        val state = _state.value
+        val currency = state.paidInCurrency ?: return
+        val foreignAmount = parseForeignAmount(state.paidInAmountText) ?: return
+        val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd ?: return
+        if (rate <= 0.0) return
+        val vnd = CurrencyConverter.toVnd(foreignAmount, rate)
+        if (vnd > 0L) {
+            _state.update { it.copy(amountText = vnd.toString(), amountError = null, splitError = null) }
+        }
+    }
+
+    private fun parseForeignAmount(text: String): Double? {
+        val normalized = text.trim().replace(',', '.')
+        return normalized.toDoubleOrNull()?.takeIf { it > 0.0 && !it.isNaN() && !it.isInfinite() }
     }
 
     fun messageShown() = _state.update { it.copy(message = null, messageArg = null) }
@@ -218,7 +281,13 @@ class ExpenseFormViewModel(
         const val ARG_EXPENSE_ID = "expenseId"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
-            initializer { ExpenseFormViewModel(createSavedStateHandle(), appContainer().expenseRepository) }
+            initializer {
+                ExpenseFormViewModel(
+                    createSavedStateHandle(),
+                    appContainer().expenseRepository,
+                    appContainer().exchangeRateRepository,
+                )
+            }
         }
     }
 }
