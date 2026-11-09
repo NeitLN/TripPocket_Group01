@@ -67,6 +67,31 @@ Gợi ý điểm tham quan gần chuyến đi, thêm thẳng vào lịch trình.
 - File gợi ý: `data/remote/wikipedia/PageSummaryApi.kt`, `PageSummaryResponse.kt`, `data/repository/PlaceInfoRepository.kt`, sửa `PlaceResultAdapter`, `WeatherViewModel`, `WeatherFragment`.
 - Test: `PlaceInfoRepositoryTest` (200, 404 = không có ảnh, 500), cập nhật `WeatherViewModelTest` cho `ApiError`.
 
+### Duy Anh: video demo 1 đến 2 phút (sản phẩm nộp số 3)
+
+Đề bài yêu cầu video cho thấy: app lấy dữ liệu từ API, luồng đăng ký/đăng nhập Firebase, và xử lý lỗi khi bật chế độ máy bay.
+
+- Quay **sau khi** cả 4 lát đã merge vào `feature/network-cloud-integration`, bằng bản build có `app/google-services.json`
+  (Firebase thật, không phải DevAuth). Pull nhánh tích hợp mới nhất rồi build lại trước khi quay.
+- Dùng tài khoản thử (vd `demo3@trippocket.test`), không dùng email/mật khẩu cá nhân. Đừng để lộ mật khẩu trên hình.
+- Kịch bản gợi ý (khoảng 90 đến 110 giây):
+
+| # | Cảnh | Thời lượng | Phải thấy gì |
+|---|---|---|---|
+| 1 | Đăng ký Firebase | 15 giây | Mở app, Register bằng email mới, vào Trip List. |
+| 2 | Giữ phiên | 10 giây | Vuốt tắt hẳn app, mở lại: vào thẳng Trip List, không hỏi đăng nhập. |
+| 3 | Trip Ideas (MockAPI) | 25 giây | Icon bóng đèn: vòng tải rồi danh sách có ảnh (Glide). Share một ý tưởng (POST), sửa (PUT), xoá (DELETE). |
+| 4 | Các lát còn lại | 20 giây | Lướt nhanh: Nearby sights (Bảo), ảnh địa điểm trong Weather (Duy Anh), Exchange rates có cờ (Minh). |
+| 5 | Chế độ máy bay | 20 giây | Bật máy bay, mở lại Trip Ideas hoặc kéo làm mới: banner "You're offline", app không văng. Tắt máy bay, bấm Retry: có dữ liệu lại. |
+| 6 | Đăng xuất, đăng nhập | 10 giây | Sign out, Login lại bằng tài khoản vừa tạo. |
+
+- Cách quay: emulator Android Studio (nút "..." > Record and playback > Start recording), hoặc
+  `adb shell screenrecord /sdcard/demo.mp4` rồi `adb pull`, hoặc trình quay màn hình của điện thoại thật.
+  Có thể lồng tiếng tiếng Việt hoặc chèn chữ ngắn tên từng cảnh; không bắt buộc.
+- Giữ trong 1 đến 2 phút. Cắt bớt chỗ chờ mạng nếu dài.
+- Đăng YouTube chế độ **Unlisted** (Không công khai) hoặc Google Drive chia sẻ "Anyone with the link".
+  Mở link bằng tab ẩn danh để chắc chắn ai cũng xem được, rồi gửi link cho Tiến.
+
 ## Minh (Expenses): tỷ giá và quy đổi ngoại tệ
 
 - Endpoint (GET, không cần key): `https://open.er-api.com/v6/latest/{base}` (USD, EUR, THB, JPY, KRW, SGD, ...).
@@ -83,7 +108,7 @@ Gợi ý điểm tham quan gần chuyến đi, thêm thẳng vào lịch trình.
 
 - Lớp mạng dùng chung (đã xong), lát Trip Ideas trên MockAPI.io với đủ GET/POST/PUT/DELETE (đã xong).
 - Firebase Auth email/password + giữ phiên khi mở lại app (A1, đã có trên `develop`).
-- Review + merge các PR, PR cuối vào `develop`, worksheet (bảng endpoint, ảnh Firebase Console, WBS), video demo 1 đến 2 phút.
+- Review + merge các PR, PR cuối vào `develop`, worksheet (bảng endpoint, ảnh Firebase Console, WBS). Video demo do Duy Anh quay.
 
 ## Hạn (đề xuất, Tiến chốt theo hạn nộp trên LMS)
 
@@ -91,4 +116,5 @@ Gợi ý điểm tham quan gần chuyến đi, thêm thẳng vào lịch trình.
 |---|---|
 | Mở PR lát của mình | T4 11/11 |
 | Sửa review, merge vào nhánh tích hợp | T5 12/11 |
-| PR tích hợp -> `develop`, worksheet, video | T6 13/11 |
+| PR tích hợp -> `develop`, worksheet (Tiến) | T6 13/11 |
+| Video demo, gửi link cho Tiến (Duy Anh) | T6 13/11 |
