@@ -98,6 +98,27 @@ class ExpenseFormViewModelTest {
     }
 
     @Test
+    fun equalSplitSmallerThanThePeople_isRefused_soNobodyIsDroppedFromTheSplit() = runBlocking {
+        val viewModel = form()
+        viewModel.setTitle("Kẹo")
+        // 2 dong for three: C would get 0, and a 0 share is not stored.
+        viewModel.setAmount("2")
+        assertEquals(mapOf("a" to 1L, "b" to 1L, "c" to 0L), viewModel.state.value.equalShares)
+
+        viewModel.save()
+        assertEquals(R.string.expense_error_equal_too_small, viewModel.state.value.splitError)
+        assertFalse(viewModel.state.value.done)
+        assertEquals(0, t.db.expenseDao().countByTrip("t1"))
+        assertEquals(5, revision())
+
+        viewModel.setAmount("3")
+        assertNull(viewModel.state.value.splitError)
+        viewModel.save()
+        viewModel.awaitDone()
+        assertEquals(mapOf("a" to 1L, "b" to 1L, "c" to 1L), repository.observeExpenses("t1").first().single().shares)
+    }
+
+    @Test
     fun customSplitThatDoesNotAddUp_staysOpenAndSavesNothing() = runBlocking {
         val viewModel = form()
         viewModel.setTitle("Homestay")

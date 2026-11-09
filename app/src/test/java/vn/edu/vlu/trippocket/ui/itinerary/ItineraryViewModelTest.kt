@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
@@ -159,6 +160,32 @@ class ItineraryViewModelTest {
             viewModel.uiState.first { it.activities.map { activity -> activity.activityId } == listOf("a", "c", "b") }
         }
         assertEquals(7, revision())
+    }
+
+    @Test
+    fun switchingDays_neverShowsTheOldDaysActivitiesUnderTheNewTab() = runBlocking {
+        t.db.activityDao().insert(insert("d0", dayIndex = 0, startTime = 8 * 60, cost = 100_000, orderIndex = 0))
+        t.db.activityDao().insert(insert("d1", dayIndex = 1, startTime = 9 * 60, cost = 250_000, orderIndex = 0))
+        val viewModel = viewModel()
+        viewModel.loaded(activities = 1)
+
+        // Every state the screen receives while flipping between the two days (issue #35, 3.2).
+        val seen = mutableListOf<ItineraryUiState>()
+        val recorder = launch(Dispatchers.Unconfined) { viewModel.uiState.collect { seen += it } }
+        repeat(3) {
+            viewModel.selectDay(1)
+            withTimeout(5_000) { viewModel.uiState.first { it.selectedDay == 1 && it.activities.isNotEmpty() } }
+            viewModel.selectDay(0)
+            withTimeout(5_000) { viewModel.uiState.first { it.selectedDay == 0 && it.activities.isNotEmpty() } }
+        }
+        recorder.cancel()
+
+        seen.filter { it.days.isNotEmpty() }.forEach { state ->
+            assertTrue(state.activities.all { it.dayIndex == state.selectedDay })
+            assertEquals(state.activities.sumOf { it.estimatedCost }, state.estimatedCost)
+            // Both days have an activity: an empty list would be a flash of the empty-day state.
+            assertTrue(state.activities.isNotEmpty())
+        }
     }
 
     private suspend fun revision() =

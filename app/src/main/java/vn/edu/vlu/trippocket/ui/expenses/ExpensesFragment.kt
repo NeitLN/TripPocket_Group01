@@ -95,7 +95,11 @@ class ExpensesFragment : Fragment() {
         binding.tvEmptyExpenses.isVisible = empty
 
         binding.tvSpentTotal.text = Format.vnd(state.spent)
-        binding.tvPlanned.text = getString(R.string.expenses_of_planned, Format.vnd(state.planned))
+        binding.tvPlanned.text = if (state.overPlan > 0) {
+            getString(R.string.expenses_of_planned_over, Format.vnd(state.planned), Format.vnd(state.overPlan))
+        } else {
+            getString(R.string.expenses_of_planned, Format.vnd(state.planned))
+        }
         binding.progressBudget.progress = state.budgetProgress
 
         fun total(category: ExpenseCategory) = Format.amount(state.categoryTotals[category] ?: 0L)

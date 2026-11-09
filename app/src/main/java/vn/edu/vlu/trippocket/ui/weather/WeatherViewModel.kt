@@ -44,7 +44,7 @@ import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.repository.InvalidPlaceException
 import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceProblem
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.ApiError
@@ -218,14 +218,26 @@ data class ForecastRow(val date: LocalDate, val tripDay: Int?, val forecast: For
  */
 class WeatherViewModel(
     savedStateHandle: SavedStateHandle,
-    tripRepository: SampleTripRepository,
+    tripRepository: TripRepository,
     private val weatherRepository: WeatherRepository,
     private val savedPlaceRepository: SavedPlaceRepository,
     private val placeInfoRepository: PlaceInfoRepository,
     private val now: () -> Long = System::currentTimeMillis,
 ) : ViewModel() {
 
-    private val trip: Trip? = tripRepository.trip(savedStateHandle[ARG_TRIP_ID] ?: "")
+    private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
+
+    /**
+     * The trip from Room, like every other tab: a trip created or edited with A2 is here too, not
+     * only the sample trips. null while it loads, or when the trip is missing, deleted or owned by
+     * another account; the forecast is then empty.
+     *
+     * The writes use [tripId] and do not wait for this flow, so a tap right after the screen opens
+     * is not lost; a trip that does not exist is refused by TripWriter and reported as
+     * [SaveMessage.Failed].
+     */
+    private val trip: StateFlow<Trip?> = tripRepository.observeTrip(tripId)
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val searchQuery = MutableStateFlow("")
 
@@ -276,6 +288,8 @@ class WeatherViewModel(
         // The stale check runs before the state is built, so it is part of showing the place.
         loaded.onEach { autoRefreshIfStale(it) },
         refresh,
+        // Edited dates move the trip-day labels and the "not available yet" rows at once.
+        trip,
         ::forecastState,
     )
         .stateIn(viewModelScope, SharingStarted.Eagerly, ForecastUiState())
@@ -297,8 +311,7 @@ class WeatherViewModel(
         .stateIn(viewModelScope, SharingStarted.Eagerly, PlaceInfoUiState())
 
     init {
-        val tripId = trip?.tripId
-        if (tripId != null) {
+        if (tripId.isNotEmpty()) {
             viewModelScope.launch {
                 savedPlaceRepository.observePlaces(tripId).collect { places ->
                     _places.update { state ->
@@ -331,7 +344,6 @@ class WeatherViewModel(
      * [messageShown] after showing the snackbar.
      */
     fun pickPlace(place: Place) {
-        val tripId = trip?.tripId ?: return
         // W2 dedupes by coordinates, and it can only answer after the write, so the message is
         // decided here from the current list.
         val places = _places.value.places
@@ -377,7 +389,6 @@ class WeatherViewModel(
 
     /** Renames a saved place (WP); one write, reported once through [SavedPlacesUiState.message]. */
     fun renamePlace(placeId: String, name: String) {
-        val tripId = trip?.tripId ?: return
         val newName = name.trim()
         writePlace({ savedPlaceRepository.renamePlace(tripId, placeId, name) }) {
             SaveMessage.Renamed(newName)
@@ -386,7 +397,6 @@ class WeatherViewModel(
 
     /** Saves the note of a saved place (WP); an empty note removes it. */
     fun updatePlaceNote(placeId: String, note: String) {
-        val tripId = trip?.tripId ?: return
         val placeName = _places.value.places.firstOrNull { it.placeId == placeId }?.name.orEmpty()
         writePlace({ savedPlaceRepository.updateNote(tripId, placeId, note) }) {
             SaveMessage.NoteSaved(placeName)
@@ -398,7 +408,6 @@ class WeatherViewModel(
      * places flow pick the first remaining one, or none at all.
      */
     fun deletePlace(placeId: String) {
-        val tripId = trip?.tripId ?: return
         val placeName = _places.value.places.firstOrNull { it.placeId == placeId }?.name.orEmpty()
         writePlace({ savedPlaceRepository.deletePlace(tripId, placeId) }) {
             SaveMessage.Deleted(placeName)
@@ -552,9 +561,8 @@ class WeatherViewModel(
         viewModelScope.launch { download(place) }
     }
 
-    private fun forecastState(loaded: Loaded, refresh: Refresh?): ForecastUiState {
+    private fun forecastState(loaded: Loaded, refresh: Refresh?, trip: Trip?): ForecastUiState {
         val place = loaded.place
-        val trip = trip
         if (place == null || trip == null) return ForecastUiState()
 
         val cached = loaded.cached
@@ -586,7 +594,7 @@ class WeatherViewModel(
             initializer {
                 WeatherViewModel(
                     createSavedStateHandle(),
-                    appContainer().sampleTripRepository,
+                    appContainer().tripRepository,
                     appContainer().weatherRepository,
                     appContainer().savedPlaceRepository,
                     appContainer().placeInfoRepository,

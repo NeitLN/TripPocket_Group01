@@ -123,25 +123,39 @@ class ExpenseCalculatorTest {
     }
 
     @Test
-    fun summaryText_listsTotalAndSuggestedPayments() {
+    fun summaryText_listsPlanAgainstSpending_byCategory_andSuggestedPayments() {
         val trip = Trip("t", "Đà Lạt Getaway", "Đà Lạt", LocalDate.of(2026, 10, 15), LocalDate.of(2026, 10, 18),
             SyncStatus.SYNCED)
         val text = ExpenseSummaryText.build(
             trip = trip,
-            spent = 300_000,
+            planned = 250_000,
+            spent = 400_000,
+            categoryTotals = mapOf(ExpenseCategory.FOOD to 300_000L, ExpenseCategory.STAY to 0L, ExpenseCategory.TRANSPORT to 100_000L),
             settlements = listOf(Settlement("b", "a", 100_000), Settlement("c", "a", 100_000)),
             names = mapOf("a" to "An", "b" to "Bình", "c" to "Chi"),
         )
         assertEquals(
             "Đà Lạt Getaway - 15 Oct - 18 Oct 2026\n" +
-                "Total spent: 300,000 ₫\n\n" +
+                "Planned: 250,000 ₫\n" +
+                "Spent: 400,000 ₫ (150,000 ₫ over plan)\n" +
+                "- Food: 300,000 ₫\n" +
+                "- Transport: 100,000 ₫\n\n" +
                 "Suggested payments:\n" +
                 "- Bình pays An 100,000 ₫\n" +
                 "- Chi pays An 100,000 ₫\n",
             text,
         )
+    }
 
-        val settled = ExpenseSummaryText.build(trip, 0, emptyList(), emptyMap())
-        assertFalse(settled.contains("Suggested payments"))
+    @Test
+    fun summaryText_withinPlan_orWithoutPlan_saysNothingAboutGoingOver() {
+        val trip = Trip("t", "Huế", "Huế", LocalDate.of(2026, 10, 15), LocalDate.of(2026, 10, 15), SyncStatus.SYNCED)
+
+        val within = ExpenseSummaryText.build(trip, 500_000, 400_000, emptyMap(), emptyList(), emptyMap())
+        val noPlan = ExpenseSummaryText.build(trip, 0, 400_000, emptyMap(), emptyList(), emptyMap())
+
+        assertTrue(within.contains("Spent: 400,000 ₫\n"))
+        assertTrue(noPlan.contains("Planned: 0 ₫\nSpent: 400,000 ₫\n"))
+        assertFalse(within.contains("Suggested payments"))
     }
 }
