@@ -11,6 +11,7 @@ import vn.edu.vlu.trippocket.data.remote.mockapi.toModel
 import vn.edu.vlu.trippocket.data.remote.mockapi.toModels
 import vn.edu.vlu.trippocket.data.remote.safeApiCall
 import vn.edu.vlu.trippocket.domain.ApiError
+import java.time.Instant
 
 /**
  * Trip Ideas on MockAPI.io (Milestone 4, owner: Tiến). The single source the ViewModels read:
@@ -25,6 +26,7 @@ class TripIdeaRepository(
     private val api: TripIdeaApi,
     private val auth: AuthRepository,
     private val io: CoroutineDispatcher = Dispatchers.IO,
+    private val now: () -> Instant = Instant::now,
 ) {
 
     /** Uid of the signed-in account, to know which ideas it may edit. */
@@ -40,7 +42,7 @@ class TripIdeaRepository(
 
     /** POST /ideas as the signed-in account. */
     suspend fun share(input: TripIdeaInput): ApiResult<TripIdea> = safeApiCall(io) {
-        api.create(input.toBody(auth.displayName.orEmpty(), currentUid.orEmpty())).toModel()
+        api.create(input.toBody(auth.displayName.orEmpty(), currentUid.orEmpty(), createdAt = now().toString())).toModel()
             ?: throw IllegalStateException("Created idea came back without id or title")
     }
 

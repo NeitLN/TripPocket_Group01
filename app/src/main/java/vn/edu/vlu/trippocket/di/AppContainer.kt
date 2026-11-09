@@ -29,6 +29,7 @@ import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
 import vn.edu.vlu.trippocket.reminder.ReminderReconciler
 import vn.edu.vlu.trippocket.reminder.ReminderScheduler
 import vn.edu.vlu.trippocket.work.BackupScheduler
+import vn.edu.vlu.trippocket.util.APP_USER_AGENT
 import java.util.concurrent.TimeUnit
 
 /**
@@ -143,7 +144,7 @@ class AppContainer(context: Context) {
             .addInterceptor { chain ->
                 chain.proceed(
                     chain.request().newBuilder()
-                        .header("User-Agent", "TripPocket/${BuildConfig.VERSION_NAME} (Android; VLU student project)")
+                        .header("User-Agent", APP_USER_AGENT)
                         .build()
                 )
             }

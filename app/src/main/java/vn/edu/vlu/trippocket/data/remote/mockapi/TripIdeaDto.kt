@@ -27,7 +27,13 @@ data class TripIdeaDto(
     val authorUid: String? = null,
 )
 
-/** Body of POST and PUT: the fields the user typed plus who shared the idea. */
+/**
+ * Body of POST and PUT: the fields the user typed plus who shared the idea.
+ *
+ * [createdAt] is sent only by POST (ISO-8601 UTC): MockAPI would otherwise fill it with a random
+ * recent date and "newest first" would be wrong. PUT leaves it null, and Gson drops null fields,
+ * so an edit keeps the original date.
+ */
 data class TripIdeaBody(
     val title: String,
     val destination: String,
@@ -37,6 +43,7 @@ data class TripIdeaBody(
     val summary: String,
     val author: String,
     val authorUid: String,
+    val createdAt: String? = null,
 )
 
 /** The idea, or null when the row has no id or no title (nothing the list could show). */
@@ -59,7 +66,7 @@ fun TripIdeaDto.toModel(): TripIdea? {
 /** Rows that cannot be shown are dropped; the rest of the list survives. */
 fun List<TripIdeaDto>.toModels(): List<TripIdea> = mapNotNull { it.toModel() }
 
-fun TripIdeaInput.toBody(author: String, authorUid: String) = TripIdeaBody(
+fun TripIdeaInput.toBody(author: String, authorUid: String, createdAt: String? = null) = TripIdeaBody(
     title = title,
     destination = destination,
     days = days,
@@ -68,4 +75,5 @@ fun TripIdeaInput.toBody(author: String, authorUid: String) = TripIdeaBody(
     summary = summary,
     author = author,
     authorUid = authorUid,
+    createdAt = createdAt,
 )

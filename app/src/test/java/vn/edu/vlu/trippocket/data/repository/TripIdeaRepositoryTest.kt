@@ -14,6 +14,7 @@ import vn.edu.vlu.trippocket.data.model.TripIdeaInput
 import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.remote.mockapi.TripIdeaApi
 import vn.edu.vlu.trippocket.domain.ApiError
+import java.time.Instant
 
 /**
  * Milestone 4: [TripIdeaRepository] against MockWebServer, checking the HTTP method, path and
@@ -29,7 +30,7 @@ class TripIdeaRepositoryTest {
         server = MockWebServer()
         server.start()
         val api = tripIdeaApiOn(server)
-        repository = TripIdeaRepository(api, signedInAs("uid-1", "tien"))
+        repository = TripIdeaRepository(api, signedInAs("uid-1", "tien"), now = { Instant.parse("2026-11-09T08:00:00Z") })
     }
 
     @After
@@ -74,6 +75,7 @@ class TripIdeaRepositoryTest {
         assertTrue(body, body.contains("\"budgetVnd\":4500000"))
         assertTrue(body, body.contains("\"author\":\"tien\""))
         assertTrue(body, body.contains("\"authorUid\":\"uid-1\""))
+        assertTrue(body, body.contains("\"createdAt\":\"2026-11-09T08:00:00Z\""))
         assertEquals("9", (result as ApiResult.Success).data.id)
     }
 
@@ -86,6 +88,8 @@ class TripIdeaRepositoryTest {
         val request = server.takeRequest()
         assertEquals("PUT", request.method)
         assertEquals("/ideas/7", request.path)
+        // An edit keeps the original date: createdAt is not sent.
+        assertTrue(!request.body.readUtf8().contains("createdAt"))
         assertTrue(result is ApiResult.Success)
     }
 

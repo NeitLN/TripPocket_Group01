@@ -29,6 +29,9 @@ class TripIdeasActivity : AppCompatActivity() {
     private lateinit var binding: ActivityTripIdeasBinding
     private val viewModel: TripIdeasViewModel by viewModels { TripIdeasViewModel.Factory }
 
+    /** Set when the form saved: the next list goes back to the top, where the newest idea is. */
+    private var scrollToTop = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -50,6 +53,7 @@ class TripIdeasActivity : AppCompatActivity() {
 
         // The form saved (POST / PUT): reload so the list shows what the server stored.
         supportFragmentManager.setFragmentResultListener(TripIdeaFormDialogFragment.REQUEST_KEY, this) { _, _ ->
+            scrollToTop = true
             viewModel.onIdeaSaved()
         }
         // "Plan this trip" -> trip form -> the new trip opens, like from the trip list.
@@ -62,7 +66,14 @@ class TripIdeasActivity : AppCompatActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    adapter.submitList(state.ideas)
+                    // ListAdapter keeps the old first row in place when a row is inserted above
+                    // it, so a newly shared idea would sit just off screen.
+                    adapter.submitList(state.ideas) {
+                        if (scrollToTop && !state.loading) {
+                            scrollToTop = false
+                            binding.rvIdeas.scrollToPosition(0)
+                        }
+                    }
                     render(state)
                 }
             }
