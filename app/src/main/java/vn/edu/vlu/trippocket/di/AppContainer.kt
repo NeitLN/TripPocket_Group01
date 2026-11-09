@@ -14,11 +14,13 @@ import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
+import vn.edu.vlu.trippocket.data.remote.wikipedia.PageSummaryApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.DevAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
+import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
@@ -106,6 +108,11 @@ class AppContainer(context: Context) {
     /** W2: places saved to a trip, in Room. */
     val savedPlaceRepository: SavedPlaceRepository by lazy {
         SavedPlaceRepository(database.savedPlaceDao(), tripWriter)
+    }
+
+    /** M4: photos and a short introduction of a place, from Wikipedia. */
+    val placeInfoRepository by lazy {
+        PlaceInfoRepository(wikipediaRetrofit.create(PageSummaryApi::class.java))
     }
 
     /** Retrofit for https://geocoding-api.open-meteo.com/ (place search). */
