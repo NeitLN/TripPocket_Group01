@@ -38,7 +38,7 @@
     <string name="idea_error_title_too_long">Keep the title under 60 characters</string>
     <string name="idea_error_destination_empty">Where is this trip?</string>
     <string name="idea_error_destination_too_long">Keep the destination under 60 characters</string>
-    <string name="idea_error_days">Enter 1 to 30 days</string>
+    <string name="idea_error_days">1 to 30 days</string>
     <string name="idea_error_budget">Enter an amount in VND, digits only</string>
     <string name="idea_error_cover">Use an https:// link to a picture, or leave it empty</string>
     <string name="idea_error_summary_too_long">Keep it under 280 characters</string>

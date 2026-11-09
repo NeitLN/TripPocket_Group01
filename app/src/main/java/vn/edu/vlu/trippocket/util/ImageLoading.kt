@@ -14,6 +14,9 @@ import com.bumptech.glide.load.resource.drawable.DrawableTransitionOptions
  * - Glide keeps decoded images in its memory cache and the downloaded bytes in its disk cache
  *   (DiskCacheStrategy.AUTOMATIC), so scrolling back or reopening the screen offline reuses them.
  *
+ * Give the ImageView `android:scaleType="center"`: the photo is already cropped to the view by
+ * [centerCrop] here, and the placeholder / error icons keep their own size instead of stretching.
+ *
  * Safe to call from RecyclerView.Adapter.onBindViewHolder: Glide cancels the previous request of
  * a recycled ImageView, so a fast scroll never shows another row's picture.
  */
