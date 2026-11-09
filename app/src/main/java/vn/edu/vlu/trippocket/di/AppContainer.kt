@@ -12,6 +12,7 @@ import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.remote.firebase.FirebaseAuthRepository
+import vn.edu.vlu.trippocket.data.remote.mockapi.TripIdeaApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
@@ -21,6 +22,7 @@ import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
+import vn.edu.vlu.trippocket.data.repository.TripIdeaRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.reminder.AlarmReminderScheduler
@@ -122,6 +124,11 @@ class AppContainer(context: Context) {
 
     /** Retrofit for the team's MockAPI.io project (Trip Ideas CRUD, Milestone 4). */
     val mockApiRetrofit: Retrofit by lazy { retrofit(BuildConfig.MOCKAPI_BASE_URL) }
+
+    /** Trip Ideas on MockAPI.io (Milestone 4, Tiến). */
+    val tripIdeaRepository: TripIdeaRepository by lazy {
+        TripIdeaRepository(mockApiRetrofit.create(TripIdeaApi::class.java), authRepository)
+    }
 
     /**
      * One OkHttp client for every API (Milestone 4): explicit timeouts so a dead network ends in
