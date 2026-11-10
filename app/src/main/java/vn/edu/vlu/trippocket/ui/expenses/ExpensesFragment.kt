@@ -60,6 +60,7 @@ class ExpensesFragment : Fragment() {
         }
         binding.btnShare.setOnClickListener { shareSummary() }
         binding.btnMembers.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_members) }
+        binding.btnExchangeRates.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_exchangeRates) }
         binding.fabAddExpense.setOnClickListener { fab ->
             val state = viewModel.uiState.value
             when {
@@ -95,7 +96,11 @@ class ExpensesFragment : Fragment() {
         binding.tvEmptyExpenses.isVisible = empty
 
         binding.tvSpentTotal.text = Format.vnd(state.spent)
-        binding.tvPlanned.text = getString(R.string.expenses_of_planned, Format.vnd(state.planned))
+        binding.tvPlanned.text = if (state.overPlan > 0) {
+            getString(R.string.expenses_of_planned_over, Format.vnd(state.planned), Format.vnd(state.overPlan))
+        } else {
+            getString(R.string.expenses_of_planned, Format.vnd(state.planned))
+        }
         binding.progressBudget.progress = state.budgetProgress
 
         fun total(category: ExpenseCategory) = Format.amount(state.categoryTotals[category] ?: 0L)

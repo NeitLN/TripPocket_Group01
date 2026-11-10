@@ -11,6 +11,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.TestDatabase.Companion.NOW
 import vn.edu.vlu.trippocket.data.local.TestDatabase.Companion.OWNER
@@ -316,5 +317,17 @@ class ExpenseRepositoryTest {
 
         assertEquals(listOf("a", "b", "c"), repository.observeMembers("t1").first().map { it.memberId })
         assertEquals(afterExpense + 2, trip().localRevision)
+    }
+
+    @Test
+    fun sampleExpenses_getTheirOwnCreatedAt_inSampleOrder(): Unit = runBlocking {
+        MockData.trips.forEach { t.db.tripDao().insert(t.trip(it.tripId)) }
+
+        repository.seedSampleExpenses(NOW)
+
+        // No two expenses of a trip share a createdAt, so the list and the backup order are fixed.
+        val seeded = t.db.expenseDao().observeByTrip(MockData.TRIP_DALAT).first().sortedBy { it.createdAt }
+        assertEquals(MockData.expensesOf(MockData.TRIP_DALAT).map { it.expenseId }, seeded.map { it.expenseId })
+        assertEquals(listOf(NOW, NOW + 1, NOW + 2, NOW + 3), seeded.map { it.createdAt })
     }
 }

@@ -43,6 +43,11 @@
             android:exported="false"
             android:parentActivityName=".ui.trips.MainActivity" />
 
+        <activity
+            android:name=".ui.ideas.TripIdeasActivity"
+            android:exported="false"
+            android:parentActivityName=".ui.trips.MainActivity" />
+
         <receiver
             android:name=".reminder.ReminderReceiver"
             android:exported="false" />
@@ -54,6 +59,8 @@
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.TIMEZONE_CHANGED" />
                 <action android:name="android.intent.action.TIME_SET" />
+                <!-- The user allowed exact alarms: set the inexact reminders again, now exact. -->
+                <action android:name="android.app.action.SCHEDULE_EXACT_ALARM_PERMISSION_STATE_CHANGED" />
             </intent-filter>
         </receiver>
 

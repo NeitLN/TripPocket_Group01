@@ -27,6 +27,7 @@
 
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>
+    <string name="expenses_of_planned_over">of %1$s planned · %2$s over</string>
     <string name="expenses_category_food">Food</string>
     <string name="expenses_category_stay">Stay</string>
     <string name="expenses_category_transport">Transport</string>
@@ -76,8 +77,33 @@
     <string name="expense_error_amount">Enter an amount above 0</string>
     <string name="expense_error_payer">Choose who paid</string>
     <string name="expense_error_participants">Pick at least one person to split with</string>
+    <string name="expense_error_equal_too_small">Each person needs at least 1 ₫. Raise the amount or split with fewer people.</string>
     <string name="expense_error_custom_sum">The shares must add up to the amount</string>
     <string name="expense_error_custom_number">Enter each share as a whole number of dong</string>
     <string name="expense_error_member">A member in this split is no longer in the trip</string>
     <string name="expense_error_not_found">This expense was deleted</string>
+
+    <!-- Exchange rates (M4) -->
+    <string name="exchange_rates_title">Exchange rates</string>
+    <string name="exchange_rates_updated">Updated: %1$s</string>
+    <string name="exchange_rates_rate_format">1 %1$s ≈ %2$s</string>
+    <string name="exchange_rates_empty">No exchange rates available</string>
+    <string name="expense_field_paid_in">Paid in</string>
+    <string name="expense_field_foreign_amount">Foreign amount</string>
+    <string name="expense_rates_loading_short">Loading exchange rates…</string>
+    <string name="expense_rates_offline_short">Rates unavailable. Enter VND directly.</string>
+    <string name="expense_paid_in_none">None (VND)</string>
+
+    <string name="currency_usd">US dollar</string>
+    <string name="currency_eur">Euro</string>
+    <string name="currency_jpy">Japanese yen</string>
+    <string name="currency_krw">South Korean won</string>
+    <string name="currency_thb">Thai baht</string>
+    <string name="currency_sgd">Singapore dollar</string>
+    <string name="currency_gbp">British pound</string>
+    <string name="currency_aud">Australian dollar</string>
+    <string name="currency_cny">Chinese yuan</string>
+    <string name="currency_twd">New Taiwan dollar</string>
+    <string name="currency_myr">Malaysian ringgit</string>
+    <string name="currency_idr">Indonesian rupiah</string>
 </resources>

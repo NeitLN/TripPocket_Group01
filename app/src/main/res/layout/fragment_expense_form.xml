@@ -61,6 +61,79 @@
                     android:maxLength="80" />
             </com.google.android.material.textfield.TextInputLayout>
 
+            <!-- Paid in: foreign currency & amount (M4) -->
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPaidInCurrency"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                android:layout_width="120dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:hint="@string/expense_field_paid_in"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilTitle">
+
+                <com.google.android.material.textfield.MaterialAutoCompleteTextView
+                    android:id="@+id/actPaidInCurrency"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:inputType="none" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <com.google.android.material.textfield.TextInputLayout
+                android:id="@+id/tilPaidInAmount"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="@dimen/space_sm"
+                android:hint="@string/expense_field_foreign_amount"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintStart_toEndOf="@id/tilPaidInCurrency"
+                app:layout_constraintTop_toTopOf="@id/tilPaidInCurrency">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/etPaidInAmount"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:imeOptions="actionNext"
+                    android:inputType="numberDecimal"
+                    android:maxLength="16" />
+            </com.google.android.material.textfield.TextInputLayout>
+
+            <TextView
+                android:id="@+id/tvPaidInRate"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:layout_marginEnd="@dimen/space_xs"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="?attr/colorOnSurfaceVariant"
+                android:visibility="gone"
+                app:layout_constraintEnd_toStartOf="@id/btnPaidInRetry"
+                app:layout_constraintStart_toStartOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/tilPaidInCurrency"
+                tools:text="1 USD ≈ 25,611 ₫"
+                tools:visibility="visible" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btnPaidInRetry"
+                style="@style/Widget.Material3.Button.TextButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:minHeight="48dp"
+                android:text="@string/api_retry"
+                android:visibility="gone"
+                app:layout_constraintBottom_toBottomOf="@id/tvPaidInRate"
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toTopOf="@id/tvPaidInRate"
+                tools:visibility="visible" />
+
+            <androidx.constraintlayout.widget.Barrier
+                android:id="@+id/barrierPaidInBottom"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                app:barrierDirection="bottom"
+                app:constraint_referenced_ids="tilPaidInCurrency,tilPaidInAmount,tvPaidInRate,btnPaidInRetry" />
+
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilAmount"
                 android:layout_width="0dp"
@@ -69,7 +142,7 @@
                 android:hint="@string/expense_field_amount"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tilTitle"
+                app:layout_constraintTop_toBottomOf="@id/barrierPaidInBottom"
                 app:suffixText="@string/expense_currency_suffix">
 
                 <com.google.android.material.textfield.TextInputEditText

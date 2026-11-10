@@ -45,6 +45,10 @@ class FirebaseAuthRepository(private val auth: FirebaseAuth) : AuthRepository {
         auth.signOut()
     }
 
+    /** The profile name only: part of the email must never be published as an author name. */
+    override val displayName: String?
+        get() = auth.currentUser?.displayName?.trim()?.takeIf { it.isNotEmpty() }
+
     /** One Firebase call, with its error translated; a cancelled screen is not an auth error. */
     private suspend fun call(block: suspend () -> Unit) {
         try {

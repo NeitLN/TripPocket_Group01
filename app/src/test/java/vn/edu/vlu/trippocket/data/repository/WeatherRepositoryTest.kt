@@ -1,14 +1,13 @@
 package vn.edu.vlu.trippocket.data.repository
 
-import com.google.gson.JsonSyntaxException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import okhttp3.ResponseBody.Companion.toResponseBody
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
-import org.junit.Assert.fail
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
@@ -21,13 +20,13 @@ import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.RefreshSummary
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.WeatherCondition
+import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeForecastApi.Companion.of
 import vn.edu.vlu.trippocket.data.remote.openmeteo.FakeGeocodingApi
+import vn.edu.vlu.trippocket.domain.ApiError
 import vn.edu.vlu.trippocket.domain.DailyWeather
-import vn.edu.vlu.trippocket.domain.WeatherError
 import java.io.IOException
-import java.net.SocketTimeoutException
 import java.time.LocalDate
 
 /**
@@ -38,12 +37,13 @@ import java.time.LocalDate
 class WeatherRepositoryTest {
 
     private val t = TestDatabase()
+    private val geocodingApi = FakeGeocodingApi()
     private val forecastApi = FakeForecastApi()
     private var clock = 100L
     private var nextId = 0
 
     private val weather = WeatherRepository(
-        FakeGeocodingApi(),
+        geocodingApi,
         forecastApi,
         t.db.weatherCacheDao(),
         t.db.savedPlaceDao(),
@@ -95,12 +95,9 @@ class WeatherRepositoryTest {
 
         forecastApi.failWith = IOException("offline")
         clock = 9L
-        try {
-            weather.refreshForecast(place)
-            fail("Expected IOException")
-        } catch (e: IOException) {
-            assertEquals("offline", e.message)
-        }
+
+        // A failed download is a value, not an exception: the ViewModel shows it.
+        assertEquals(ApiResult.Failure(ApiError.OFFLINE), weather.refreshForecast(place))
 
         val cached = weather.observeForecast(place.placeId).first()!!
         assertEquals(5L, cached.fetchedAt)
@@ -123,6 +120,18 @@ class WeatherRepositoryTest {
 
         assertTrue(cached.days.isEmpty())
         assertEquals(42L, cached.fetchedAt)
+    }
+
+    @Test
+    fun clearForecast_removesTheCache_andKeepsThePlace() = runBlocking {
+        val place = saved()
+        weather.refreshForecast(place)
+
+        assertTrue(weather.clearForecast(place.placeId))
+
+        assertNull(weather.observeForecast(place.placeId).first())
+        assertEquals(listOf(place.placeId), places.observePlaces("t1").first().map { it.placeId })
+        assertFalse(weather.clearForecast(place.placeId))
     }
 
     @Test
@@ -208,28 +217,25 @@ class WeatherRepositoryTest {
     }
 
     @Test
-    fun aLostConnection_isANetworkError() {
-        assertEquals(WeatherError.NETWORK, IOException("offline").toWeatherError())
-        assertEquals(WeatherError.NETWORK, SocketTimeoutException("timeout").toWeatherError())
+    fun aLostConnection_isAnOfflineFailure() = runBlocking {
+        val place = saved()
+        forecastApi.failWith = IOException("offline")
+
+        assertEquals(ApiResult.Failure(ApiError.OFFLINE), weather.refreshForecast(place))
     }
 
     @Test
-    fun tooManyRequests_isRateLimited() {
-        assertEquals(WeatherError.RATE_LIMITED, httpError(429).toWeatherError())
+    fun tooManyRequestsOnTheSearch_isARateLimitFailure() = runBlocking {
+        geocodingApi.failWith = httpError(429)
+
+        assertEquals(ApiResult.Failure(ApiError.RATE_LIMITED), weather.searchPlaces("Da Lat"))
     }
 
     @Test
-    fun aServerError_isANamedKind() {
-        assertEquals(WeatherError.SERVER, httpError(500).toWeatherError())
-        assertEquals(WeatherError.SERVER, httpError(503).toWeatherError())
-    }
+    fun aServerErrorOnTheSearch_isANamedFailure() = runBlocking {
+        geocodingApi.failWith = httpError(503)
 
-    @Test
-    fun anotherHttpErrorOrAnUnreadableAnswer_isABadResponse() {
-        assertEquals(WeatherError.BAD_RESPONSE, httpError(400).toWeatherError())
-        assertEquals(WeatherError.BAD_RESPONSE, httpError(404).toWeatherError())
-        assertEquals(WeatherError.BAD_RESPONSE, JsonSyntaxException("not json").toWeatherError())
-        assertEquals(WeatherError.BAD_RESPONSE, IllegalStateException("boom").toWeatherError())
+        assertEquals(ApiResult.Failure(ApiError.SERVER), weather.searchPlaces("Da Lat"))
     }
 
     private fun httpError(code: Int): HttpException =
