@@ -89,6 +89,23 @@ class NearbySightsViewModelTest {
         return ViewModelProvider(viewModels, factory)[NearbySightsViewModel::class.java]
     }
 
+    private suspend fun insertActivity(index: Int, dayIndex: Int = 0, title: String = "Activity $index") {
+        t.db.activityDao().insert(
+            ActivityEntity(
+                activityId = "a$index",
+                tripId = tripId,
+                dayIndex = dayIndex,
+                title = title,
+                place = "",
+                startTime = index % (24 * 60),
+                estimatedCost = 0,
+                note = "",
+                orderIndex = index,
+                reminderMinutesBefore = null,
+            )
+        )
+    }
+
     private suspend fun seedPlace() {
         savedPlaces.savePlace(tripId, Place("Da Lat", "Lam Dong", "Vietnam", 11.9404, 108.4583))
     }
@@ -219,22 +236,7 @@ class NearbySightsViewModelTest {
 
     @Test
     fun theActivityLimit_isReported_insteadOfCrashing(): Unit = runTest {
-        repeat(Limits.MAX_ACTIVITIES) { index ->
-            t.db.activityDao().insert(
-                ActivityEntity(
-                    activityId = "a$index",
-                    tripId = tripId,
-                    dayIndex = 0,
-                    title = "Activity $index",
-                    place = "",
-                    startTime = index % (24 * 60),
-                    estimatedCost = 0,
-                    note = "",
-                    orderIndex = index,
-                    reminderMinutesBefore = null,
-                )
-            )
-        }
+        repeat(Limits.MAX_ACTIVITIES) { insertActivity(it) }
         seedPlace()
         val api = FakeGeoSearchApi(FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương")))
         val viewModel = newViewModel(api)
@@ -247,6 +249,63 @@ class NearbySightsViewModelTest {
             viewModel.uiState.first { it.message != null }.message,
         )
         assertEquals(Limits.MAX_ACTIVITIES, t.db.activityDao().countByTrip(tripId))
+    }
+
+    @Test
+    fun aSightAddedToTheDay_readsAdded_andTheOthersCanStillBeAdded(): Unit = runTest {
+        seedPlace()
+        val api = FakeGeoSearchApi(
+            FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương"), FakeGeoSearchApi.page(2, "Ga Đà Lạt"))
+        )
+        val viewModel = newViewModel(api)
+        val lake = viewModel.uiState.first { it.sights.size == 2 }.sights.first { it.title == "Hồ Xuân Hương" }
+        assertTrue(viewModel.uiState.value.rows.all { it.addState == AddState.CAN_ADD })
+
+        viewModel.addToDay(lake)
+
+        val rows = viewModel.uiState.first { state -> state.rows.any { it.addState == AddState.ADDED } }.rows
+        assertEquals(AddState.ADDED, rows.single { it.sight.title == "Hồ Xuân Hương" }.addState)
+        assertEquals(AddState.CAN_ADD, rows.single { it.sight.title == "Ga Đà Lạt" }.addState)
+    }
+
+    @Test
+    fun theSameSightInAnotherDay_canStillBeAddedToThisDay(): Unit = runTest {
+        insertActivity(0, dayIndex = 0, title = "Hồ Xuân Hương")
+        seedPlace()
+        val api = FakeGeoSearchApi(FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương")))
+        val viewModel = newViewModel(api, dayIndex = 1)
+
+        val state = viewModel.uiState.first { it.sights.isNotEmpty() }
+
+        assertEquals(AddState.CAN_ADD, state.rows.single().addState)
+    }
+
+    @Test
+    fun aFullTrip_turnsEveryButtonOff_beforeAnyTap(): Unit = runTest {
+        repeat(Limits.MAX_ACTIVITIES) { insertActivity(it) }
+        seedPlace()
+        val api = FakeGeoSearchApi(
+            FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương"), FakeGeoSearchApi.page(2, "Ga Đà Lạt"))
+        )
+        val viewModel = newViewModel(api)
+
+        val state = viewModel.uiState.first { it.sights.size == 2 && it.tripFull }
+
+        assertTrue(state.rows.all { it.addState == AddState.TRIP_FULL })
+    }
+
+    @Test
+    fun deletingAnActivity_fromAFullTrip_turnsTheButtonsBackOn(): Unit = runTest {
+        repeat(Limits.MAX_ACTIVITIES) { insertActivity(it) }
+        seedPlace()
+        val api = FakeGeoSearchApi(FakeGeoSearchApi.response(FakeGeoSearchApi.page(1, "Hồ Xuân Hương")))
+        val viewModel = newViewModel(api)
+        viewModel.uiState.first { it.sights.isNotEmpty() && it.tripFull }
+
+        itinerary.deleteActivity(tripId, "a0")
+
+        val state = viewModel.uiState.first { !it.tripFull }
+        assertEquals(AddState.CAN_ADD, state.rows.single().addState)
     }
 
     @Test
