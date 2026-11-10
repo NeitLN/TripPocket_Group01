@@ -41,6 +41,16 @@ class CurrencyConverterTest {
     }
 
     @Test
+    fun toVnd_roundsTheDecimalProduct_soATieNeverFallsOneDongShort() {
+        // 0.29 * 50 = 14.5 exactly. The binary doubles give 14.499999999999998, so the old
+        // (amount * rate).roundToLong() returned 14 here.
+        assertEquals(15L, CurrencyConverter.toVnd(0.29, 50.0))
+        assertEquals(29L, CurrencyConverter.toVnd(0.57, 50.0))
+        assertEquals(32L, CurrencyConverter.toVnd(0.35, 90.0))
+        assertEquals(60L, CurrencyConverter.toVnd(0.35, 170.0))
+    }
+
+    @Test
     fun toVnd_zeroOrNegativeAmounts_returnZero() {
         assertEquals(0L, CurrencyConverter.toVnd(0.0, 25000.0))
         assertEquals(0L, CurrencyConverter.toVnd(-50.0, 25000.0))
@@ -52,6 +62,8 @@ class CurrencyConverterTest {
         assertEquals(0L, CurrencyConverter.toVnd(100.0, -25000.0))
         assertEquals(0L, CurrencyConverter.toVnd(100.0, Double.NaN))
         assertEquals(0L, CurrencyConverter.toVnd(Double.NaN, 25000.0))
+        assertEquals(0L, CurrencyConverter.toVnd(Double.POSITIVE_INFINITY, 25000.0))
+        assertEquals(0L, CurrencyConverter.toVnd(100.0, Double.POSITIVE_INFINITY))
     }
 
     @Test
