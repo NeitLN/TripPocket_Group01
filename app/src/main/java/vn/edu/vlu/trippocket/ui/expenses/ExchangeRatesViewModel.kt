@@ -20,6 +20,8 @@ sealed interface ExchangeRatesUiState {
     data class Success(
         val rates: ExchangeRates,
         val isRefreshing: Boolean = false,
+        /** A pull-to-refresh failed: the rates are the previous ones, not an error screen. */
+        val refreshError: ApiError? = null,
     ) : ExchangeRatesUiState
     data class Error(val error: ApiError) : ExchangeRatesUiState
 }
@@ -43,13 +45,14 @@ class ExchangeRatesViewModel(
     }
 
     fun retry() {
-        loadRates()
+        // From the error screen there is nothing to keep; from the banner over a list there is.
+        if (_uiState.value is ExchangeRatesUiState.Success) refresh() else loadRates()
     }
 
     fun refresh() {
         val current = _uiState.value
         if (current is ExchangeRatesUiState.Success) {
-            _uiState.value = current.copy(isRefreshing = true)
+            _uiState.value = current.copy(isRefreshing = true, refreshError = null)
         } else {
             _uiState.value = ExchangeRatesUiState.Loading
         }
@@ -64,7 +67,13 @@ class ExchangeRatesViewModel(
                 _uiState.value = ExchangeRatesUiState.Success(result.data, isRefreshing = false)
             }
             is ApiResult.Failure -> {
-                _uiState.value = ExchangeRatesUiState.Error(result.error)
+                val current = _uiState.value
+                _uiState.value = if (isRefresh && current is ExchangeRatesUiState.Success) {
+                    // Keep the rates already on screen; the banner explains the stale refresh.
+                    current.copy(isRefreshing = false, refreshError = result.error)
+                } else {
+                    ExchangeRatesUiState.Error(result.error)
+                }
             }
         }
     }
