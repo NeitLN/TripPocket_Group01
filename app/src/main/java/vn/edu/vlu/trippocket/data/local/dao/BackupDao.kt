@@ -91,6 +91,10 @@ interface BackupDao {
     @Query("UPDATE trip SET syncStatus = 'PENDING' WHERE tripId = :tripId AND ownerUid = :ownerUid AND syncStatus = 'FAILED'")
     suspend fun retryFailed(tripId: String, ownerUid: String): Int
 
+    /** Deleted trips of the account whose document delete FAILED: back to PENDING (at sign-in). */
+    @Query("UPDATE trip SET syncStatus = 'PENDING' WHERE ownerUid = :ownerUid AND isDeleted = 1 AND syncStatus = 'FAILED'")
+    suspend fun retryFailedDeletes(ownerUid: String): Int
+
     /** A deleted trip still at the revision whose document was just removed. */
     @Query("SELECT COUNT(*) FROM trip WHERE tripId = :tripId AND isDeleted = 1 AND localRevision = :revision")
     suspend fun isTombstoneAt(tripId: String, revision: Long): Int
