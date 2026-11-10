@@ -94,4 +94,7 @@
     <string name="sights_empty_body">Wikipedia has no article within 10 km of this place. Pull down to check again.</string>
     <string name="sights_no_place_title">Add a place first</string>
     <string name="sights_no_place_body">Save a place in Weather, then come back to see what is nearby.</string>
+
+    <!-- W5: the trip has no saved place, so there is no forecast to show yet -->
+    <string name="itinerary_weather_no_place">Save a place in the Weather tab to see the forecast</string>
 </resources>
