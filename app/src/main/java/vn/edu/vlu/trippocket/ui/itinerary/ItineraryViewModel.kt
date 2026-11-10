@@ -13,15 +13,18 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.appContainer
+import vn.edu.vlu.trippocket.data.model.ChecklistItem
 import vn.edu.vlu.trippocket.data.model.ForecastDay
 import vn.edu.vlu.trippocket.data.model.ItineraryActivity
 import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
+import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
 import vn.edu.vlu.trippocket.domain.Limits
@@ -50,13 +53,13 @@ data class ItineraryUiState(
 
 /**
  * Screen 3, day by day. The trip (its days, so a trip created or re-dated in A2 shows the right
- * tabs) and the activities come from Room; the checklist count and the forecast stay on the
- * sample data until their own tasks (W5, I2) move them.
+ * tabs), the activities and the packing count (I2) come from Room; the forecast stays on the
+ * sample data until W5 moves it.
  */
 class ItineraryViewModel(
     private val savedStateHandle: SavedStateHandle,
     tripRepository: TripRepository,
-    private val sampleRepository: SampleTripRepository,
+    checklistRepository: ChecklistRepository,
     weatherRepository: WeatherRepository,
     private val itineraryRepository: ItineraryRepository,
 ) : ViewModel() {
@@ -75,21 +78,28 @@ class ItineraryViewModel(
     /**
      * Eagerly, so the screen always has a state to read and a tab tap is never missed.
      * [flatMapLatest] cancels the queries of the previous day when another day is selected.
+     *
+     * Each list of activities carries the day it was read for. Right after a tab change the
+     * selected day is already new while Room is still answering for the old one; that moment
+     * emits nothing, so the screen never shows the old day's activities and "Est." under the new
+     * tab (issue #35, 3.2), nor an empty day in between: it goes straight to the new day's list.
      */
     @OptIn(ExperimentalCoroutinesApi::class)
     val uiState: StateFlow<ItineraryUiState> = combine(
         tripRepository.observeTrip(tripId),
         selectedDay,
-        selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day) },
+        selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day).map { DayActivities(day, it) } },
         itineraryRepository.observeActivities(tripId),
-    ) { trip, day, activities, all ->
+        checklistRepository.observe(tripId),
+    ) { trip, day, dayActivities, all, checklist ->
         dayCount = trip?.dayCount ?: 0
         if (trip == null) return@combine ItineraryUiState()
         // A trip made shorter (A2) or a restored tab past the end: fall back to the last day.
         val shown = day.coerceIn(0, dayCount - 1)
         if (shown != day) selectDay(shown)
-        state(trip, shown, if (shown == day) activities else emptyList(), all.size)
-    }.stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
+        if (dayActivities.day != shown) return@combine null
+        state(trip, shown, dayActivities.activities, all.size, checklist)
+    }.filterNotNull().stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
 
     fun selectDay(dayIndex: Int) {
         val day = dayIndex.coerceIn(0, (dayCount - 1).coerceAtLeast(0))
@@ -137,17 +147,17 @@ class ItineraryViewModel(
         dayIndex: Int,
         activities: List<ItineraryActivity>,
         activityCount: Int,
+        checklist: List<ChecklistItem>,
     ): ItineraryUiState {
         val dates = (0 until trip.dayCount).map(trip::dateOfDay)
-        val (done, total) = sampleRepository.checklist(trip.tripId)
         return ItineraryUiState(
             days = dates,
             selectedDay = dayIndex,
             activities = activities,
             forecast = dates.getOrNull(dayIndex)?.let { date -> forecast.firstOrNull { it.date == date } },
             estimatedCost = activities.sumOf { it.estimatedCost },
-            checklistDone = done,
-            checklistTotal = total,
+            checklistDone = checklist.count { it.isDone },
+            checklistTotal = checklist.size,
             activityCount = activityCount,
         )
     }
@@ -160,7 +170,7 @@ class ItineraryViewModel(
                 ItineraryViewModel(
                     createSavedStateHandle(),
                     appContainer().tripRepository,
-                    appContainer().sampleTripRepository,
+                    appContainer().checklistRepository,
                     appContainer().weatherRepository,
                     appContainer().itineraryRepository,
                 )
@@ -168,3 +178,6 @@ class ItineraryViewModel(
         }
     }
 }
+
+/** The activities of one day, tagged with the day they were read for. */
+private data class DayActivities(val day: Int, val activities: List<ItineraryActivity>)

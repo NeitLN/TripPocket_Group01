@@ -17,6 +17,7 @@ import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.model.SyncStatus
+import vn.edu.vlu.trippocket.data.remote.firebase.BackupRejectedException
 import vn.edu.vlu.trippocket.data.remote.firebase.BackupRemote
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshot
 import java.io.IOException
@@ -31,10 +32,14 @@ class BackupRepositoryTest {
         val deletes = mutableListOf<String>()
         var failNext = false
 
+        /** Trip ids Firestore refuses for good (rules, a bad document), upload and delete alike. */
+        val rejected = mutableSetOf<String>()
+
         /** Runs inside the next upload, before it "reaches the server". */
         var duringUpload: (suspend () -> Unit)? = null
 
         override suspend fun upload(snapshot: TripSnapshot) {
+            if (snapshot.tripId in rejected) throw BackupRejectedException("PERMISSION_DENIED")
             if (failNext) {
                 failNext = false
                 throw IOException("offline")
@@ -45,6 +50,7 @@ class BackupRepositoryTest {
         }
 
         override suspend fun delete(ownerUid: String, tripId: String) {
+            if (tripId in rejected) throw BackupRejectedException("PERMISSION_DENIED")
             if (failNext) {
                 failNext = false
                 throw IOException("offline")
@@ -133,6 +139,69 @@ class BackupRepositoryTest {
         assertEquals(SyncStatus.FAILED, status("big"))
         assertEquals(listOf("small"), remote.uploads)
         assertEquals(SyncStatus.SYNCED, status("small"))
+    }
+
+    @Test
+    fun aTripFirestoreRefusesForGood_isFailed_andNoLongerBlocksTheOthers(): Unit = runBlocking {
+        pendingTrip("refused")
+        pendingTrip("ok")
+        remote.rejected += "refused"
+
+        assertEquals(BackupOutcome.DONE, backup.backUp(OWNER))
+
+        assertEquals(SyncStatus.FAILED, status("refused"))
+        assertEquals(listOf("ok"), remote.uploads)
+        assertEquals(SyncStatus.SYNCED, status("ok"))
+    }
+
+    @Test
+    fun aDeletedTripWhoseDocumentIsRefused_isFailed_keptOnThePhone_andTheOthersStillGo(): Unit = runBlocking {
+        t.db.tripDao().insert(t.trip("gone", deleted = true).copy(syncStatus = SyncStatus.PENDING))
+        pendingTrip("ok")
+        remote.rejected += "gone"
+
+        assertEquals(BackupOutcome.DONE, backup.backUp(OWNER))
+
+        assertEquals(SyncStatus.FAILED, status("gone"))
+        assertEquals(SyncStatus.SYNCED, status("ok"))
+    }
+
+    @Test
+    fun signingOutWhileTheUploadRuns_isNotARefusal_theTripStaysPendingForTheNextSignIn(): Unit = runBlocking {
+        pendingTrip("t1")
+        pendingTrip("t2")
+        remote.duringUpload = {
+            // The uid check passed, then the user signs out before Firestore answers: the rules
+            // now refuse the request, but the trip itself is fine.
+            auth.setUid(null)
+            throw BackupRejectedException("PERMISSION_DENIED")
+        }
+
+        assertEquals(BackupOutcome.ACCOUNT_CHANGED, backup.backUp(OWNER))
+
+        assertEquals(SyncStatus.PENDING, status("t1"))
+        assertEquals(SyncStatus.PENDING, status("t2"))
+        assertTrue(remote.uploads.isEmpty())
+    }
+
+    @Test
+    fun aDeletedTripThatFailed_isTriedAgainAtSignIn_withoutARetryButton(): Unit = runBlocking {
+        t.db.tripDao().insert(t.trip("gone", deleted = true).copy(syncStatus = SyncStatus.FAILED))
+        t.db.tripDao().insert(t.trip("tooBig").copy(syncStatus = SyncStatus.FAILED))
+        t.db.tripDao().insert(t.trip("theirs", owner = "uid-b", deleted = true).copy(syncStatus = SyncStatus.FAILED))
+
+        backup.resumePending(OWNER)
+
+        // A deleted trip has no card, so nobody can press "Retry backup" on it: sign-in retries it.
+        assertEquals(SyncStatus.PENDING, status("gone"))
+        assertEquals(listOf(OWNER), requested)
+        // A trip the user can still see keeps its FAILED badge and its Retry button.
+        assertEquals(SyncStatus.FAILED, status("tooBig"))
+        assertEquals(SyncStatus.FAILED, status("theirs"))
+
+        assertEquals(BackupOutcome.DONE, backup.backUp(OWNER))
+        assertNull(t.db.backupDao().trip("gone"))
+        assertEquals(listOf("gone"), remote.deletes)
     }
 
     @Test

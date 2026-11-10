@@ -5,6 +5,7 @@ import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import vn.edu.vlu.trippocket.data.local.AppDatabase
+import vn.edu.vlu.trippocket.data.remote.firebase.BackupRejectedException
 import vn.edu.vlu.trippocket.data.remote.firebase.BackupRemote
 import vn.edu.vlu.trippocket.data.remote.firebase.FirestoreDocumentSize
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotMapper
@@ -39,7 +40,12 @@ object AccountLocks {
  * it SYNCED only if the revision did not move meanwhile; repeat until nothing is PENDING.
  * - A deleted trip: its document is deleted first, then the rows are purged.
  * - A snapshot of 1 MiB or more becomes FAILED (the user trims it, then "Retry backup").
- * - Any error leaves the trip PENDING; the job retries with exponential backoff.
+ * - Firestore refusing it for good (BackupRejectedException: PERMISSION_DENIED,
+ *   INVALID_ARGUMENT, ...) also makes it FAILED, and the next trip goes on; unless the account
+ *   signed out meanwhile, then it stays PENDING. A deleted trip that FAILED is retried at the
+ *   next start-up or sign-in ([resumePending]).
+ * - Any other error (network, timeout) leaves the trip PENDING; the job retries with
+ *   exponential backoff.
  */
 class BackupRepository(
     private val db: AppDatabase,
@@ -74,6 +80,13 @@ class BackupRepository(
                 }
             } catch (e: CancellationException) {
                 throw e
+            } catch (e: BackupRejectedException) {
+                // Signed out (or switched) while the request was on its way: the rules refuse it
+                // for that reason only, so the trip stays PENDING for the next sign-in.
+                if (auth.currentUid.value != ownerUid) return@withLock BackupOutcome.ACCOUNT_CHANGED
+                // Refused for good (rules, a bad document): FAILED, so it stops blocking the
+                // account's other trips; "Retry backup" sends it again once the cause is fixed.
+                dao.markFailed(tripId, revision)
             } catch (e: Exception) {
                 return@withLock BackupOutcome.RETRY_LATER
             }
@@ -87,8 +100,13 @@ class BackupRepository(
         if (dao.retryFailed(tripId, uid) > 0) scheduler.request(uid)
     }
 
-    /** At start-up and after sign-in: a trip left PENDING (app killed before upload) is resent. */
+    /**
+     * At start-up and after sign-in: a trip left PENDING (app killed before upload) is resent.
+     * A deleted trip that FAILED is tried again too: it has no card, so no "Retry backup" button,
+     * and without this its document would stay in Firestore for good.
+     */
     suspend fun resumePending(ownerUid: String) {
+        dao.retryFailedDeletes(ownerUid)
         if (db.tripDao().countPending(ownerUid) > 0) scheduler.request(ownerUid)
     }
 }

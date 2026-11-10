@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    One trip idea (Milestone 4). The cover and the overflow button get their
+    contentDescription in TripIdeaAdapter (they name the idea). The 16:9 cover is a remote URL loaded by Glide in
+    TripIdeaAdapter (placeholder while downloading, broken-image icon on failure, cached).
+    Below it: title, destination + days, budget (Money style), summary, author, then
+    "Plan this trip" and, for the account that shared it, the overflow with Edit / Delete.
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/cardIdea"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginHorizontal="@dimen/space_sm"
+    android:layout_marginVertical="@dimen/space_xs">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:paddingBottom="@dimen/space_sm">
+
+        <ImageView
+            android:id="@+id/ivCover"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="?attr/colorSurfaceContainerHighest"
+            android:scaleType="center"
+            app:layout_constraintDimensionRatio="16:9"
+            tools:ignore="ContentDescription"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:src="@drawable/ic_image" />
+
+        <TextView
+            android:id="@+id/tvIdeaTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginHorizontal="@dimen/space_lg"
+            android:layout_marginTop="@dimen/space_md"
+            android:textAppearance="@style/TextAppearance.TripPocket.CardTitle"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintEnd_toStartOf="@id/btnOptions"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivCover"
+            tools:text="3 days in Da Lat" />
+
+        <ImageButton
+            android:id="@+id/btnOptions"
+            android:layout_width="48dp"
+            android:layout_height="48dp"
+            android:layout_marginTop="@dimen/space_xs"
+            android:layout_marginEnd="@dimen/space_xs"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:src="@drawable/ic_more_vert"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/ivCover"
+            app:tint="?attr/colorOnSurfaceVariant"
+            tools:ignore="ContentDescription" />
+
+        <TextView
+            android:id="@+id/tvIdeaMeta"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xxs"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintEnd_toEndOf="@id/tvIdeaTitle"
+            app:layout_constraintStart_toStartOf="@id/tvIdeaTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvIdeaTitle"
+            tools:text="Da Lat, Lam Dong · 3 days" />
+
+        <TextView
+            android:id="@+id/tvIdeaBudget"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:textAppearance="@style/TextAppearance.TripPocket.Money"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="@id/tvIdeaTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvIdeaMeta"
+            android:layout_marginEnd="@dimen/space_lg"
+            tools:text="About 4,500,000 ₫" />
+
+        <TextView
+            android:id="@+id/tvIdeaSummary"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_sm"
+            android:ellipsize="end"
+            android:maxLines="3"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnSurface"
+            app:layout_constraintEnd_toEndOf="@id/tvIdeaBudget"
+            app:layout_constraintStart_toStartOf="@id/tvIdeaTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvIdeaBudget"
+            tools:text="Pine hills, the night market and strawberry farms." />
+
+        <TextView
+            android:id="@+id/tvIdeaAuthor"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="@dimen/space_sm"
+            android:textAppearance="?attr/textAppearanceBodySmall"
+            android:textColor="?attr/colorOnSurfaceVariant"
+            app:layout_constraintBaseline_toBaselineOf="@id/btnPlan"
+            app:layout_constraintEnd_toStartOf="@id/btnPlan"
+            app:layout_constraintStart_toStartOf="@id/tvIdeaTitle"
+            tools:text="Shared by tien" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnPlan"
+            style="@style/Widget.TripPocket.Button.Text"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:layout_marginEnd="@dimen/space_sm"
+            android:text="@string/ideas_plan"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvIdeaSummary" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>
