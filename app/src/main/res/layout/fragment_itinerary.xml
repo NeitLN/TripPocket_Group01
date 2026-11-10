@@ -2,9 +2,11 @@
 <!--
     Screen 3 - Day-by-day Itinerary.
     - TabLayout (scrollable) lists the trip days; a 10-day trip simply scrolls.
-    - Day header: the date title ends at the start of the "Packing" button.
-    - barrierTitle (direction=bottom) sits under the taller of the date and
-      the button, so the weather row below never collides with the button.
+    - Day header: the date title ends at the start of the "Packing" button, which sits
+      before the "Nearby sights" icon button; at a larger font the title wraps instead of
+      running under either button.
+    - barrierTitle (direction=bottom) sits under the taller of the date and the buttons,
+      so the weather row below never collides with them.
     - Weather + estimated cost form a packed horizontal chain (bias 0) across
       the full width: the cost always follows the weather text.
     - barrierHeader (direction=bottom) sits under the weather row; the list
@@ -45,18 +47,31 @@
         style="@style/Widget.Material3.Button.TonalButton.Icon"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginEnd="@dimen/space_sm"
         app:icon="@drawable/ic_checklist"
-        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btnSights"
         app:layout_constraintTop_toTopOf="@id/tvDayDate"
         tools:text="Packing 5/12" />
+
+    <!-- Nearby sights: the second header button, so the date ends before both of them. -->
+    <ImageButton
+        android:id="@+id/btnSights"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="@dimen/screen_margin"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:contentDescription="@string/sights_entry_desc"
+        android:src="@drawable/ic_place"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tvDayDate"
+        app:tint="?attr/colorOnSurfaceVariant" />
 
     <androidx.constraintlayout.widget.Barrier
         android:id="@+id/barrierTitle"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:barrierDirection="bottom"
-        app:constraint_referenced_ids="tvDayDate,btnChecklist" />
+        app:constraint_referenced_ids="tvDayDate,btnChecklist,btnSights" />
 
     <!-- Packed horizontal chain: weather -> estimated cost -->
     <TextView

@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.TripPocketApp
 import vn.edu.vlu.trippocket.databinding.ActivityMainBinding
+import vn.edu.vlu.trippocket.ui.ideas.TripIdeasActivity
 import vn.edu.vlu.trippocket.ui.login.LoginActivity
 import vn.edu.vlu.trippocket.util.applySystemBarPadding
 
@@ -46,6 +47,10 @@ class MainActivity : AppCompatActivity() {
                 }
                 R.id.action_restore -> {
                     restoreViewModel.restore()
+                    true
+                }
+                R.id.action_trip_ideas -> {
+                    startActivity(TripIdeasActivity.newIntent(this))
                     true
                 }
                 R.id.action_sign_out -> {

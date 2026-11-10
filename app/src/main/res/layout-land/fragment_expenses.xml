@@ -58,16 +58,28 @@
         android:layout_height="wrap_content"
         android:minHeight="48dp"
         android:textColor="?attr/colorPrimary"
+        app:layout_constraintBottom_toBottomOf="@id/btnExchangeRates"
+        app:layout_constraintEnd_toStartOf="@id/btnExchangeRates"
+        app:layout_constraintTop_toTopOf="@id/btnExchangeRates"
+        tools:text="Members (3)" />
+
+    <com.google.android.material.button.MaterialButton
+        android:id="@+id/btnExchangeRates"
+        style="?attr/materialIconButtonStyle"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:contentDescription="@string/exchange_rates_title"
+        app:icon="@drawable/ic_currency_exchange"
+        app:iconTint="?attr/colorOnPrimaryContainer"
         app:layout_constraintBottom_toBottomOf="@id/btnShare"
         app:layout_constraintEnd_toStartOf="@id/btnShare"
-        app:layout_constraintTop_toTopOf="@id/btnShare"
-        tools:text="Members (3)" />
+        app:layout_constraintTop_toTopOf="@id/btnShare" />
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnShare"
         style="?attr/materialIconButtonStyle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
         android:layout_marginTop="@dimen/space_xs"
         android:layout_marginEnd="@dimen/space_xs"
         android:contentDescription="@string/expenses_share"

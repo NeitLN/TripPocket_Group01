@@ -99,7 +99,9 @@ fallback.
   - Mỗi tài khoản một unique work `trip-backup:<uid>`, policy `APPEND_OR_REPLACE`.
   - Worker xử lý lần lượt cho tới khi hết chuyến PENDING của uid đó. Mỗi chuyến: đọc snapshot + revision trong một
     transaction → chờ Firestore ghi xong → `UPDATE … SET SYNCED WHERE tripId=? AND localRevision=?`.
-  - Lỗi mạng tạm thời → retry. Snapshot ≥ 1 MiB → FAILED (cũng có điều kiện revision), rồi xử lý chuyến tiếp theo.
+  - Lỗi mạng tạm thời (timeout, `UNAVAILABLE`, `DEADLINE_EXCEEDED`…) → retry. Snapshot ≥ 1 MiB, hoặc Firestore từ
+    chối hẳn (`PERMISSION_DENIED`, `INVALID_ARGUMENT`…) → FAILED (cũng có điều kiện revision), rồi xử lý chuyến tiếp
+    theo; nút Retry gửi lại sau khi sửa nguyên nhân.
   - Uid đang đăng nhập khác uid của job → kết thúc thành công, giữ PENDING.
   - Chuyến đã xoá mềm: xoá document trên Firestore trước, rồi xoá local có điều kiện.
   - Upload và restore dùng chung **một mutex cho mỗi tài khoản**.

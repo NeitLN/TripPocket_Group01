@@ -91,16 +91,17 @@ class TripListViewModel(
      * null and the list hides the trips; the rows stay in Room for the next sign-in.
      * Every reminder alarm of this phone is cancelled too, so the next account gets none of them.
      */
-    fun retryBackup(tripId: String) {
-        viewModelScope.launch { retryBackup.invoke(tripId) }
-    }
-
     fun signOut() {
         viewModelScope.launch {
             auth.signOut()
             // MainActivity finishes right after this call; do not let that cancel the alarm cleanup.
             withContext(NonCancellable) { syncReminders(null) }
         }
+    }
+
+    /** "Retry backup" on a FAILED trip card (A3): back to PENDING and queued again. */
+    fun retryBackup(tripId: String) {
+        viewModelScope.launch { retryBackup.invoke(tripId) }
     }
 
     private fun toCard(trip: Trip, totals: TripTotals) = TripCard(trip, totals.memberCount, totals.spent)
