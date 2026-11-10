@@ -29,6 +29,7 @@ class TripPocketApp : Application() {
                 container.tripRepository.seedSampleTrips(DevAuthRepository.DEV_UID, now)
                 container.expenseRepository.seedSampleExpenses(now)
                 container.itineraryRepository.seedSampleActivities()
+                container.checklistRepository.seedSampleChecklist()
             }
         }
     }

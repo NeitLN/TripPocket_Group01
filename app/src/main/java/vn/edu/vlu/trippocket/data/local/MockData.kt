@@ -108,11 +108,21 @@ object MockData {
         )
     }
 
-    /** Done / total packing items per trip. */
+    /** Packing list of each sample trip, title to packed: Đà Lạt 5/12, Hội An 9/9, Phú Quốc 0/4. */
     private val checklist = mapOf(
-        TRIP_DALAT to (5 to 12),
-        TRIP_HOIAN to (9 to 9),
-        TRIP_PHUQUOC to (0 to 4),
+        TRIP_DALAT to listOf(
+            "Warm jacket" to true, "Scarf" to true, "Walking shoes" to true, "Power bank" to true,
+            "ID card" to true, "Raincoat" to false, "Sunscreen" to false, "Motion sickness pills" to false,
+            "Folding umbrella" to false, "Wool socks" to false, "Water bottle" to false, "Camera" to false,
+        ),
+        TRIP_HOIAN to listOf(
+            "Áo dài for photos" to true, "Sandals" to true, "Sunglasses" to true, "Sunscreen" to true,
+            "Hat" to true, "Power bank" to true, "Cash for the night market" to true, "Mosquito spray" to true,
+            "ID card" to true,
+        ),
+        TRIP_PHUQUOC to listOf(
+            "Swimsuit" to false, "Snorkel mask" to false, "Beach towel" to false, "Passport" to false,
+        ),
     )
 
     private val searchablePlaces = listOf(
@@ -146,7 +156,8 @@ object MockData {
 
     fun spentTotal(tripId: String) = expensesOf(tripId).sumOf { it.amount }
 
-    fun checklistOf(tripId: String): Pair<Int, Int> = checklist[tripId] ?: (0 to 0)
+    /** The sample packing list of [tripId] in display order: title to packed. */
+    fun checklistOf(tripId: String): List<Pair<String, Boolean>> = checklist[tripId].orEmpty()
 
     fun savedPlacesOf(tripId: String): List<Place> = savedPlaces[tripId].orEmpty()
 
