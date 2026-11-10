@@ -57,6 +57,44 @@
     <string name="reminder_allow_notifications">Allow notifications</string>
     <string name="reminder_open_settings">Open notification settings</string>
 
+    <!-- Checklist (I2) -->
+    <string name="checklist_title">Packing list</string>
+    <string name="checklist_count">%1$d/%2$d packed</string>
+    <string name="checklist_add_hint">Add something to bring</string>
+    <string name="checklist_add">Add</string>
+    <string name="checklist_at_limit">%1$d/%2$d items: the list is full</string>
+    <string name="checklist_empty_title">Nothing to pack yet</string>
+    <string name="checklist_empty_body">Add what to bring or what to sort out before you leave.</string>
+    <string name="checklist_edit_desc">Rename %1$s</string>
+    <string name="checklist_delete_desc">Delete %1$s</string>
+    <string name="checklist_rename_title">Rename item</string>
+    <string name="checklist_delete_item">Delete item</string>
+    <string name="checklist_save">Save</string>
+    <string name="checklist_cancel">Cancel</string>
+    <string name="checklist_deleted">\"%1$s\" deleted</string>
+    <string name="checklist_undo">Undo</string>
+    <string name="checklist_error_blank">Type an item first.</string>
+    <string name="checklist_error_too_long">Keep it under 80 characters.</string>
+    <string name="checklist_error_limit">The list is full: 100 items per trip.</string>
+    <string name="checklist_error_generic">Could not save that change. Try again.</string>
+
+    <!-- Nearby sights (Milestone 4) -->
+    <string name="sights_title">Nearby sights</string>
+    <string name="sights_subtitle">Within 10 km of %1$s</string>
+    <string name="sights_subtitle_any">Within 10 km of this trip\'s place</string>
+    <string name="sights_entry_desc">Nearby sights</string>
+    <string name="sights_loading">Looking for nearby sights</string>
+    <string name="sights_distance_m">%1$d m</string>
+    <string name="sights_distance_km">%1$.1f km</string>
+    <string name="sights_add_to_day">Add to day</string>
+    <string name="sights_add_desc">Add %1$s to the day</string>
+    <string name="sights_added">Added to Day %1$d</string>
+    <string name="sights_add_failed">Could not add this sight. Try again.</string>
+    <string name="sights_empty_title">No sights nearby</string>
+    <string name="sights_empty_body">Wikipedia has no article within 10 km of this place. Pull down to check again.</string>
+    <string name="sights_no_place_title">Add a place first</string>
+    <string name="sights_no_place_body">Save a place in Weather, then come back to see what is nearby.</string>
+
     <!-- W5: the trip has no saved place, so there is no forecast to show yet -->
     <string name="itinerary_weather_no_place">Save a place in the Weather tab to see the forecast</string>
 </resources>

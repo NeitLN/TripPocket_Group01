@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Body of the "Rename item" dialog (RenameChecklistItemDialogFragment). -->
+<com.google.android.material.textfield.TextInputLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/tilTitle"
+    style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:paddingHorizontal="@dimen/space_xl"
+    android:paddingTop="@dimen/space_sm"
+    app:counterEnabled="true"
+    app:counterMaxLength="80">
+
+    <com.google.android.material.textfield.TextInputEditText
+        android:id="@+id/etTitle"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:imeOptions="actionDone"
+        android:inputType="textCapSentences"
+        android:maxLength="80" />
+</com.google.android.material.textfield.TextInputLayout>

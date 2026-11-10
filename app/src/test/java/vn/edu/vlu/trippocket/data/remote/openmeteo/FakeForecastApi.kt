@@ -24,6 +24,7 @@ class FakeForecastApi : ForecastApi {
         latitude: Double,
         longitude: Double,
         daily: String,
+        hourly: String,
         timezone: String,
         forecastDays: Int,
     ): ForecastResponse {

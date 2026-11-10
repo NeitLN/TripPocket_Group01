@@ -2,14 +2,14 @@ package vn.edu.vlu.trippocket.data.repository
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
-import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
-import retrofit2.HttpException
 import vn.edu.vlu.trippocket.data.local.dao.SavedPlaceDao
 import vn.edu.vlu.trippocket.data.local.dao.WeatherCacheDao
 import vn.edu.vlu.trippocket.data.local.entity.SavedPlaceEntity
@@ -20,13 +20,13 @@ import vn.edu.vlu.trippocket.data.model.Place
 import vn.edu.vlu.trippocket.data.model.RefreshSummary
 import vn.edu.vlu.trippocket.data.model.SavedPlace
 import vn.edu.vlu.trippocket.data.model.WeatherCondition
+import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.remote.openmeteo.ForecastApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.GeocodingApi
 import vn.edu.vlu.trippocket.data.remote.openmeteo.toForecastDays
 import vn.edu.vlu.trippocket.data.remote.openmeteo.toPlaces
+import vn.edu.vlu.trippocket.data.remote.safeApiCall
 import vn.edu.vlu.trippocket.domain.DailyWeather
-import vn.edu.vlu.trippocket.domain.WeatherError
-import java.io.IOException
 import java.time.LocalDate
 import java.time.format.DateTimeParseException
 
@@ -48,26 +48,27 @@ class WeatherRepository(
     private val savedPlaceDao: SavedPlaceDao,
     private val gson: Gson = Gson(),
     private val now: () -> Long = System::currentTimeMillis,
+    private val io: CoroutineDispatcher = Dispatchers.IO,
 ) {
 
     /**
-     * Search results for [query] (W1). A blank query returns no places without a request;
-     * network, HTTP and JSON failures are thrown to the caller, which shows the error state.
-     * Retrofit already runs the request off the main thread.
+     * Search results for [query] (W1). A blank query returns no places without a request.
+     * [safeApiCall] runs on [io] and maps network, HTTP and JSON failures to an [ApiError], so
+     * the ViewModel shows the error state with the right sentence.
      */
-    suspend fun searchPlaces(query: String): List<Place> {
+    suspend fun searchPlaces(query: String): ApiResult<List<Place>> {
         val trimmed = query.trim()
-        if (trimmed.isEmpty()) return emptyList()
-        return geocodingApi.search(trimmed).toPlaces()
+        if (trimmed.isEmpty()) return ApiResult.Success(emptyList())
+        return safeApiCall(io) { geocodingApi.search(trimmed).toPlaces() }
     }
 
     /**
      * Downloads the 16-day forecast of [place] and replaces its cached copy.
      *
-     * A network, HTTP or JSON failure is thrown before anything is written, so the previous
+     * A network, HTTP or JSON failure is reported before anything is written, so the previous
      * cache is kept and the screen keeps showing the forecast from the last sync.
      */
-    suspend fun refreshForecast(place: SavedPlace) {
+    suspend fun refreshForecast(place: SavedPlace): ApiResult<Unit> = safeApiCall(io) {
         val days = forecastApi.daily(place.latitude, place.longitude).toForecastDays()
         cacheDao.upsert(
             WeatherCacheEntity(
@@ -88,6 +89,12 @@ class WeatherRepository(
         }
 
     /**
+     * Forgets the cached forecast of [placeId] so the screen shows no forecast until the next
+     * refresh. The saved place is kept; returns false when there was nothing cached.
+     */
+    suspend fun clearForecast(placeId: String): Boolean = cacheDao.delete(placeId) > 0
+
+    /**
      * Reloads the forecast of every place saved to [tripId], one after another, and reports how
      * many were refreshed and how many kept their previous cache. A failing place does not stop
      * the places after it.
@@ -100,14 +107,10 @@ class WeatherRepository(
         var refreshed = 0
         var failed = 0
         for (place in places) {
-            try {
-                refreshForecast(place)
-                refreshed++
-            } catch (e: CancellationException) {
-                throw e
-            } catch (e: Exception) {
+            when (refreshForecast(place)) {
+                is ApiResult.Success -> refreshed++
                 // This place keeps its cache; the next place is still worth trying.
-                failed++
+                is ApiResult.Failure -> failed++
             }
         }
         return RefreshSummary(refreshed, failed)
@@ -196,20 +199,4 @@ private fun SavedPlaceEntity.toSavedPlace() = SavedPlace(
     longitude = longitude,
     note = note,
 )
-
-/**
- * The reason a request failed, as the screen shows it (H). Called where the request was made,
- * because only this layer knows Retrofit: [HttpException] for an HTTP error, [IOException] when
- * the phone could not reach the service, anything else (JSON of an unexpected shape) as
- * [WeatherError.BAD_RESPONSE].
- */
-internal fun Throwable.toWeatherError(): WeatherError = when {
-    this is IOException -> WeatherError.NETWORK
-    this is HttpException -> when {
-        code() == 429 -> WeatherError.RATE_LIMITED
-        code() in 500..599 -> WeatherError.SERVER
-        else -> WeatherError.BAD_RESPONSE
-    }
-    else -> WeatherError.BAD_RESPONSE
-}
 

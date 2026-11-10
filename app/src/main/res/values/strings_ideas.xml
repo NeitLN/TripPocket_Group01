@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Trip Ideas (Milestone 4, owner: Tiến): trips shared on the team's MockAPI.io project. -->
+<resources>
+    <string name="ideas_title">Trip ideas</string>
+    <string name="ideas_subtitle">Trips other TripPocket users shared. Pull down to refresh.</string>
+    <string name="ideas_share">Share an idea</string>
+    <string name="ideas_loading">Loading trip ideas</string>
+    <string name="ideas_empty_title">No ideas yet</string>
+    <string name="ideas_empty_body">Be the first: share a trip you loved so others can plan it too.</string>
+    <string name="ideas_meta">%1$s · %2$s</string>
+    <string name="ideas_budget">About %1$s</string>
+    <string name="ideas_budget_unknown">Budget not given</string>
+    <string name="ideas_by">Shared by %1$s</string>
+    <string name="ideas_by_you">Shared by you</string>
+    <string name="ideas_by_someone">Shared by a traveller</string>
+    <string name="ideas_plan">Plan this trip</string>
+    <string name="ideas_options">More options for %1$s</string>
+    <string name="ideas_action_edit">Edit</string>
+    <string name="ideas_action_delete">Delete</string>
+    <string name="ideas_delete_title">Delete this idea?</string>
+    <string name="ideas_delete_message">\"%1$s\" will be removed for everyone.</string>
+    <string name="ideas_deleted">Idea deleted</string>
+    <string name="ideas_cover_description">Photo of %1$s</string>
+
+    <string name="idea_form_new_title">Share a trip idea</string>
+    <string name="idea_form_edit_title">Edit trip idea</string>
+    <string name="idea_field_title">Title</string>
+    <string name="idea_field_destination">Destination</string>
+    <string name="idea_field_days">Days</string>
+    <string name="idea_field_budget">Budget per person (VND, optional)</string>
+    <string name="idea_field_cover">Cover photo URL (https, optional)</string>
+    <string name="idea_field_summary">What makes it good</string>
+    <string name="idea_cover_preview">Cover preview</string>
+    <string name="idea_save_new">Share</string>
+    <string name="idea_save_edit">Save changes</string>
+    <string name="idea_loading">Loading the idea</string>
+    <string name="idea_error_title_empty">Give the idea a title</string>
+    <string name="idea_error_title_too_long">Keep the title under 60 characters</string>
+    <string name="idea_error_destination_empty">Where is this trip?</string>
+    <string name="idea_error_destination_too_long">Keep the destination under 60 characters</string>
+    <string name="idea_error_days">1 to 30 days</string>
+    <string name="idea_error_budget">Enter an amount in VND, digits only</string>
+    <string name="idea_error_cover">Use an https:// link to a picture, or leave it empty</string>
+    <string name="idea_error_summary_too_long">Keep it under 280 characters</string>
+    <string name="idea_not_found">This idea was deleted on the server (404).</string>
+</resources>

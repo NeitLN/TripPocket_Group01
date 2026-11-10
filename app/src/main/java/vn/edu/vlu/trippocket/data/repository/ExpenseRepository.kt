@@ -158,6 +158,9 @@ class ExpenseRepository(
      * Debug builds only, until E1 adds the members screen: copies the sample members and
      * expenses of the sample trips into Room (same ids as TripRepository.seedSampleTrips).
      * Not a user change, so it does not go through TripWriter.
+     *
+     * Each expense gets its own createdAt, 1 ms apart in sample order, as if typed in one by
+     * one: ordering by createdAt (the list, the backup snapshot) then has no ties.
      */
     suspend fun seedSampleExpenses(now: Long) {
         MockData.trips.forEach { trip ->
@@ -165,12 +168,12 @@ class ExpenseRepository(
             MockData.membersOf(trip.tripId).forEach {
                 memberDao.insert(TripMemberEntity(it.memberId, it.tripId, it.name, it.orderIndex))
             }
-            MockData.expensesOf(trip.tripId).forEach { expense ->
+            MockData.expensesOf(trip.tripId).forEachIndexed { index, expense ->
                 val input = ExpenseInput(
                     expense.title, expense.amount, expense.payerId, expense.category,
                     expense.splitType, expense.spentAt, expense.shares,
                 )
-                expenseDao.insert(toEntity(expense.expenseId, trip.tripId, input, createdAt = now))
+                expenseDao.insert(toEntity(expense.expenseId, trip.tripId, input, createdAt = now + index))
                 expenseDao.insertShares(toShares(expense.expenseId, input))
             }
         }
