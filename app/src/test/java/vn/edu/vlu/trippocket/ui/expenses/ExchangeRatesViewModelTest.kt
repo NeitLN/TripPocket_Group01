@@ -8,6 +8,8 @@ import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.test.setMain
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
@@ -113,5 +115,46 @@ class ExchangeRatesViewModelTest {
         assertTrue(state is ExchangeRatesUiState.Success)
         val successState = state as ExchangeRatesUiState.Success
         assertEquals("Wed, 06 Nov 2026 00:02:31 +0000", successState.rates.lastUpdatedUtc)
+    }
+
+    @Test
+    fun aFailedRefresh_keepsTheRatesOnScreen_andStopsTheSpinner() = runTest {
+        fakeApi.response = sampleSuccessResponse()
+        val viewModel = ExchangeRatesViewModel(repository)
+        val before = viewModel.uiState.value as ExchangeRatesUiState.Success
+
+        // Pull to refresh, then the network drops.
+        fakeApi.response = null
+        fakeApi.error = IOException("Offline")
+        viewModel.refresh()
+
+        val after = viewModel.uiState.value as ExchangeRatesUiState.Success
+        assertEquals(before.rates, after.rates)
+        assertFalse(after.isRefreshing)
+        assertEquals(ApiError.OFFLINE, after.refreshError)
+    }
+
+    @Test
+    fun aSuccessfulRefresh_clearsThePreviousRefreshError() = runTest {
+        fakeApi.response = sampleSuccessResponse()
+        val viewModel = ExchangeRatesViewModel(repository)
+
+        fakeApi.response = null
+        fakeApi.error = IOException("Offline")
+        viewModel.refresh()
+        assertEquals(
+            ApiError.OFFLINE,
+            (viewModel.uiState.value as ExchangeRatesUiState.Success).refreshError,
+        )
+
+        fakeApi.error = null
+        fakeApi.response = sampleSuccessResponse().copy(
+            timeLastUpdateUtc = "Wed, 06 Nov 2026 00:02:31 +0000",
+        )
+        viewModel.refresh()
+
+        val state = viewModel.uiState.value as ExchangeRatesUiState.Success
+        assertNull(state.refreshError)
+        assertEquals("Wed, 06 Nov 2026 00:02:31 +0000", state.rates.lastUpdatedUtc)
     }
 }
