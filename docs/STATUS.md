@@ -1,46 +1,61 @@
 # STATUS
-Cập nhật: T6 30/10/2026 (tối)
+Cập nhật: T3 10/11/2026
 
 ## Đang ở đâu
-- Mốc hiện tại: M0 xong. F0 + bộ nhận diện đã merge vào `develop` ngày 31/10 (fast-forward tới `4fe6fea`);
-  gate trên `develop`: `testDebugUnitTest lintDebug assembleDebug` PASS, 24 test.
-- Phân việc: chủ module + xoay vòng, mỗi người có tính năng ở cả 4 module (ROADMAP "Xoay vòng").
-- Đã có: Room đủ 8 bảng + DAO khung, `TripWriter`/`TripChangeTracker`, `Limits`, `AppContainer`, Retrofit cho 2 host
-  Open-Meteo, danh sách chuyến đọc từ Room, TripDetail chạy trên Navigation với 4 tab (thêm Checklist), manifest đủ
-  quyền + receiver stub, `allowBackup=false`, model/string/test tách theo module, `TripSnapshot`.
-- Tạm thời: `DevAuthRepository` (luôn là `dev-user`, seed chuyến mẫu ở bản debug) cho tới A1; các màn Itinerary,
-  Weather, Expenses vẫn đọc MockData qua `SampleTripRepository` cho tới khi từng người chuyển sang Room.
+- `develop` có đủ feature trừ **A3, A4, W5**: ba PR này CI xanh và đang chờ review/merge (#24 → #25, #27).
+  Còn chờ thêm: #49 (seed Packing list cho chuyến mẫu, issue #35), #50 (bỏ destructive fallback, X1), #34 (test
+  rules, đã approve), #33 (Minh gộp lại `develop` sau khi #24 vào).
+- `develop` đi trước `main` 30 commit; chưa có tag `v1.0`.
+- M4 (network/cloud) đã vào `develop` qua #46.
 
-## Nhận diện "sticker" (nhánh `feature/tien-brand`, tách từ `feature/tien-foundation`)
-- Logo + icon app, theme sáng/tối, font Be Vietnam Pro, Login và Trip List mới. Quy tắc cho cả nhóm: `DESIGN.md`;
-  file logo cho slide/báo cáo: `docs/brand/`.
-- Bằng chứng 31/10: `testDebugUnitTest lintDebug assembleDebug` PASS (24 test); emulator Pixel 7 API 34 ở theme
-  sáng, tối, chữ 200%, launcher: PASS, không crash. Review độc lập: lượt đầu "fix" (3 lỗi), sửa xong, lượt chấm lại
-  "ship" (chỉ phạm vi 3 lỗi đó).
-- Chưa làm: chuyển cảnh container transform từ thẻ chuyến sang Trip Detail; chưa chụp icon monochrome (Android 13+).
-- Đã merge vào `develop` cùng F0.
+## Bằng chứng theo phiếu (unit test, bản `develop` + #24 #25 #27 #49 gộp thử)
+Cột "Test" là test tự động chứng minh điều kiện; "Máy thật" là phần unit test không thay được, kiểm ở release gate.
 
-## Quyết định đang chờ (Tiến)
-| Câu hỏi | Đề xuất | Việc bị chặn | Phải chốt trước |
-|---|---|---|---|
-| File CI `.github/workflows/ci.yml` (đã soạn, chưa ghi) | Duyệt | Hàng rào PR | T7 31/10 |
-| Chữ ký 3 repository của Bảo/Duy Anh/Minh | Họp T7 | Phần Room của I/W/E | T7 31/10 |
-| Ngày demo chính xác | — | Lịch W3 | T2 02/11 |
+| Điều kiện (phiếu) | Test | Máy thật |
+|---|---|---|
+| A1 đăng nhập, sai mật khẩu/mất mạng không kẹt Loading | `LoginViewModelTest` (12) | mở lại app vẫn đăng nhập |
+| A2 CRUD offline; B không mở được chuyến của A | `TripRepositoryTest.anotherAccount_cannotOpenEditOrDeleteTheTrip` | — |
+| A3 sửa offline → SYNCED; sửa lúc worker chạy; A→B→A | `BackupRepositoryTest` (12), gồm `anEditDuringTheUpload_…`, `anotherAccountSignedIn_stopsTheRun_…` | upload thật lên Firestore |
+| A4 cài lại → Restore đủ; snapshot hỏng/vượt giới hạn bị từ chối | `RestoreRepositoryTest` (12), `TripSnapshotValidatorTest` (8), `TripSnapshotCodecTest` (7) | gỡ app → cài lại → Restore |
+| A5 snapshot đầy giới hạn < 1 MiB; rules 2 tài khoản | `FullTripSnapshotSizeTest` (4); rules: PR #34 (job `firestore-rules`) | — |
+| E1 chặn xoá thành viên đang dùng | `ExpenseRepositoryTest.deletingAPayerOrParticipant_…` | — |
+| E2 100.001 chia 3 → 33.334/33.334/33.333; lệch tổng không lưu | `ExpenseRepositoryTest` (17) | — |
+| E3 A trả 300.000 cho 3 → B, C nợ A 100.000 | `ExpenseBalancesTest.proposalDemo_…` | — |
+| E4 dự tính so với thực chi, share text | `ExpensesViewModelTest`, `ExpenseFlowCrossCheckTest` | share sheet |
+| I1 CRUD; hoạt động 201 không ghi, revision giữ nguyên | `ItineraryRepositoryTest.the201stActivity_…` | — |
+| I2 checklist, tối đa 100 | `ChecklistRepositoryTest` (10) | — |
+| I3 kéo thả một transaction; đổi giờ sắp lại | `ItineraryRepositoryTest.reorder_…`, `afterAReorder_changingTheTime_…` | — |
+| I4 exact/inexact; sửa/xoá đổi/huỷ nhắc | `AlarmReminderSchedulerTest`, `ActivityReminderSyncTest` | nhắc đến đúng giờ |
+| I5 khởi động lại, đăng xuất, đổi múi giờ | `ReminderReconcilerTest`, `BootReceiverTest` | khởi động lại máy |
+| W1 "da lat", "xyz", mất mạng, Retry cùng query | `WeatherViewModelTest` (45) | — |
+| W2 trùng tên khác toạ độ; địa điểm 31 bị chặn | `SavedPlaceRepositoryTest` | — |
+| W3 chế độ máy bay vẫn hiện kèm giờ cập nhật | `WeatherViewModelTest.aFailedRefresh_keepsTheCachedRows_…` | chế độ máy bay |
+| W5 offline vẫn hiện; chưa có địa điểm thì hướng dẫn | `ItineraryViewModelTest.weather_…` | — |
+
+Kết quả chạy 10/11 (máy Tiến, `--rerun-tasks`): **441/441 PASS**, 0 lỗi, trên `develop` gộp thử #24 #25 #27 #49
+(gộp không conflict).
+
+## Release gate X1 (phiếu `X1-integration.md`)
+| Mục | Trạng thái |
+|---|---|
+| `testDebugUnitTest lintDebug assembleDebug` | PASS 10/11 trên bản gộp thử; chạy lại sau khi merge thật |
+| Không có `google-services.json` hay secret trong git | PASS 10/11 (`git ls-files` không ra gì) |
+| Schema đóng băng | PASS 10/11: `1.json` sinh lại từ entity không đổi so với 30/10, `version = 1` |
+| Bản demo không dùng destructive fallback | Lệch đã sửa ở PR #50 (chờ merge): APK debug (RUNBOOK) vẫn bật fallback; PR bỏ nó ở mọi bản build, có test |
+| Kịch bản demo trên máy thật, chế độ máy bay | chưa chạy |
+| Gỡ app → cài lại → DB trống → đăng nhập → Restore đủ | chưa chạy (cần #24, #25) |
+| Đăng xuất → tài khoản khác: không thấy chuyến, không nhận nhắc | chưa chạy |
+| Nhắc đúng giờ; khởi động lại máy vẫn đến | chưa chạy |
+| Xoay màn hình, "Don't keep activities" mọi tab | chưa chạy |
+| Profiler: TripDetail mở/đóng 10 lần không leak | Itinerary đã kiểm (issue #35, Minh); các tab khác chưa |
 
 ## Bước tiếp theo
-1. Tiến duyệt CI → ghi file, đặt quyền thực thi cho `gradlew` (git đang lưu là 100644).
-2. Tiến tạo Firebase + deploy rules (RUNBOOK), gửi `google-services.json` cho nhóm.
-3. Gửi 3 phiếu `docs/tasks/{I,W,E}-*.md` cho các bạn; họp T7 31/10 chốt chữ ký repository.
-4. Review + merge `feature/tien-foundation` → `develop` (T7), rồi bắt đầu A1.
+1. Review lại #24 (Bảo, Minh), merge #24 → #25, #27, #49, #34, #50; Minh gộp `develop` vào #33.
+2. Chạy release gate trên `develop` đã gộp, trên máy thật; ghi kết quả vào bảng trên.
+3. PASS → merge `develop` → `main`, tag `v1.0`, cài cùng APK lên máy demo và máy dự phòng (RUNBOOK).
 
 ## Bộ kiểm nhanh (chạy đầu mỗi session)
 - `./gradlew testDebugUnitTest lintDebug assembleDebug`
 - Máy Tiến (đường dẫn có dấu): `subst T: "<repo>"`, `JAVA_HOME=C:\Program Files\Android\Android Studio\jbr`,
-  `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, chạy Gradle từ `T:\` (RUNBOOK).
-
-## Bằng chứng gần nhất
-- `feature/tien-foundation`, máy Tiến, 30/10: `testDebugUnitTest lintDebug assembleDebug` **PASS**, 16/16 test,
-  lint chỉ có thông báo phiên bản (`AndroidGradlePluginVersion`, `GradleDependency`, `NewerVersionAvailable`).
-- Emulator Pixel_7 API 34, bản debug: danh sách 3 chuyến từ Room; 4 tab mở được; xoay màn hình giữ tab; process death
-  ở tab Weather → khôi phục đúng chuyến; logcat crash buffer trống. **PASS**.
-- Chưa kiểm: build có `google-services.json` (chưa có Firebase project) — NOT RUN.
+  `ANDROID_HOME=%LOCALAPPDATA%\Android\Sdk`, chạy Gradle từ `T:\` (RUNBOOK). Build trong terminal VS Code mà báo lỗi
+  `JdkImageTransform`/`jlink` thì chạy `gradlew --stop` trước: extension Java dựng daemon bằng JRE không có `jlink`.
