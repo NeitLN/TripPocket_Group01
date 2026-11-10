@@ -17,11 +17,12 @@ import kotlin.math.roundToInt
 /**
  * One Wikipedia sight per row (Milestone 4): photo, name, description and distance, plus the
  * "Add to day" button. The photo is a remote URL loaded by Glide here; a missing or broken one
- * falls back to the app's default images instead of an empty box.
+ * falls back to the app's default images instead of an empty box. The button is off and reads
+ * "Added" for a sight already in the day, or "Trip is full" at the activity limit.
  */
 class SightAdapter(
     private val onAddToDay: (Sight) -> Unit,
-) : ListAdapter<Sight, SightAdapter.ViewHolder>(DIFF) {
+) : ListAdapter<SightRow, SightAdapter.ViewHolder>(DIFF) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int) = ViewHolder(
         ItemSightBinding.inflate(LayoutInflater.from(parent.context), parent, false),
@@ -40,7 +41,8 @@ class SightAdapter(
         private val onAddToDay: (Sight) -> Unit,
     ) : RecyclerView.ViewHolder(binding.root) {
 
-        fun bind(sight: Sight) {
+        fun bind(row: SightRow) {
+            val sight = row.sight
             binding.ivSightImage.loadRemote(
                 sight.imageUrl,
                 R.drawable.ic_image,
@@ -52,6 +54,14 @@ class SightAdapter(
             binding.tvSightDistance.text = distanceText(binding.root.context, sight.distanceMeters)
             binding.btnAddToDay.contentDescription =
                 binding.root.context.getString(R.string.sights_add_desc, sight.title)
+            binding.btnAddToDay.isEnabled = row.addState == AddState.CAN_ADD
+            binding.btnAddToDay.setText(
+                when (row.addState) {
+                    AddState.CAN_ADD -> R.string.sights_add_to_day
+                    AddState.ADDED -> R.string.sights_already_added
+                    AddState.TRIP_FULL -> R.string.sights_trip_full
+                }
+            )
             binding.btnAddToDay.setOnClickListener { onAddToDay(sight) }
         }
 
@@ -68,10 +78,10 @@ class SightAdapter(
             context.getString(R.string.sights_distance_km, meters / 1_000)
         }
 
-        val DIFF = object : DiffUtil.ItemCallback<Sight>() {
-            override fun areItemsTheSame(old: Sight, new: Sight) = old.pageId == new.pageId
+        val DIFF = object : DiffUtil.ItemCallback<SightRow>() {
+            override fun areItemsTheSame(old: SightRow, new: SightRow) = old.sight.pageId == new.sight.pageId
 
-            override fun areContentsTheSame(old: Sight, new: Sight) = old == new
+            override fun areContentsTheSame(old: SightRow, new: SightRow) = old == new
         }
     }
 }
