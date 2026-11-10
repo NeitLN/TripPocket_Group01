@@ -135,6 +135,35 @@ class ExchangeRatesViewModelTest {
     }
 
     @Test
+    fun retryFromTheRefreshErrorBanner_keepsTheList_andFetchesAgain() = runTest {
+        fakeApi.response = sampleSuccessResponse()
+        val viewModel = ExchangeRatesViewModel(repository)
+        val before = (viewModel.uiState.value as ExchangeRatesUiState.Success).rates
+
+        // Pull to refresh fails once: the list stays and the banner offers Retry.
+        fakeApi.response = null
+        fakeApi.error = IOException("Offline")
+        viewModel.refresh()
+        assertEquals(
+            ApiError.OFFLINE,
+            (viewModel.uiState.value as ExchangeRatesUiState.Success).refreshError,
+        )
+
+        // Retry from the banner goes through refresh(), not back to the Loading screen.
+        fakeApi.error = null
+        fakeApi.response = sampleSuccessResponse().copy(
+            timeLastUpdateUtc = "Wed, 06 Nov 2026 00:02:31 +0000",
+        )
+        viewModel.retry()
+
+        val after = viewModel.uiState.value as ExchangeRatesUiState.Success
+        assertEquals(before.items, after.rates.items)
+        assertNull(after.refreshError)
+        assertFalse(after.isRefreshing)
+        assertEquals("Wed, 06 Nov 2026 00:02:31 +0000", after.rates.lastUpdatedUtc)
+    }
+
+    @Test
     fun aSuccessfulRefresh_clearsThePreviousRefreshError() = runTest {
         fakeApi.response = sampleSuccessResponse()
         val viewModel = ExchangeRatesViewModel(repository)
