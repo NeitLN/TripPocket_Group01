@@ -12,6 +12,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.TestDatabase.Companion.OWNER
 import vn.edu.vlu.trippocket.data.local.entity.ChecklistItemEntity
@@ -46,6 +47,25 @@ class ChecklistRepositoryTest {
         } catch (e: InvalidChecklistItemException) {
             assertEquals(problem, e.problem)
         }
+    }
+
+    @Test
+    fun sampleSeed_fillsTheSampleTripsInRoom_once_withoutMarkingThemForBackup(): Unit = runBlocking {
+        t.db.tripDao().insert(t.trip(MockData.TRIP_DALAT))
+        t.db.tripDao().insert(t.trip(MockData.TRIP_HOIAN))
+        // MockData.TRIP_PHUQUOC is not in Room: skipped, not a foreign-key crash.
+        val before = revision(MockData.TRIP_DALAT)
+
+        repository.seedSampleChecklist()
+        repository.seedSampleChecklist()
+
+        val dalat = items(MockData.TRIP_DALAT)
+        assertEquals(12, dalat.size)
+        assertEquals(5, dalat.count { it.isDone })
+        assertEquals("Warm jacket", dalat.first().title)
+        assertEquals(9, items(MockData.TRIP_HOIAN).count { it.isDone })
+        assertTrue(items(MockData.TRIP_PHUQUOC).isEmpty())
+        assertEquals(before, revision(MockData.TRIP_DALAT))
     }
 
     @Test

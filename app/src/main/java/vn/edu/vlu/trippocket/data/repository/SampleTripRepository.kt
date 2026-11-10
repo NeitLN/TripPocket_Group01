@@ -28,7 +28,4 @@ class SampleTripRepository {
     fun expenses(tripId: String): List<Expense> = MockData.expensesOf(tripId)
 
     fun spentTotal(tripId: String): Long = MockData.spentTotal(tripId)
-
-    /** Done / total packing items. */
-    fun checklist(tripId: String): Pair<Int, Int> = MockData.checklistOf(tripId)
 }
