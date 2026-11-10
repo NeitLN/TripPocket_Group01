@@ -167,6 +167,44 @@ class BackupRepositoryTest {
     }
 
     @Test
+    fun signingOutWhileTheUploadRuns_isNotARefusal_theTripStaysPendingForTheNextSignIn(): Unit = runBlocking {
+        pendingTrip("t1")
+        pendingTrip("t2")
+        remote.duringUpload = {
+            // The uid check passed, then the user signs out before Firestore answers: the rules
+            // now refuse the request, but the trip itself is fine.
+            auth.setUid(null)
+            throw BackupRejectedException("PERMISSION_DENIED")
+        }
+
+        assertEquals(BackupOutcome.ACCOUNT_CHANGED, backup.backUp(OWNER))
+
+        assertEquals(SyncStatus.PENDING, status("t1"))
+        assertEquals(SyncStatus.PENDING, status("t2"))
+        assertTrue(remote.uploads.isEmpty())
+    }
+
+    @Test
+    fun aDeletedTripThatFailed_isTriedAgainAtSignIn_withoutARetryButton(): Unit = runBlocking {
+        t.db.tripDao().insert(t.trip("gone", deleted = true).copy(syncStatus = SyncStatus.FAILED))
+        t.db.tripDao().insert(t.trip("tooBig").copy(syncStatus = SyncStatus.FAILED))
+        t.db.tripDao().insert(t.trip("theirs", owner = "uid-b", deleted = true).copy(syncStatus = SyncStatus.FAILED))
+
+        backup.resumePending(OWNER)
+
+        // A deleted trip has no card, so nobody can press "Retry backup" on it: sign-in retries it.
+        assertEquals(SyncStatus.PENDING, status("gone"))
+        assertEquals(listOf(OWNER), requested)
+        // A trip the user can still see keeps its FAILED badge and its Retry button.
+        assertEquals(SyncStatus.FAILED, status("tooBig"))
+        assertEquals(SyncStatus.FAILED, status("theirs"))
+
+        assertEquals(BackupOutcome.DONE, backup.backUp(OWNER))
+        assertNull(t.db.backupDao().trip("gone"))
+        assertEquals(listOf("gone"), remote.deletes)
+    }
+
+    @Test
     fun retry_movesAFailedTripBackToPending_andQueuesTheJob(): Unit = runBlocking {
         t.db.tripDao().insert(t.trip("t1").copy(syncStatus = SyncStatus.FAILED))
         t.db.tripDao().insert(t.trip("other", owner = "uid-b").copy(syncStatus = SyncStatus.FAILED))

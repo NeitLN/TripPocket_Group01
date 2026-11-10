@@ -65,7 +65,11 @@ class FirestoreBackupRemote(
             Code.INTERNAL, Code.UNAUTHENTICATED, Code.CANCELLED, Code.UNKNOWN,
         )
 
-        /** The app's Firestore without its own offline cache; call once, before any other use. */
+        /**
+         * The app's Firestore without its own offline cache. Settings can only be set before the
+         * instance is first used, so AppContainer calls this once, and nothing else in the app may
+         * call FirebaseFirestore.getInstance() before it.
+         */
         fun create(): FirestoreBackupRemote {
             val firestore = FirebaseFirestore.getInstance()
             firestore.firestoreSettings = FirebaseFirestoreSettings.Builder()

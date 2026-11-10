@@ -101,9 +101,11 @@ fallback.
     transaction → chờ Firestore ghi xong → `UPDATE … SET SYNCED WHERE tripId=? AND localRevision=?`.
   - Lỗi mạng tạm thời (timeout, `UNAVAILABLE`, `DEADLINE_EXCEEDED`…) → retry. Snapshot ≥ 1 MiB, hoặc Firestore từ
     chối hẳn (`PERMISSION_DENIED`, `INVALID_ARGUMENT`…) → FAILED (cũng có điều kiện revision), rồi xử lý chuyến tiếp
-    theo; nút Retry gửi lại sau khi sửa nguyên nhân.
+    theo; nút Retry gửi lại sau khi sửa nguyên nhân. Bị từ chối mà uid đã đổi (đăng xuất giữa lúc gửi) thì không
+    phải lỗi của chuyến: giữ PENDING như dòng dưới.
   - Uid đang đăng nhập khác uid của job → kết thúc thành công, giữ PENDING.
-  - Chuyến đã xoá mềm: xoá document trên Firestore trước, rồi xoá local có điều kiện.
+  - Chuyến đã xoá mềm: xoá document trên Firestore trước, rồi xoá local có điều kiện. Chuyến đã xoá mà FAILED không
+    có thẻ để bấm Retry, nên lần mở app hoặc đăng nhập sau tự đưa về PENDING và thử lại.
   - Upload và restore dùng chung **một mutex cho mỗi tài khoản**.
   - Khi mở app và khi đăng nhập: còn chuyến PENDING thì enqueue lại.
 - `android:allowBackup="false"`: Firestore là bản sao lưu duy nhất, và cài lại app phải bắt đầu với DB trống thì
