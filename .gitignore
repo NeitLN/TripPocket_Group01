@@ -12,3 +12,8 @@
 
 # Firebase config is shared privately, never committed (proposal 6.3)
 google-services.json
+
+# A5 rules tests (firestore-tests/): npm packages and emulator logs
+node_modules/
+firestore-debug.log
+firebase-debug.log

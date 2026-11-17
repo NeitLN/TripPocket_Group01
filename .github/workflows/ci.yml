@@ -31,3 +31,24 @@ jobs:
         with:
           name: reports
           path: app/build/reports
+
+  # A5: firestore.rules with two accounts, in the Firestore emulator (firestore-tests/README.md).
+  firestore-rules:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: firestore-tests
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: firestore-tests/package-lock.json
+      - run: npm ci
+      - run: npm test
