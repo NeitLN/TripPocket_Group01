@@ -4,7 +4,6 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.dao.ActivityDao
 import vn.edu.vlu.trippocket.data.local.dao.BackupDao
 import vn.edu.vlu.trippocket.data.local.dao.ChecklistDao
@@ -24,8 +23,9 @@ import vn.edu.vlu.trippocket.data.local.entity.WeatherCacheEntity
 
 /**
  * TripPocket_DB (proposal 4.2). Owner: Tiến; ask before changing an entity.
- * Every schema change bumps [version]. The destructive fallback is for debug builds
- * with throw-away data only; the schema is frozen before demo data is created.
+ * The schema is frozen at version 1 (app/schemas). A change to it bumps [version] and adds a
+ * Migration: there is no destructive fallback, so a missing migration fails at start-up
+ * instead of silently wiping trips that are not backed up yet.
  */
 @Database(
     entities = [
@@ -38,7 +38,7 @@ import vn.edu.vlu.trippocket.data.local.entity.WeatherCacheEntity
         ExpenseShareEntity::class,
         WeatherCacheEntity::class,
     ],
-    version = 1,
+    version = AppDatabase.VERSION,
     exportSchema = true,
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -53,6 +53,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         private const val NAME = "TripPocket_DB"
+        const val VERSION = 1
 
         /** Written by one thread, read by all: @Volatile so no thread sees a half-built instance. */
         @Volatile
@@ -67,9 +68,8 @@ abstract class AppDatabase : RoomDatabase() {
                 instance ?: build(context.applicationContext).also { instance = it }
             }
 
-        private fun build(context: Context): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, NAME)
-                .apply { if (BuildConfig.DEBUG) fallbackToDestructiveMigration(dropAllTables = true) }
-                .build()
+        /** [name] is a parameter only so a test can open its own file next to the real one. */
+        internal fun build(context: Context, name: String = NAME): AppDatabase =
+            Room.databaseBuilder(context, AppDatabase::class.java, name).build()
     }
 }

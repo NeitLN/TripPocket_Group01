@@ -85,9 +85,9 @@ Test: `data/local/TripWriterTest.kt`. Riêng `WeatherCache` không nằm trong b
 ổn định) rồi đánh số lại. Kéo thả chỉ đổi `orderIndex`. Sửa tên, ghi chú hay chi phí thì giữ nguyên thứ tự.
 
 ### Migration
-`exportSchema = true`. Mỗi lần đổi schema thì **tăng version**; chỉ trong lúc phát triển mới được dùng destructive
-fallback (dữ liệu thử, xoá được). Đóng băng schema **trước khi tạo dữ liệu demo**; bản demo không dùng destructive
-fallback.
+`exportSchema = true`. Schema đã đóng băng ở version 1 (`app/schemas`) từ 30/10. Đổi schema thì **tăng version và
+viết Migration**. Từ 10/11 không còn destructive fallback, kể cả bản debug (bản demo là APK debug): thiếu migration
+thì app báo lỗi ngay khi mở, không lặng lẽ xoá chuyến chưa backup.
 
 ## Tài khoản, phiên và backup
 - Quyền sở hữu được kiểm **ở các điểm vào**, không cần kiểm trong từng query bảng con:
