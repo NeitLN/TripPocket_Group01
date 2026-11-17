@@ -1,14 +1,16 @@
 # STATUS
-Cập nhật: T3 10/11/2026
+Cập nhật: T2 17/11/2026 (sau release `v1.0`)
 
 ## Đang ở đâu
-- `develop` có đủ feature trừ **A3, A4, W5**: ba PR này CI xanh và đang chờ review/merge (#24 → #25, #27).
-  Còn chờ thêm: #49 (seed Packing list cho chuyến mẫu, issue #35), #50 (bỏ destructive fallback, X1), #34 (test
-  rules, đã approve), #33 (Minh gộp lại `develop` sau khi #24 vào).
-- `develop` đi trước `main` 30 commit; chưa có tag `v1.0`.
-- M4 (network/cloud) đã vào `develop` qua #46.
+- **Đã phát hành**: `develop` `1c86a8f` → PR #54 → `main` `62a2552`, tag **`v1.0`**, GitHub Release
+  https://github.com/NeitLN/TripPocket_Group01/releases/tag/v1.0 kèm `app-debug.apk`
+  (SHA-256 `E662B8553B574AB058787981C6F6FB43C034104B3052C3118D9DC0B339BBCC1B`).
+- 9 PR còn treo đã merge hết trong ngày 17/11: #53, #52, #49, #27, #25, #33, #50, #51, #34; mỗi lần merge đều chờ
+  CI `develop` xanh (gồm cả job `firestore-rules` mới). **0 PR, 0 issue mở.**
+- `main` xanh: `build` + `firestore-rules`, run `44115689826` (3m41s).
+- M4 (network/cloud) vào `develop` từ trước qua #46; A3/A4/W5/A5 và seed I2 vào nốt trong đợt này.
 
-## Bằng chứng theo phiếu (unit test, bản `develop` + #24 #25 #27 #49 gộp thử)
+## Bằng chứng theo phiếu (unit test, bản `main` `62a2552`)
 Cột "Test" là test tự động chứng minh điều kiện; "Máy thật" là phần unit test không thay được, kiểm ở release gate.
 
 | Điều kiện (phiếu) | Test | Máy thật |
@@ -32,27 +34,31 @@ Cột "Test" là test tự động chứng minh điều kiện; "Máy thật" l�
 | W3 chế độ máy bay vẫn hiện kèm giờ cập nhật | `WeatherViewModelTest.aFailedRefresh_keepsTheCachedRows_…` | chế độ máy bay |
 | W5 offline vẫn hiện; chưa có địa điểm thì hướng dẫn | `ItineraryViewModelTest.weather_…` | — |
 
-Kết quả chạy 10/11 (máy Tiến, `--rerun-tasks`): **441/441 PASS**, 0 lỗi, trên `develop` gộp thử #24 #25 #27 #49
-(gộp không conflict).
+Kết quả chạy 17/11 (`main` `62a2552`, Windows, JDK `D:\android studio\jbr`): **452/452 PASS**, 0 lỗi, lint không có
+lỗi chặn build, `BUILD SUCCESSFUL` (2m46s khi build lại từ `main`; 4m13s trên `develop`).
 
 ## Release gate X1 (phiếu `X1-integration.md`)
 | Mục | Trạng thái |
 |---|---|
-| `testDebugUnitTest lintDebug assembleDebug` | PASS 10/11 trên bản gộp thử; chạy lại sau khi merge thật |
-| Không có `google-services.json` hay secret trong git | PASS 10/11 (`git ls-files` không ra gì) |
-| Schema đóng băng | PASS 10/11: `1.json` sinh lại từ entity không đổi so với 30/10, `version = 1` |
-| Bản demo không dùng destructive fallback | Lệch đã sửa ở PR #50 (chờ merge): APK debug (RUNBOOK) vẫn bật fallback; PR bỏ nó ở mọi bản build, có test |
-| Kịch bản demo trên máy thật, chế độ máy bay | chưa chạy |
-| Gỡ app → cài lại → DB trống → đăng nhập → Restore đủ | chưa chạy (cần #24, #25) |
-| Đăng xuất → tài khoản khác: không thấy chuyến, không nhận nhắc | chưa chạy |
-| Nhắc đúng giờ; khởi động lại máy vẫn đến | chưa chạy |
-| Xoay màn hình, "Don't keep activities" mọi tab | chưa chạy |
-| Profiler: TripDetail mở/đóng 10 lần không leak | Itinerary đã kiểm (issue #35, Minh); các tab khác chưa |
+| `testDebugUnitTest lintDebug assembleDebug` | **PASS 17/11** — 452 test trên `main` và trên `develop` |
+| Không có `google-services.json` hay secret trong git | **PASS 17/11** (`git ls-files` không ra gì) |
+| Schema đóng băng | **PASS** — `app/schemas/.../1.json` trong repo, `version = 1` |
+| Bản demo không dùng destructive fallback | **PASS 17/11** sau #50: `git grep fallbackToDestructive` rỗng, `AppDatabaseMigrationTest` xanh |
+| Gỡ app → cài lại → DB trống | **PASS một nửa 17/11**: cài lại trên emulator API 34 → `databases/` + `shared_prefs/` rỗng, app ra màn Sign in; phần đăng nhập → Restore kiểm trên máy thật |
+| Kịch bản demo trên máy thật, chế độ máy bay | kiểm khi quay video (dùng APK trong Release) |
+| Đăng xuất → tài khoản khác: không thấy chuyến, không nhận nhắc | kiểm khi quay video |
+| Nhắc đúng giờ; khởi động lại máy vẫn đến | kiểm trên máy thật |
+| Xoay màn hình, "Don't keep activities" mọi tab | kiểm trên máy thật |
+| Profiler: TripDetail mở/đóng 10 lần không leak | Itinerary đã kiểm (issue #35: 21 vòng, số về 1 activity / 1 ViewRootImpl); các tab khác kiểm khi quay |
+
+Chi tiết lệnh + số đo: `.ai/evidence/X1-release-gate-2026-11-17.md`; checklist máy thật + kịch bản quay:
+`.ai/evidence/X1-device-checklist-17-11.md`.
 
 ## Bước tiếp theo
-1. Review lại #24 (Bảo, Minh), merge #24 → #25, #27, #49, #34, #50; Minh gộp `develop` vào #33.
-2. Chạy release gate trên `develop` đã gộp, trên máy thật; ghi kết quả vào bảng trên.
-3. PASS → merge `develop` → `main`, tag `v1.0`, cài cùng APK lên máy demo và máy dự phòng (RUNBOOK).
+1. Cài `app-debug.apk` trong Release lên **cả hai** máy (cùng một file), chạy 5 mục máy thật còn lại.
+2. Quay video 1–2 phút theo 6 cảnh trong phiếu M4, dùng tài khoản thử; đăng Unlisted/Drive rồi mở bằng tab ẩn danh.
+3. Nộp LMS: link PR tích hợp (#46, #54), link Release, video, worksheet (bảng endpoint + ảnh Firebase Console + WBS).
+4. Nếu có sửa code sau `v1.0`: tag `v1.0.1`, cài lại cùng một APK mới lên cả hai máy.
 
 ## Bộ kiểm nhanh (chạy đầu mỗi session)
 - `./gradlew testDebugUnitTest lintDebug assembleDebug`
