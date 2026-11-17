@@ -8,10 +8,12 @@ Nhóm 01 · TripPocket · Ngày chốt: 17/11/2026
 | Nhánh phát hành | `main` — commit `47a999b`, bản phát hành `62a2552`, tag **`v1.0`** |
 | PR tích hợp M4 | #46 (network/cloud → `develop`), #54 (`develop` → `main`, phát hành) |
 | APK | GitHub Release `v1.0`, `app-debug.apk` — SHA-256 `E662B8553B574AB058787981C6F6FB43C034104B3052C3118D9DC0B339BBCC1B` |
-| Video demo | `trippocket-m4-final.mp4` — 1:52, 1920×1080, tiếng Việt có phụ đề từng cảnh; *(dán link YouTube Unlisted / Drive sau khi upload)* |
+| Video demo | https://youtu.be/4aHB0uAgqk4 — *Demo trippocket m4 final*, 1:52, 1920×1080, tiếng Việt có phụ đề từng cảnh (YouTube, chế độ Unlisted) |
 | Bằng chứng tự động | `docs/STATUS.md`, `.ai/evidence/X1-release-gate-2026-11-17.md` |
 
 ## 0. Video demo — mục lục (1:52)
+
+Xem tại **https://youtu.be/4aHB0uAgqk4** (Unlisted, mở được ở tab ẩn danh). Bản dựng gốc: `D:\TripPocket-video\out\trippocket-m4-final.mp4`.
 
 Quay bằng bản build có `google-services.json` (Firebase thật), tài khoản thử, không lộ mật khẩu. Thời điểm dưới đây
 là **xấp xỉ** (lấy theo từng cảnh trong bản dựng):
