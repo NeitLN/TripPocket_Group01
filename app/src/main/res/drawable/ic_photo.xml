@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Default image of a place when Wikipedia has no thumbnail: it is both the Glide placeholder
+    (while a photo downloads) and the Glide error image (when the download fails).
+
+    The canvas is the whole tile (56dp) and the glyph sits in the middle at 24dp, so the icon
+    stays small inside a 56dp search row and a 96dp "About" photo instead of touching the edges.
+    The tint lives on the vector, not on the ImageView, so a real photo loaded later is never
+    tinted.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="56dp"
+    android:height="56dp"
+    android:tint="?attr/colorControlNormal"
+    android:viewportWidth="56"
+    android:viewportHeight="56">
+    <group
+        android:translateX="16"
+        android:translateY="16">
+        <path
+            android:fillColor="@android:color/white"
+            android:pathData="M21,19V5c0,-1.1 -0.9,-2 -2,-2H5c-1.1,0 -2,0.9 -2,2v14c0,1.1 0.9,2 2,2h14c1.1,0 2,-0.9 2,-2zM8.5,13.5l2.5,3.01L14.5,12l4.5,6H5l3.5,-4.5z" />
+    </group>
+</vector>

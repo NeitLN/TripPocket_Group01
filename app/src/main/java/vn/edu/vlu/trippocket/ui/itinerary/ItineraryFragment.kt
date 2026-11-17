@@ -130,6 +130,7 @@ class ItineraryFragment : Fragment() {
             override fun onTabReselected(tab: TabLayout.Tab) = Unit
         })
         binding.btnChecklist.setOnClickListener { (activity as? TripDetailActivity)?.showTab(R.id.nav_checklist) }
+        binding.btnSights.setOnClickListener { openNearbySights() }
         binding.fabAddActivity.setOnClickListener {
             if (viewModel.uiState.value.canAdd) {
                 findNavController().navigate(R.id.action_itinerary_to_form)
@@ -166,13 +167,15 @@ class ItineraryFragment : Fragment() {
 
         val date = state.selectedDate ?: return
         binding.tvDayDate.text = date.format(Format.weekdayDayMonth)
+        // W5: no place yet -> how to get a forecast; a day outside the cache -> not available yet.
         val forecast = state.forecast
-        binding.tvDayWeather.text = if (forecast == null) {
-            getString(R.string.weather_not_available)
-        } else {
-            getString(R.string.weather_temp_range, forecast.maxTemp, forecast.minTemp) + " · " +
+        binding.tvDayWeather.text = when {
+            !state.hasSavedPlace -> getString(R.string.itinerary_weather_no_place)
+            forecast == null -> getString(R.string.weather_not_available)
+            else -> getString(R.string.weather_temp_range, forecast.maxTemp, forecast.minTemp) + " · " +
                 getString(R.string.weather_rain_chance, forecast.rainChance)
         }
+        binding.tvDayWeather.setCompoundDrawablesRelativeWithIntrinsicBounds(forecast?.condition?.iconRes ?: 0, 0, 0, 0)
         binding.tvDayCost.isVisible = state.estimatedCost > 0
         binding.tvDayCost.text = getString(R.string.itinerary_estimated, Format.vnd(state.estimatedCost))
 
@@ -185,6 +188,17 @@ class ItineraryFragment : Fragment() {
         } else {
             getString(R.string.itinerary_limit_count, state.activityCount, Limits.MAX_ACTIVITIES)
         }
+    }
+
+    /**
+     * Opens the nearby sights of the trip's saved place. The day now selected in this tab is
+     * carried as a nav argument, so "Add to day" there writes to the same day the user sees.
+     */
+    private fun openNearbySights() {
+        findNavController().navigate(
+            R.id.action_itinerary_to_sights,
+            Bundle().apply { putInt(ARG_DAY_INDEX, viewModel.uiState.value.selectedDay) },
+        )
     }
 
     override fun onDestroyView() {

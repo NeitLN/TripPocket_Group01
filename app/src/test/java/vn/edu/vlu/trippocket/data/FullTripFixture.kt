@@ -21,8 +21,9 @@ import java.util.UUID
  * as many 3-byte UTF-8 letters as a real sentence has, so the backup snapshot is as large
  * as it can get. Every expense is shared by all 15 members.
  *
- * Use [insertInto] to put it in a Room database, then run it through the real backup mapper
- * (A3) and [vn.edu.vlu.trippocket.data.remote.firebase.FirestoreDocumentSize].
+ * Use [insertInto] to put it in a Room database; FullTripSnapshotSizeTest then reads it back
+ * through the backup mapper (A3) and measures it with
+ * [vn.edu.vlu.trippocket.data.remote.firebase.FirestoreDocumentSize].
  */
 object FullTripFixture {
 

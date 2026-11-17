@@ -60,6 +60,8 @@ class TripListViewModel(
     private val today: () -> LocalDate = LocalDate::now,
     /** Rebuilds reminder alarms for an account; null cancels them all (ReminderReconciler, I5). */
     private val syncReminders: suspend (uid: String?) -> Unit = {},
+    /** "Retry backup" of a FAILED trip (A3): back to PENDING and queued again. */
+    private val retryBackup: suspend (tripId: String) -> Unit = {},
 ) : ViewModel() {
 
     val uiState: StateFlow<TripListUiState> = combine(
@@ -97,6 +99,11 @@ class TripListViewModel(
         }
     }
 
+    /** "Retry backup" on a FAILED trip card (A3): back to PENDING and queued again. */
+    fun retryBackup(tripId: String) {
+        viewModelScope.launch { retryBackup.invoke(tripId) }
+    }
+
     private fun toCard(trip: Trip, totals: TripTotals) = TripCard(trip, totals.memberCount, totals.spent)
 
     companion object {
@@ -111,6 +118,7 @@ class TripListViewModel(
                     container.expenseRepository,
                     container.authRepository,
                     syncReminders = { uid -> container.reminderReconciler.reconcile(uid) },
+                    retryBackup = { tripId -> container.backupRepository.retry(tripId) },
                 )
             }
         }

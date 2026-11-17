@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Milestone 4: error banner shared by every networked screen. Include it with
+    <include android:id="@+id/networkError" layout="@layout/view_network_error" /> and bind it with
+    ViewNetworkErrorBinding: the screen sets tvNetworkError from ApiError.messageRes and wires
+    btnNetworkRetry to its ViewModel's retry().
+-->
+<com.google.android.material.card.MaterialCardView xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:visibility="gone"
+    app:cardBackgroundColor="?attr/colorErrorContainer"
+    app:cardCornerRadius="@dimen/card_corner_radius"
+    app:cardElevation="0dp"
+    app:strokeWidth="0dp"
+    tools:visibility="visible">
+
+    <androidx.constraintlayout.widget.ConstraintLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:padding="@dimen/space_lg">
+
+        <ImageView
+            android:id="@+id/ivNetworkError"
+            android:layout_width="@dimen/icon_size_md"
+            android:layout_height="@dimen/icon_size_md"
+            android:importantForAccessibility="no"
+            android:src="@drawable/ic_cloud_alert"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toTopOf="parent"
+            app:tint="?attr/colorOnErrorContainer" />
+
+        <TextView
+            android:id="@+id/tvNetworkError"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="@dimen/space_md"
+            android:accessibilityLiveRegion="polite"
+            android:textAppearance="?attr/textAppearanceBodyMedium"
+            android:textColor="?attr/colorOnErrorContainer"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toEndOf="@id/ivNetworkError"
+            app:layout_constraintTop_toTopOf="parent"
+            tools:text="@string/api_error_offline" />
+
+        <com.google.android.material.button.MaterialButton
+            android:id="@+id/btnNetworkRetry"
+            style="@style/Widget.Material3.Button.TextButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_xs"
+            android:text="@string/api_retry"
+            android:textColor="?attr/colorOnErrorContainer"
+            app:icon="@drawable/ic_refresh"
+            app:iconTint="?attr/colorOnErrorContainer"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tvNetworkError" />
+
+    </androidx.constraintlayout.widget.ConstraintLayout>
+</com.google.android.material.card.MaterialCardView>

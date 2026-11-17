@@ -60,6 +60,7 @@ class ExpensesFragment : Fragment() {
         }
         binding.btnShare.setOnClickListener { shareSummary() }
         binding.btnMembers.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_members) }
+        binding.btnExchangeRates.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_exchangeRates) }
         binding.fabAddExpense.setOnClickListener { fab ->
             val state = viewModel.uiState.value
             when {

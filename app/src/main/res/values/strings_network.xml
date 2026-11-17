@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Milestone 4: messages shared by every screen that calls a REST API (domain/ApiError.kt). -->
+<resources>
+    <string name="api_error_offline">You\'re offline. Turn off airplane mode or check Wi-Fi, then try again.</string>
+    <string name="api_error_timeout">The server took too long to answer. Try again.</string>
+    <string name="api_error_bad_request">The server refused this request (400). Check what you entered.</string>
+    <string name="api_error_forbidden">Only the account that shared this can change it. Check that you\'re signed in.</string>
+    <string name="api_error_not_found">This item no longer exists on the server (404).</string>
+    <string name="api_error_rate_limited">Too many requests right now (429). Wait a minute and try again.</string>
+    <string name="api_error_server">The server is having trouble (5xx). Try again later.</string>
+    <string name="api_error_bad_response">The server sent an answer the app could not read.</string>
+    <string name="api_retry">Retry</string>
+</resources>

@@ -20,6 +20,7 @@ import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.SplitType
+import vn.edu.vlu.trippocket.data.repository.ExchangeRateRepository
 import vn.edu.vlu.trippocket.databinding.FragmentExpenseFormBinding
 import vn.edu.vlu.trippocket.databinding.ItemSplitMemberBinding
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
@@ -80,6 +81,51 @@ class ExpenseFormFragment : Fragment() {
 
         if (!fieldsFilled) fillFields(state)
 
+        if (binding.etAmount.text?.toString() != state.amountText) {
+            binding.etAmount.setText(state.amountText)
+            binding.etAmount.setSelection(state.amountText.length)
+        }
+        // The ViewModel rewrites the "Paid in" amount after a VND edit, so it is rendered too.
+        if (binding.etPaidInAmount.text?.toString() != state.paidInAmountText) {
+            binding.etPaidInAmount.setText(state.paidInAmountText)
+            binding.etPaidInAmount.setSelection(state.paidInAmountText.length)
+        }
+
+        when {
+            state.paidInCurrency == null -> {
+                binding.tvPaidInRate.isVisible = false
+                binding.btnPaidInRetry.isVisible = false
+            }
+            state.ratesLoading -> {
+                binding.tvPaidInRate.isVisible = true
+                binding.tvPaidInRate.setText(R.string.expense_rates_loading_short)
+                binding.btnPaidInRetry.isVisible = false
+            }
+            state.ratesError != null -> {
+                binding.tvPaidInRate.isVisible = true
+                binding.tvPaidInRate.setText(R.string.expense_rates_offline_short)
+                binding.btnPaidInRetry.isVisible = true
+            }
+            state.exchangeRates != null -> {
+                val item = state.exchangeRates.items.find { it.code == state.paidInCurrency }
+                if (item != null) {
+                    binding.tvPaidInRate.isVisible = true
+                    binding.tvPaidInRate.text = getString(
+                        R.string.exchange_rates_rate_format,
+                        item.code,
+                        Format.rateToVnd(item.rateToVnd),
+                    )
+                } else {
+                    binding.tvPaidInRate.isVisible = false
+                }
+                binding.btnPaidInRetry.isVisible = false
+            }
+            else -> {
+                binding.tvPaidInRate.isVisible = false
+                binding.btnPaidInRetry.isVisible = false
+            }
+        }
+
         binding.tilTitle.error = state.titleError?.let(::getString)
         binding.tilAmount.error = state.amountError?.let(::getString)
         binding.tilPayer.error = state.payerError?.let(::getString)
@@ -104,6 +150,29 @@ class ExpenseFormFragment : Fragment() {
         binding.etAmount.setText(state.amountText)
         binding.etTitle.doAfterTextChanged { viewModel.setTitle(it?.toString().orEmpty()) }
         binding.etAmount.doAfterTextChanged { viewModel.setAmount(it?.toString().orEmpty()) }
+
+        val currencyCodes = ExchangeRateRepository.SUPPORTED_CURRENCIES.map { it.code }
+        val currencyLabels = listOf(getString(R.string.expense_paid_in_none)) +
+            ExchangeRateRepository.SUPPORTED_CURRENCIES.map { "${it.code} · ${getString(it.nameRes)}" }
+        binding.actPaidInCurrency.setSimpleItems(currencyLabels.toTypedArray())
+        state.paidInCurrency?.let { code ->
+            binding.actPaidInCurrency.setText(code, false)
+        }
+        binding.actPaidInCurrency.setOnItemClickListener { _, _, position, _ ->
+            if (position == 0) {
+                viewModel.setPaidInCurrency(null)
+                binding.actPaidInCurrency.setText(getString(R.string.expense_paid_in_none), false)
+                binding.etPaidInAmount.setText("")
+            } else {
+                val code = currencyCodes[position - 1]
+                viewModel.setPaidInCurrency(code)
+                binding.actPaidInCurrency.setText(code, false)
+            }
+        }
+
+        binding.etPaidInAmount.setText(state.paidInAmountText)
+        binding.etPaidInAmount.doAfterTextChanged { viewModel.setPaidInAmount(it?.toString().orEmpty()) }
+        binding.btnPaidInRetry.setOnClickListener { viewModel.retryRates() }
 
         binding.actPayer.setAdapter(
             ArrayAdapter(requireContext(), android.R.layout.simple_list_item_1, state.members.map { it.name })

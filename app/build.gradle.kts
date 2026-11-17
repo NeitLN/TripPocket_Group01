@@ -25,6 +25,11 @@ android {
         versionName = "0.3-final"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        // Milestone 4: base URL of the team's MockAPI.io project (Trip Ideas CRUD), from
+        // gradle.properties; override it in ~/.gradle/gradle.properties to point at another project.
+        val mockApiBaseUrl = providers.gradleProperty("trippocket.mockApiBaseUrl").get()
+        buildConfigField("String", "MOCKAPI_BASE_URL", "\"$mockApiBaseUrl\"")
     }
 
     buildTypes {
@@ -83,6 +88,7 @@ dependencies {
     implementation(libs.retrofit)
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
+    implementation(libs.glide)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
@@ -91,6 +97,7 @@ dependencies {
     testImplementation(libs.junit)
     testImplementation(libs.kotlinx.coroutines.test)
     testImplementation(libs.robolectric)
+    testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)

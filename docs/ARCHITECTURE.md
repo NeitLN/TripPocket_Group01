@@ -85,9 +85,9 @@ Test: `data/local/TripWriterTest.kt`. Riêng `WeatherCache` không nằm trong b
 ổn định) rồi đánh số lại. Kéo thả chỉ đổi `orderIndex`. Sửa tên, ghi chú hay chi phí thì giữ nguyên thứ tự.
 
 ### Migration
-`exportSchema = true`. Mỗi lần đổi schema thì **tăng version**; chỉ trong lúc phát triển mới được dùng destructive
-fallback (dữ liệu thử, xoá được). Đóng băng schema **trước khi tạo dữ liệu demo**; bản demo không dùng destructive
-fallback.
+`exportSchema = true`. Schema đã đóng băng ở version 1 (`app/schemas`) từ 30/10. Đổi schema thì **tăng version và
+viết Migration**. Từ 10/11 không còn destructive fallback, kể cả bản debug (bản demo là APK debug): thiếu migration
+thì app báo lỗi ngay khi mở, không lặng lẽ xoá chuyến chưa backup.
 
 ## Tài khoản, phiên và backup
 - Quyền sở hữu được kiểm **ở các điểm vào**, không cần kiểm trong từng query bảng con:
@@ -99,11 +99,26 @@ fallback.
   - Mỗi tài khoản một unique work `trip-backup:<uid>`, policy `APPEND_OR_REPLACE`.
   - Worker xử lý lần lượt cho tới khi hết chuyến PENDING của uid đó. Mỗi chuyến: đọc snapshot + revision trong một
     transaction → chờ Firestore ghi xong → `UPDATE … SET SYNCED WHERE tripId=? AND localRevision=?`.
-  - Lỗi mạng tạm thời → retry. Snapshot ≥ 1 MiB → FAILED (cũng có điều kiện revision), rồi xử lý chuyến tiếp theo.
+  - Lỗi mạng tạm thời (timeout, `UNAVAILABLE`, `DEADLINE_EXCEEDED`…) → retry. Snapshot ≥ 1 MiB, hoặc Firestore từ
+    chối hẳn (`PERMISSION_DENIED`, `INVALID_ARGUMENT`…) → FAILED (cũng có điều kiện revision), rồi xử lý chuyến tiếp
+    theo; nút Retry gửi lại sau khi sửa nguyên nhân. Bị từ chối mà uid đã đổi (đăng xuất giữa lúc gửi) thì không
+    phải lỗi của chuyến: giữ PENDING như dòng dưới.
   - Uid đang đăng nhập khác uid của job → kết thúc thành công, giữ PENDING.
-  - Chuyến đã xoá mềm: xoá document trên Firestore trước, rồi xoá local có điều kiện.
+  - Chuyến đã xoá mềm: xoá document trên Firestore trước, rồi xoá local có điều kiện. Chuyến đã xoá mà FAILED không
+    có thẻ để bấm Retry, nên lần mở app hoặc đăng nhập sau tự đưa về PENDING và thử lại.
   - Upload và restore dùng chung **một mutex cho mỗi tài khoản**.
   - Khi mở app và khi đăng nhập: còn chuyến PENDING thì enqueue lại.
+- **Restore (A4, proposal 6.2)** — menu "Restore from backup" trên Trip List, `RestoreRepository`:
+  - Document được đọc/ghi dưới dạng map qua `TripSnapshotCodec` (Firestore không gán được `val` của data class).
+  - Đọc hết `users/{uid}/trips` từ server; mất mạng thì báo lỗi, không đổi gì.
+  - Mỗi snapshot được `TripSnapshotValidator` kiểm **toàn bộ** (giới hạn, độ dài chữ, ngày/giờ, enum, người trả
+    và phần chia thuộc đúng chuyến, tổng phần chia = số tiền). Hỏng → bỏ riêng chuyến đó, các chuyến khác vẫn về.
+  - Chỉ có trong backup → thêm. Giống hệt bản trên máy → bỏ qua. Khác nhau (kể cả chuyến đã xoá mềm) → một hộp
+    thoại checkbox, tick = lấy bản backup, mặc định giữ bản trên máy. Huỷ hộp thoại → không ghi gì.
+  - Ghi trong mutex của tài khoản; mỗi chuyến cùng mọi bảng con trong **một** transaction, giữ UUID, thành SYNCED
+    với revision của backup. Revision trên máy đổi kể từ lúc đọc → không thay chuyến đó.
+  - Giữ bản trên máy → `touch` (PENDING) để bản trên máy đè lại backup.
+  - Xong thì gọi `ReminderReconciler` và tải lại forecast của các chuyến vừa khôi phục (chạy nền).
 - `android:allowBackup="false"`: Firestore là bản sao lưu duy nhất, và cài lại app phải bắt đầu với DB trống thì
   mới kiểm restore được.
 

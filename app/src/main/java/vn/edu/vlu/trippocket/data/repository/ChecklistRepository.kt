@@ -4,6 +4,7 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
+import vn.edu.vlu.trippocket.data.local.MockData
 import vn.edu.vlu.trippocket.data.local.TripWriter
 import vn.edu.vlu.trippocket.data.local.dao.ChecklistDao
 import vn.edu.vlu.trippocket.data.local.entity.ChecklistItemEntity
@@ -93,6 +94,21 @@ class ChecklistRepository(
                 } else {
                     checklistDao.insert(ChecklistItemEntity(item.itemId, item.tripId, item.title, item.isDone))
                 }
+            }
+        }
+    }
+
+    /**
+     * Debug builds without Firebase: gives the sample trips their packing list, like the sample
+     * activities and expenses (issue #35, 3.1). Not a user change, so it does not go through
+     * TripWriter. A trip that is not in Room, or already has items, is left alone.
+     */
+    suspend fun seedSampleChecklist() {
+        MockData.trips.forEach { trip ->
+            if (!checklistDao.tripExists(trip.tripId)) return@forEach
+            if (checklistDao.countByTrip(trip.tripId) > 0) return@forEach
+            MockData.checklistOf(trip.tripId).forEachIndexed { index, (title, packed) ->
+                checklistDao.insert(ChecklistItemEntity("${trip.tripId}-item-$index", trip.tripId, title, packed))
             }
         }
     }
