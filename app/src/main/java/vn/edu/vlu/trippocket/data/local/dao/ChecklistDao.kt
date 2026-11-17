@@ -38,6 +38,10 @@ interface ChecklistDao {
     @Query("SELECT COUNT(*) FROM checklist_item WHERE tripId = :tripId")
     suspend fun countByTrip(tripId: String): Int
 
+    /** For the sample seed: an item can only point at a trip that is in Room (FK). */
+    @Query("SELECT EXISTS(SELECT 1 FROM trip WHERE tripId = :tripId)")
+    suspend fun tripExists(tripId: String): Boolean
+
     @Insert
     suspend fun insert(row: ChecklistItemEntity)
 
