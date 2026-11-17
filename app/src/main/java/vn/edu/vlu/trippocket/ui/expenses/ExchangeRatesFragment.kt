@@ -68,7 +68,9 @@ class ExchangeRatesFragment : Fragment() {
             is ExchangeRatesUiState.Success -> {
                 binding.progressBar.isVisible = false
                 binding.swipeRefresh.isRefreshing = state.isRefreshing
-                binding.networkError.root.isVisible = false
+                // A failed pull-to-refresh keeps the last rates and explains itself in the banner.
+                binding.networkError.root.isVisible = state.refreshError != null
+                state.refreshError?.let { binding.networkError.tvNetworkError.setText(it.messageRes) }
                 binding.rvCurrencies.isVisible = state.rates.items.isNotEmpty()
                 binding.tvEmpty.isVisible = state.rates.items.isEmpty()
                 binding.tvLastUpdated.isVisible = state.rates.lastUpdatedUtc.isNotBlank()

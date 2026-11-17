@@ -2,7 +2,6 @@ package vn.edu.vlu.trippocket.domain
 
 import java.math.BigDecimal
 import java.math.RoundingMode
-import kotlin.math.roundToLong
 
 /**
  * Pure Kotlin utility for currency conversion (Milestone 4).
@@ -15,12 +14,19 @@ object CurrencyConverter {
      * Converts [amount] in foreign currency to VND using [rateToVnd]
      * (the value of 1 unit of foreign currency in VND).
      *
-     * The result is rounded to the nearest whole dong.
-     * Returns 0L if either [amount] or [rateToVnd] is NaN or non-positive.
+     * The result is rounded to the nearest whole dong, on the decimal values: multiplying the
+     * binary doubles first can land just below a .5 tie (0.29 * 50 = 14.499999999999998), which
+     * used to round a dong too low.
+     * Returns 0L if either value is not finite, or is NaN or non-positive.
      */
     fun toVnd(amount: Double, rateToVnd: Double): Long {
-        if (amount.isNaN() || rateToVnd.isNaN() || rateToVnd <= 0.0 || amount <= 0.0) return 0L
-        return (amount * rateToVnd).roundToLong()
+        if (!amount.isFinite() || !rateToVnd.isFinite()) return 0L
+        if (amount <= 0.0 || rateToVnd <= 0.0) return 0L
+        val vnd = BigDecimal.valueOf(amount)
+            .multiply(BigDecimal.valueOf(rateToVnd))
+            .setScale(0, RoundingMode.HALF_UP)
+        // An absurd amount must not overflow the Long the rest of the app stores.
+        return if (vnd > LONG_MAX) Long.MAX_VALUE else vnd.longValueExact()
     }
 
     /**
@@ -34,4 +40,6 @@ object CurrencyConverter {
             .stripTrailingZeros()
             .toPlainString()
     }
+
+    private val LONG_MAX: BigDecimal = BigDecimal.valueOf(Long.MAX_VALUE)
 }
