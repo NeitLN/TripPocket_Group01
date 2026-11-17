@@ -27,6 +27,7 @@ import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.data.repository.TripRepository
 import vn.edu.vlu.trippocket.data.repository.WeatherRepository
+import vn.edu.vlu.trippocket.domain.DailyWeather
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.time.LocalDate
@@ -36,8 +37,13 @@ data class ItineraryUiState(
     val days: List<LocalDate> = emptyList(),
     val selectedDay: Int = 0,
     val activities: List<ItineraryActivity> = emptyList(),
-    /** Weather of the trip's first saved place on that date; null if not in the cached forecast. */
+    /**
+     * W5: weather of the trip's first saved place on that date, from the Room cache (works
+     * offline); null when the cache has no such day, shown as "Forecast not available yet".
+     */
     val forecast: ForecastDay? = null,
+    /** false: the trip has no saved place yet, so the screen says how to add one instead. */
+    val hasSavedPlace: Boolean = false,
     /** Planned cost of the selected day. */
     val estimatedCost: Long = 0,
     val checklistDone: Int = 0,
@@ -53,8 +59,8 @@ data class ItineraryUiState(
 
 /**
  * Screen 3, day by day. The trip (its days, so a trip created or re-dated in A2 shows the right
- * tabs), the activities and the packing count (I2) come from Room; the forecast stays on the
- * sample data until W5 moves it.
+ * tabs), the activities, the packing count (I2) and the weather (W5: the cached forecast of the
+ * first saved place, via WeatherRepository.observeDailyWeather) all come from Room.
  */
 class ItineraryViewModel(
     private val savedStateHandle: SavedStateHandle,
@@ -65,10 +71,6 @@ class ItineraryViewModel(
 ) : ViewModel() {
 
     private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
-
-    private val forecast: List<ForecastDay> = weatherRepository.savedPlaces(tripId).firstOrNull()
-        ?.let(weatherRepository::forecast)
-        .orEmpty()
 
     /** Days of the trip as last read from Room; 0 until the trip is loaded. */
     private var dayCount: Int = 0
@@ -90,15 +92,16 @@ class ItineraryViewModel(
         selectedDay,
         selectedDay.flatMapLatest { day -> itineraryRepository.observeDay(tripId, day).map { DayActivities(day, it) } },
         itineraryRepository.observeActivities(tripId),
-        checklistRepository.observe(tripId),
-    ) { trip, day, dayActivities, all, checklist ->
+        // One flow for the trip-wide extras, so the main combine stays at five flows.
+        combine(checklistRepository.observe(tripId), weatherRepository.observeDailyWeather(tripId), ::TripExtras),
+    ) { trip, day, dayActivities, all, extras ->
         dayCount = trip?.dayCount ?: 0
         if (trip == null) return@combine ItineraryUiState()
         // A trip made shorter (A2) or a restored tab past the end: fall back to the last day.
         val shown = day.coerceIn(0, dayCount - 1)
         if (shown != day) selectDay(shown)
         if (dayActivities.day != shown) return@combine null
-        state(trip, shown, dayActivities.activities, all.size, checklist)
+        state(trip, shown, dayActivities.activities, all.size, extras)
     }.filterNotNull().stateIn(viewModelScope, SharingStarted.Eagerly, ItineraryUiState())
 
     fun selectDay(dayIndex: Int) {
@@ -147,14 +150,17 @@ class ItineraryViewModel(
         dayIndex: Int,
         activities: List<ItineraryActivity>,
         activityCount: Int,
-        checklist: List<ChecklistItem>,
+        extras: TripExtras,
     ): ItineraryUiState {
         val dates = (0 until trip.dayCount).map(trip::dateOfDay)
+        val (checklist, weather) = extras
         return ItineraryUiState(
             days = dates,
             selectedDay = dayIndex,
             activities = activities,
-            forecast = dates.getOrNull(dayIndex)?.let { date -> forecast.firstOrNull { it.date == date } },
+            // Exact date only (ForecastMatcher): a day outside the cache never shows another day.
+            forecast = (weather as? DailyWeather.Cached)?.let { cached -> dates.getOrNull(dayIndex)?.let(cached::on) },
+            hasSavedPlace = weather is DailyWeather.Cached,
             estimatedCost = activities.sumOf { it.estimatedCost },
             checklistDone = checklist.count { it.isDone },
             checklistTotal = checklist.size,
@@ -181,3 +187,6 @@ class ItineraryViewModel(
 
 /** The activities of one day, tagged with the day they were read for. */
 private data class DayActivities(val day: Int, val activities: List<ItineraryActivity>)
+
+/** What the screen shows for the whole trip, whatever the day: packing list and weather. */
+private data class TripExtras(val checklist: List<ChecklistItem>, val weather: DailyWeather)
