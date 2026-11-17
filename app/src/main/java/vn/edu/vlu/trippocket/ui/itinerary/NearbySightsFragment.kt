@@ -53,7 +53,7 @@ class NearbySightsFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    adapter.submitList(state.sights)
+                    adapter.submitList(state.rows)
                     render(state)
                 }
             }

@@ -12,6 +12,7 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -48,6 +49,20 @@ sealed interface SightsMessage {
     data object AddFailed : SightsMessage
 }
 
+/** What the "Add to day" button of one sight can do right now. */
+enum class AddState {
+    CAN_ADD,
+
+    /** An activity with this sight's title is already in the selected day. */
+    ADDED,
+
+    /** The trip already has [Limits.MAX_ACTIVITIES] activities. */
+    TRIP_FULL,
+}
+
+/** One row of the list: the sight and the state of its button. */
+data class SightRow(val sight: Sight, val addState: AddState)
+
 data class NearbySightsUiState(
     val loading: Boolean = true,
     val refreshing: Boolean = false,
@@ -58,7 +73,25 @@ data class NearbySightsUiState(
     /** The trip has no saved place at all: the screen says so and never calls the API. */
     val noPlace: Boolean = false,
     val message: SightsMessage? = null,
+    /** Titles of the activities already in the selected day, read from Room. */
+    val addedTitles: Set<String> = emptySet(),
+    /** The trip has [Limits.MAX_ACTIVITIES] activities, so nothing more can be added. */
+    val tripFull: Boolean = false,
 ) {
+    /**
+     * The sights with their button state: a sight already in the day reads "Added", and a full
+     * trip turns every button off, so the user sees it before tapping instead of after.
+     */
+    val rows: List<SightRow>
+        get() = sights.map { sight ->
+            val addState = when {
+                sight.title.take(Limits.MAX_TEXT) in addedTitles -> AddState.ADDED
+                tripFull -> AddState.TRIP_FULL
+                else -> AddState.CAN_ADD
+            }
+            SightRow(sight, addState)
+        }
+
     /**
      * The API answered with nothing within the radius. A separate sentence from [noPlace]:
      * here the place exists and a later refresh may still find something.
@@ -109,6 +142,18 @@ class NearbySightsViewModel(
                 .map { places -> places.firstOrNull()?.placeId }
                 .distinctUntilChanged()
                 .collect { load(newPlace = true) }
+        }
+        // The selected day and the trip's activity count, so the buttons follow every write:
+        // this screen's own "Add to day", or an edit in the Itinerary tab.
+        viewModelScope.launch {
+            combine(
+                itineraryRepository.observeDay(tripId, dayIndex),
+                itineraryRepository.observeActivities(tripId),
+            ) { day, all ->
+                day.map { it.title }.toSet() to (all.size >= Limits.MAX_ACTIVITIES)
+            }.collect { (addedTitles, tripFull) ->
+                _uiState.update { it.copy(addedTitles = addedTitles, tripFull = tripFull) }
+            }
         }
     }
 
