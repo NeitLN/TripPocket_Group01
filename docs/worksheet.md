@@ -8,10 +8,33 @@ Nhóm 01 · TripPocket · Ngày chốt: 17/11/2026
 | Nhánh phát hành | `main` — commit `47a999b`, bản phát hành `62a2552`, tag **`v1.0`** |
 | PR tích hợp M4 | #46 (network/cloud → `develop`), #54 (`develop` → `main`, phát hành) |
 | APK | GitHub Release `v1.0`, `app-debug.apk` — SHA-256 `E662B8553B574AB058787981C6F6FB43C034104B3052C3118D9DC0B339BBCC1B` |
-| Video demo | *(dán link YouTube Unlisted / Drive)* |
+| Video demo | `trippocket-m4-final.mp4` — 1:52, 1920×1080, tiếng Việt có phụ đề từng cảnh; *(dán link YouTube Unlisted / Drive sau khi upload)* |
 | Bằng chứng tự động | `docs/STATUS.md`, `.ai/evidence/X1-release-gate-2026-11-17.md` |
 
-## 1. Ảnh Firebase Console (dán vào `docs/images/`)
+## 0. Video demo — mục lục (1:52)
+
+Quay bằng bản build có `google-services.json` (Firebase thật), tài khoản thử, không lộ mật khẩu. Thời điểm dưới đây
+là **xấp xỉ** (lấy theo từng cảnh trong bản dựng):
+
+| Thời điểm | Cảnh | Nội dung |
+|---|---|---|
+| 0:00 | Mở đầu | TripPocket · Milestone 4 Network & Cloud |
+| 0:10 | 1. Đăng ký / đăng nhập Firebase | `Firebase Authentication`, Email + mật khẩu, đăng ký xong vào thẳng app |
+| 0:18 | 2. Giữ phiên | Tắt hẳn app rồi mở lại → vào thẳng Trip List, không hỏi đăng nhập |
+| 0:26 | 3. MockAPI (CRUD) | `GET /ideas` (vòng tải + danh sách có ảnh bìa Glide), `POST` chia sẻ, `PUT` sửa ngân sách, `DELETE` |
+| 0:46 | 4a. Địa điểm | Open-Meteo Geocoding, ảnh Wikipedia (nhiều request song song), Nearby sights |
+| 1:06 | 4b. Tỷ giá | open.er-api.com, 12 đồng tiền, cờ tải bằng Glide, "Paid in" USD → VND (Room vẫn lưu VND) |
+| 1:20 | 5. Chế độ máy bay | Kéo làm mới khi offline: banner "You're offline" + Retry, danh sách cũ vẫn còn; bật lại mạng → Retry có dữ liệu |
+| 1:34 | Lỗi mạng | Bảng quy đổi `ApiError` (OFFLINE / TIMEOUT / NOT_FOUND / RATE_LIMITED / SERVER / BAD_RESPONSE) |
+| 1:44 | Kiến trúc | Retrofit → Repository (`safeApiCall`, `Dispatchers.IO`) → ViewModel (`StateFlow` Loading/Success/Error) → UI |
+| 1:50 | Kết | Nhóm 01 · Lớp Lập trình ứng dụng di động |
+
+Ba yêu cầu bắt buộc của đề đều có trong video: **app lấy dữ liệu từ API** (cảnh 3, 4a, 4b), **luồng đăng ký/đăng nhập
+Firebase** (cảnh 1, 2), **xử lý lỗi khi bật chế độ máy bay** (cảnh 5).
+
+## 1. Ảnh Firebase Console (cần chụp thêm, đặt vào `docs/images/`)
+
+Ba ảnh dưới phải chụp từ Firebase Console của nhóm (cần tài khoản Google của người nộp). Ảnh màn hình app thì đã có ở mục 2.
 
 | Ảnh | Chụp ở đâu | Cho thấy gì |
 |---|---|---|
@@ -22,16 +45,25 @@ Nhóm 01 · TripPocket · Ngày chốt: 17/11/2026
 Ảnh minh chứng A5 (rules chặn uid khác) nằm ở test tự động, không cần ảnh: `firestore-tests/` chạy bằng
 `firebase emulator` trong job `firestore-rules` (xem mục 5).
 
-## 2. Ảnh màn hình app (dán vào `docs/images/`)
+## 2. Ảnh màn hình app (đã có trong `docs/images/`)
 
-| Ảnh | Cách chụp |
-|---|---|
-| `app-loading.png` | Mở **Trip Ideas** khi mạng chậm (bật "Network throttling" của emulator) — thấy ProgressBar |
-| `app-loaded.png` | Cùng màn sau khi tải xong — danh sách ý tưởng có ảnh bìa tải bằng Glide |
-| `app-offline.png` | Bật **chế độ máy bay**, kéo làm mới — banner lỗi (không có danh sách, không văng app) |
+Trích từ bản quay demo ngày 09/11 (cùng bản build đã dựng thành video ở mục đầu), kích thước gốc 1080×2400,
+thu nhỏ còn 540×1200 cho nhẹ repo.
 
-Tuỳ chọn thêm: `exchange-rates-offline.png` (kéo làm mới ở màn Exchange rates khi máy bay → vẫn giữ tỷ giá cũ + banner), đúng
-hành vi đã sửa ở #53.
+**Trip Ideas — vòng tải, tải xong, mất mạng** (MockAPI + Glide, lỗi mạng xử lý bằng banner + Retry):
+
+| `app-loading.png` | `app-loaded.png` | `app-offline.png` |
+|---|---|---|
+| ![Loading trip ideas](images/app-loading.png) | ![Danh sách ý tưởng có ảnh bìa](images/app-loaded.png) | ![Offline, danh sách cũ vẫn còn](images/app-offline.png) |
+
+**Ba lát còn lại + giữ phiên đăng nhập:**
+
+| `nearby-sights.png` | `exchange-rates.png` | `expenses-paid-in.png` | `trip-list-session.png` |
+|---|---|---|---|
+| ![Nearby sights](images/nearby-sights.png) | ![Exchange rates](images/exchange-rates.png) | ![Paid in USD](images/expenses-paid-in.png) | ![My trips, đã đăng nhập](images/trip-list-session.png) |
+| Wikipedia GeoSearch, khoảng cách từ chuyến | open.er-api.com, cờ tải bằng Glide, dòng "Updated" | Quy đổi USD → VND trước khi lưu Room (Room luôn lưu VND) | Mở lại app vẫn ở Trip List, không hỏi đăng nhập |
+
+Hành vi offline của từng lát (đã sửa ở #53: kéo làm mới lỗi vẫn giữ dữ liệu cũ) xem trong video, cảnh 5.
 
 ## 3. Bảng endpoint
 
