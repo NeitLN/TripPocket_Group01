@@ -56,9 +56,10 @@ Chi tiết lệnh + số đo: `.ai/evidence/X1-release-gate-2026-11-17.md`; chec
 
 ## Bước tiếp theo
 1. Cài `app-debug.apk` trong Release lên **cả hai** máy (cùng một file), chạy 5 mục máy thật còn lại.
-2. Quay video 1–2 phút theo 6 cảnh trong phiếu M4, dùng tài khoản thử; đăng Unlisted/Drive rồi mở bằng tab ẩn danh.
-3. Nộp LMS: link PR tích hợp (#46, #54), link Release, video, worksheet (bảng endpoint + ảnh Firebase Console + WBS).
-4. Nếu có sửa code sau `v1.0`: tag `v1.0.1`, cài lại cùng một APK mới lên cả hai máy.
+2. ~~Quay video + upload~~ **xong 17/11**: https://youtu.be/4aHB0uAgqk4 (Unlisted, 1:53).
+3. ~~Worksheet~~ **xong 17/11**: `docs/worksheet.md` (mục lục video, 10 ảnh trong `docs/images/`, bảng endpoint, MVVM, Git + WBS, đối chiếu rubric).
+4. Nộp LMS: link PR tích hợp (#46, #54), link Release `v1.0`, video, worksheet.
+5. Nếu có sửa code sau `v1.0`: tag `v1.0.1`, cài lại cùng một APK mới lên cả hai máy.
 
 ## Bộ kiểm nhanh (chạy đầu mỗi session)
 - `./gradlew testDebugUnitTest lintDebug assembleDebug`
