@@ -34,15 +34,13 @@ là **xấp xỉ** (lấy theo từng cảnh trong bản dựng):
 Ba yêu cầu bắt buộc của đề đều có trong video: **app lấy dữ liệu từ API** (cảnh 3, 4a, 4b), **luồng đăng ký/đăng nhập
 Firebase** (cảnh 1, 2), **xử lý lỗi khi bật chế độ máy bay** (cảnh 5).
 
-## 1. Ảnh Firebase Console (cần chụp thêm, đặt vào `docs/images/`)
+## 1. Ảnh Firebase Console (chụp 17/11/2026, project `TripPocket-GR0up01`)
 
-Ba ảnh dưới phải chụp từ Firebase Console của nhóm (cần tài khoản Google của người nộp). Ảnh màn hình app thì đã có ở mục 2.
-
-| Ảnh | Chụp ở đâu | Cho thấy gì |
-|---|---|---|
-| `firebase-auth-users.png` | Firebase Console → Authentication → **Users** | Có tài khoản thử `demo3@…`, cột "Provider = Email/Password", có cột Last sign-in |
-| `firestore-trips.png` | → Firestore Database → Data → `users/{uid}/trips/{tripId}` | Một document chuyến: các field `name`, `startDate`, `endDate`, `localRevision`, `updatedAt`, và sub-field `expenses` / `activities` / `shares` |
-| `firestore-rules.png` | → Firestore Database → **Rules** | Bản rules đã publish (trùng nội dung `firestore.rules` trong repo) |
+| Ảnh | Cho thấy gì |
+|---|---|
+| ![Authentication → Users](images/firebase-auth-users.png) | **Authentication → Users**: hai tài khoản thử (`demo1@…`, `demo2@…`), provider Email/Password, cột Signed In ngày 9–10/11 |
+| ![Firestore → Data](images/firestore-trips.png) | **Firestore → Data**: `users/{uid}/trips/{tripId}` — `name: "Offline trip"`, `destination: "Hoi An"`, `startDate: 20777`, `endDate: 20778`, `localRevision: 2`, `updatedAt`, `ownerUid`, cùng các mảng `activities`, `checklist`, `expenses`, `members`, `places` |
+| ![Firestore → Rules](images/firestore-rules.png) | **Firestore → Rules** đã publish: `allow read, write: if request.auth != null && request.auth.uid == uid;` — khớp `firestore.rules` trong repo |
 
 Ảnh minh chứng A5 (rules chặn uid khác) nằm ở test tự động, không cần ảnh: `firestore-tests/` chạy bằng
 `firebase emulator` trong job `firestore-rules` (xem mục 5).
