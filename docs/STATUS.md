@@ -51,8 +51,6 @@ lỗi chặn build, `BUILD SUCCESSFUL` (2m46s khi build lại từ `main`; 4m13s
 | Xoay màn hình, "Don't keep activities" mọi tab | kiểm trên máy thật |
 | Profiler: TripDetail mở/đóng 10 lần không leak | Itinerary đã kiểm (issue #35: 21 vòng, số về 1 activity / 1 ViewRootImpl); các tab khác kiểm khi quay |
 
-Chi tiết lệnh + số đo: `.ai/evidence/X1-release-gate-2026-11-17.md`; checklist máy thật + kịch bản quay:
-`.ai/evidence/X1-device-checklist-17-11.md`.
 
 ## Bước tiếp theo
 1. Cài `app-debug.apk` trong Release lên **cả hai** máy (cùng một file), chạy 5 mục máy thật còn lại.
