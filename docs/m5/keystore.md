@@ -82,12 +82,17 @@ Ghi lại vào mục 5 bên dưới: ngày tạo, SHA-256 fingerprint của cert
 | Certificate SHA-256 fingerprint | `4D:57:84:00:5D:B7:25:5F:DD:4B:AA:3F:E9:E2:9E:A3:E1:78:3E:20:6B:1B:0A:52:82:0B:D6:87:C0:E7:A4:6A` |
 | Certificate SHA-1 fingerprint | `56:95:D7:38:D6:1D:7E:22:03:95:F8:54:1D:E8:E6:0D:82:FF:F6:65` |
 | Chữ ký APK | APK Signature Scheme **v2: true** (v1/v3/v4: false — `minSdk 26` nên AGP chỉ ký v2, đúng thiết kế) |
-| `app-release.apk` | 4.755.819 B (4,54 MB) — SHA-256 `D8192E28B12EFB4FF2250E1335983B4911CACD1A7158CAFF24DDEDBDE3389A3F` |
-| `app-release.aab` | 7.919.703 B (7,55 MB) — SHA-256 `F0B6BEFE3EF2AA550AF2E1F5F4E0393BC7D9DB99BA3F1F1DCD2E0A3D8B196AFD` |
+| `app-release.apk` | 4.755.819 B (4,54 MB) — SHA-256 `D8192E28B12EFB4FF2250E1335983B4911CACD1A7158CAFF24DDEDBDE3389A3F` (bản build lúc 14:04, Stage 2) |
+| `app-release.aab` | 7.919.703 B (7,55 MB) — SHA-256 `F0B6BEFE3EF2AA550AF2E1F5F4E0393BC7D9DB99BA3F1F1DCD2E0A3D8B196AFD` (bản build lúc 14:04, Stage 2) |
 | `mapping.txt` (R8) | 47.147.568 B — **chỉ để local**, không đưa vào repo/báo cáo (báo cáo chỉ dán đoạn trích) |
 | Mật khẩu | chỉ nằm ở `D:\TripPocket-keys\password.txt` + `keystore.properties` (cả hai **ngoài git**) — không có trong file này, không có trong commit |
 | Nơi sao lưu 1 | _chưa sao lưu_ |
 | Nơi sao lưu 2 | _chưa sao lưu_ |
+
+> **Lưu ý về SHA-256 file:** R8/zip không tất định theo byte. Bản `assembleRelease` chạy lại ngày 18/11 lúc 14:54
+> (sau Stage 3) ra **cùng dung lượng 4.755.819 B** nhưng SHA-256 khác: `ECABCE8F4F1D6850B23E03745CB73C943A001B8ADE6FF507E6AD893A314771F6`.
+> Vì vậy **SHA-256 của asset phát hành phải đo lại ở Stage 7** trên đúng file upload lên GitHub Release; bảng trên chỉ
+> là bản Stage 2.
 
 ## 6. Sao lưu (bắt buộc, 2 nơi)
 

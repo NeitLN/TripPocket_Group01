@@ -131,4 +131,7 @@ dependencies {
     testImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+
+    // M5 stage 3: LeakCanary only in debug builds; release packaging stays clean.
+    debugImplementation(libs.leakcanary.android)
 }

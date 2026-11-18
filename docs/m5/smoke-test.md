@@ -74,3 +74,20 @@ Bổ sung vì `logcat` chỉ giữ buffer gần nhất (các bước 1–3 chạ
    vẫn còn trên tài khoản `demo3@trippocket.test` (dùng lại được cho video demo Stage 9).
 4. Bàn phím ảo che nút bấm: mọi lần bấm nút ở nửa dưới màn hình phải `input keyevent 4` để đóng IME trước, nếu
    không lệnh tap rơi vào bàn phím. Đây là mẹo thao tác, không phải lỗi app.
+
+## 6. Bổ sung 18/11 (Stage 3) — kiểm lại bước 8 trên bản **release đã ký**
+
+Bản ở mục 1–5 là APK **R8 ký bằng debug keystore** (Stage 1). Sau khi có khoá thật (Stage 2) và LeakCanary
+(Stage 3), chạy lại đúng phần backup của bước 8 trên `app-release.apk` ký bằng `release-key.jks`:
+
+| Việc | Kết quả |
+|---|---|
+| Cài `app-release.apk` (4.755.819 B, cert `CN=TripPocket…`) | `versionName=1.1.0`, `versionCode=2`, chữ ký v2 |
+| Đăng nhập `demo3@trippocket.test` → Restore from backup | "1 trip restored", "1 member · 200,000 ₫ spent" |
+| Sửa 1 expense (Lunch `200000` → `250000`) rồi về Trip list | thẻ chuyến **"Backed up"** + "250,000 ₫ spent" |
+| `adb uninstall` → cài lại → đăng nhập → Restore | về đúng **250,000 ₫** → dữ liệu thật sự đã lên Firestore |
+| Đổi lại `250000` → `200000`, chờ job | "Backed up", "1 member · 200,000 ₫ spent" (dữ liệu mẫu như cũ) |
+| Logcat lọc `FATAL`, `VerifyError`, `NoSuchField`, `NoSuchMethod`, `ClassNotFoundException`, `NoClassDefFoundError`, `E/AndroidRuntime` sau cả 2 lượt | **0 hit** (4.460 + 1.064 dòng); `Worker result SUCCESS for … BackupWorker` |
+
+Chi tiết + ảnh: `docs/m5/leaks.md` mục 6, ảnh `docs/m5/img/release-backup-250k.png` và
+`docs/m5/img/release-backup-backed-up.png`.
