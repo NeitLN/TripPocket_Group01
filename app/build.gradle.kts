@@ -20,6 +20,14 @@ val keystoreProps = Properties().apply {
     if (f.exists()) f.inputStream().use { load(it) }
 }
 
+// M5 stage 6: nothing secret or machine-specific is written in this file. Values are read from
+// local.properties first (a machine's own override, git-ignored), then gradle.properties (the
+// team default, so CI builds without the private file).
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
 android {
     namespace = "vn.edu.vlu.trippocket"
 
@@ -36,9 +44,11 @@ android {
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Milestone 4: base URL of the team's MockAPI.io project (Trip Ideas CRUD), from
-        // gradle.properties; override it in ~/.gradle/gradle.properties to point at another project.
-        val mockApiBaseUrl = providers.gradleProperty("trippocket.mockApiBaseUrl").get()
+        // Milestone 4: base URL of the team's MockAPI.io project (Trip Ideas CRUD). Read from
+        // local.properties, else gradle.properties; the value is a
+        // public endpoint, not a key, but this proves that no URL has to live in source.
+        val mockApiBaseUrl = localProps.getProperty("trippocket.mockApiBaseUrl")
+            ?: providers.gradleProperty("trippocket.mockApiBaseUrl").get()
         buildConfigField("String", "MOCKAPI_BASE_URL", "\"$mockApiBaseUrl\"")
     }
 
@@ -119,6 +129,9 @@ dependencies {
     implementation(libs.retrofit.converter.gson)
     implementation(libs.okhttp.logging)
     implementation(libs.glide)
+
+    // M5 stage 5: EncryptedSharedPreferences for the "who signed in last" record.
+    implementation(libs.androidx.security.crypto)
 
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)

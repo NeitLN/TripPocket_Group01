@@ -27,6 +27,10 @@ robolectric = "4.17"
 testCore = "1.7.0"
 # Debug-only leak detector (M5 stage 3). Never on the release classpath.
 leakcanary = "2.14"
+# M5 stage 5: EncryptedSharedPreferences. 1.1.0 is the latest stable on Google Maven, but Google
+# deprecated every API in it (release notes: "Deprecated all APIs in favour of existing platform
+# APIs and direct use of Android Keystore"). Kept because the milestone requires this API.
+securityCrypto = "1.1.0"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -60,6 +64,7 @@ kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-cor
 robolectric = { group = "org.robolectric", name = "robolectric", version.ref = "robolectric" }
 androidx-test-core-ktx = { group = "androidx.test", name = "core-ktx", version.ref = "testCore" }
 leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
+androidx-security-crypto = { group = "androidx.security", name = "security-crypto", version.ref = "securityCrypto" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

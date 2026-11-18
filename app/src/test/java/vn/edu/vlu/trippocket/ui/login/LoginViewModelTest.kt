@@ -17,6 +17,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import vn.edu.vlu.trippocket.R
+import vn.edu.vlu.trippocket.data.local.secure.InMemorySessionStore
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.domain.AuthProblem
 
@@ -25,6 +26,7 @@ import vn.edu.vlu.trippocket.domain.AuthProblem
 class LoginViewModelTest {
 
     private val auth = FakeAuthRepository()
+    private val sessions = InMemorySessionStore()
     private val validEmail = "an@gmail.com"
     private val validPassword = "dalat2026"
 
@@ -37,7 +39,7 @@ class LoginViewModelTest {
     /** Every uid the ViewModel asked the reminder reconciler to rebuild alarms for. */
     private val reminderSyncs = mutableListOf<String?>()
 
-    private fun viewModel() = LoginViewModel(auth) { reminderSyncs += it }
+    private fun viewModel() = LoginViewModel(auth, sessions, syncReminders = { reminderSyncs += it })
 
     private suspend fun LoginViewModel.awaitState(condition: (LoginUiState) -> Boolean) =
         withTimeout(5_000) { uiState.first(condition) }
@@ -201,11 +203,51 @@ class LoginViewModelTest {
 
     @Test
     fun aRestoredSession_isReportedOnce_asAlreadySignedIn(): Unit = runBlocking {
-        val restored = LoginViewModel(FakeAuthRepository("uid-restored"))
+        val restored = LoginViewModel(FakeAuthRepository("uid-restored"), InMemorySessionStore())
 
         assertTrue(restored.uiState.value.alreadySignedIn)
         assertFalse(restored.uiState.value.signedIn)
 
         assertFalse(viewModel().uiState.value.alreadySignedIn)
+    }
+
+    /** M5 stage 5: signing in remembers the address, never the password. */
+    @Test
+    fun signingIn_remembersTheEmailInTheSessionStore(): Unit = runBlocking {
+        val viewModel = viewModel()
+
+        viewModel.signIn(validEmail, validPassword)
+        viewModel.awaitState { it.signedIn }
+
+        assertEquals(validEmail, sessions.email)
+        assertEquals(FakeAuthRepository.UID, sessions.uid)
+        assertEquals(1, sessions.reminders)
+    }
+
+    /** A failed attempt must not leave an address behind, and must not overwrite the old one. */
+    @Test
+    fun aRejectedSignIn_writesNothingToTheSessionStore(): Unit = runBlocking {
+        auth.failWith = AuthProblem.INVALID_CREDENTIALS
+        val viewModel = viewModel()
+
+        viewModel.signIn(validEmail, validPassword)
+        viewModel.awaitState { !it.loading }
+
+        assertEquals(0, sessions.reminders)
+        assertNull(sessions.email)
+    }
+
+    /** What the form uses to prefill the field after the app was closed. */
+    @Test
+    fun aRememberedEmail_isOfferedToTheForm(): Unit = runBlocking {
+        sessions.email = validEmail
+        val viewModel = viewModel()
+
+        val state = viewModel.awaitState { it.rememberedEmail != null }
+
+        assertEquals(validEmail, state.rememberedEmail)
+        // Offering the address does not sign anybody in.
+        assertFalse(state.signedIn)
+        assertEquals(0, auth.calls)
     }
 }
