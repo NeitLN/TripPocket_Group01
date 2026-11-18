@@ -90,6 +90,7 @@ class WeatherFragment : Fragment() {
         binding.rvResults.layoutManager = LinearLayoutManager(requireContext())
         binding.rvResults.adapter = resultAdapter
         binding.rvForecast.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvForecast.setHasFixedSize(true)
         binding.rvForecast.adapter = forecastAdapter
 
         binding.etSearch.doAfterTextChanged { viewModel.onQueryChanged(it?.toString().orEmpty()) }

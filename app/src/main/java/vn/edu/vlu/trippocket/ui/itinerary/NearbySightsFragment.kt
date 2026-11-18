@@ -46,6 +46,7 @@ class NearbySightsFragment : Fragment() {
 
         val adapter = SightAdapter(onAddToDay = viewModel::addToDay)
         binding.rvSights.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvSights.setHasFixedSize(true)
         binding.rvSights.adapter = adapter
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
         binding.networkError.btnNetworkRetry.setOnClickListener { viewModel.retry() }

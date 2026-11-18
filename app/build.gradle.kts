@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.ksp)
@@ -8,6 +10,22 @@ plugins {
 // still builds and every unit test runs; only Firebase calls fail at runtime.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
+}
+
+// Release signing material lives outside the repo (keystore.properties is git-ignored).
+// A machine without that file — CI, a teammate, a fresh clone — must still build: the release
+// APK then stays unsigned instead of failing the build.
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
+}
+
+// M5 stage 6: nothing secret or machine-specific is written in this file. Values are read from
+// local.properties first (a machine's own override, git-ignored), then gradle.properties (the
+// team default, so CI builds without the private file).
+val localProps = Properties().apply {
+    val f = rootProject.file("local.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -21,22 +39,44 @@ android {
         applicationId = "vn.edu.vlu.trippocket"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.3-final"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
-        // Milestone 4: base URL of the team's MockAPI.io project (Trip Ideas CRUD), from
-        // gradle.properties; override it in ~/.gradle/gradle.properties to point at another project.
-        val mockApiBaseUrl = providers.gradleProperty("trippocket.mockApiBaseUrl").get()
+        // Milestone 4: base URL of the team's MockAPI.io project (Trip Ideas CRUD). Read from
+        // local.properties, else gradle.properties; the value is a
+        // public endpoint, not a key, but this proves that no URL has to live in source.
+        val mockApiBaseUrl = localProps.getProperty("trippocket.mockApiBaseUrl")
+            ?: providers.gradleProperty("trippocket.mockApiBaseUrl").get()
         buildConfigField("String", "MOCKAPI_BASE_URL", "\"$mockApiBaseUrl\"")
+    }
+
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
     }
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            // M5 spike (18/11): in AGP 9.4.1 `optimization.enable`, `isMinifyEnabled` and both
+            // together produce the same APK (4.52 MB) and the same mapping.txt, so the two DSLs
+            // drive one pipeline. Keep the explicit pair below: it names exactly what the
+            // milestone requires (R8 + resource shrinking) and avoids two switches for one thing.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
+            // Null when keystore.properties is missing, so the build still succeeds.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
@@ -90,6 +130,9 @@ dependencies {
     implementation(libs.okhttp.logging)
     implementation(libs.glide)
 
+    // M5 stage 5: EncryptedSharedPreferences for the "who signed in last" record.
+    implementation(libs.androidx.security.crypto)
+
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore)
@@ -101,4 +144,7 @@ dependencies {
     testImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.espresso.core)
     androidTestImplementation(libs.androidx.junit)
+
+    // M5 stage 3: LeakCanary only in debug builds; release packaging stays clean.
+    debugImplementation(libs.leakcanary.android)
 }

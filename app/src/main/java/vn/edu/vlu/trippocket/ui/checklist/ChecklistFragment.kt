@@ -47,6 +47,7 @@ class ChecklistFragment : Fragment() {
             onDelete = viewModel::delete,
         )
         binding.rvItems.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvItems.setHasFixedSize(true)
         binding.rvItems.adapter = adapter
 
         binding.btnAdd.setOnClickListener { addTyped() }

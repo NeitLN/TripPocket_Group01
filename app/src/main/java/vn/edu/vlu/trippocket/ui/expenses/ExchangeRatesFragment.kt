@@ -40,6 +40,7 @@ class ExchangeRatesFragment : Fragment() {
         super.onViewCreated(view, savedInstanceState)
 
         binding.rvCurrencies.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvCurrencies.setHasFixedSize(true)
         binding.rvCurrencies.adapter = adapter
 
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }

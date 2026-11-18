@@ -1,6 +1,7 @@
 package vn.edu.vlu.trippocket.ui.trips
 
 import android.content.res.ColorStateList
+import android.content.res.Resources
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import androidx.core.view.isVisible
@@ -57,20 +58,13 @@ class TripAdapter(
     inner class TripHolder(private val binding: ItemTripBinding) : RecyclerView.ViewHolder(binding.root) {
 
         fun bind(card: TripCard) {
-            val context = binding.root.context
             val trip = card.trip
+            val text = card.text ?: card.withRowText(binding.root.resources).text!!
             binding.sticker.bind(trip.destination, trip.tripId)
             binding.tvTripName.text = trip.name
             binding.tvDestination.text = trip.destination
-            val days = context.resources.getQuantityString(R.plurals.trip_days, trip.dayCount, trip.dayCount)
-            binding.tvDates.text = context.getString(
-                R.string.trip_dates_days, Format.dateRange(trip.startDate, trip.endDate), days
-            )
-            binding.tvMeta.text = context.getString(
-                R.string.trip_meta,
-                context.resources.getQuantityString(R.plurals.trip_members, card.memberCount, card.memberCount),
-                context.getString(R.string.trip_spent, Format.vnd(card.spent)),
-            )
+            binding.tvDates.text = text.dates
+            binding.tvMeta.text = text.meta
 
             val status = trip.syncStatus
             binding.tvSync.setText(status.labelRes)
@@ -103,4 +97,27 @@ class TripAdapter(
             override fun areContentsTheSame(old: TripListRow, new: TripListRow) = old == new
         }
     }
+}
+
+/**
+ * Stage 4: formats the two lines of a trip card once per emitted list, on the main thread in the
+ * Fragment (the ViewModel has no Context). Bind then only calls setText while scrolling.
+ */
+fun TripCard.withRowText(resources: Resources): TripCard {
+    if (text != null) return this
+    val days = resources.getQuantityString(R.plurals.trip_days, trip.dayCount, trip.dayCount)
+    return copy(
+        text = TripCardText(
+            dates = resources.getString(
+                R.string.trip_dates_days,
+                Format.dateRange(trip.startDate, trip.endDate),
+                days,
+            ),
+            meta = resources.getString(
+                R.string.trip_meta,
+                resources.getQuantityString(R.plurals.trip_members, memberCount, memberCount),
+                resources.getString(R.string.trip_spent, Format.vnd(spent)),
+            ),
+        ),
+    )
 }

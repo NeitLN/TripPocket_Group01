@@ -14,6 +14,8 @@ import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.data.local.AppDatabase
 import vn.edu.vlu.trippocket.data.local.TripChangeTracker
 import vn.edu.vlu.trippocket.data.local.TripWriter
+import vn.edu.vlu.trippocket.data.local.secure.EncryptedSessionStore
+import vn.edu.vlu.trippocket.data.local.secure.SessionStore
 import vn.edu.vlu.trippocket.data.remote.ReadFirstConverterFactory
 import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateApi
 import vn.edu.vlu.trippocket.data.remote.firebase.BackupRemote
@@ -100,6 +102,13 @@ class AppContainer(context: Context) {
     val tripWriter: TripWriter by lazy {
         TripWriter(database, TripChangeTracker(database.tripDao()), backupScheduler)
     }
+
+    /**
+     * M5 stage 5: the encrypted "who signed in last" record. Lazy on purpose: the constructor
+     * opens the AndroidKeyStore, which does not exist under Robolectric, so creating it eagerly
+     * would break every unit test that builds the container.
+     */
+    val sessionStore: SessionStore by lazy { EncryptedSessionStore(context) }
 
     /**
      * True when the app was built without `app/google-services.json` (CI, a fresh clone), so

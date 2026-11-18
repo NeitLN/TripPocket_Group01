@@ -66,6 +66,7 @@ class ItineraryFragment : Fragment() {
             },
         )
         binding.rvActivities.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvActivities.setHasFixedSize(true)
         binding.rvActivities.adapter = adapter
 
         itemTouchHelper = ItemTouchHelper(object : ItemTouchHelper.SimpleCallback(

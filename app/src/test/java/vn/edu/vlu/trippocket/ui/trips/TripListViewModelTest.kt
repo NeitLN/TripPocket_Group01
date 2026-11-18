@@ -18,6 +18,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import vn.edu.vlu.trippocket.data.local.TestDatabase
+import vn.edu.vlu.trippocket.data.local.secure.InMemorySessionStore
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.repository.FakeAuthRepository
 import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
@@ -30,6 +31,7 @@ class TripListViewModelTest {
 
     private val t = TestDatabase()
     private val auth = FakeAuthRepository(TestDatabase.OWNER)
+    private val sessions = InMemorySessionStore("an@gmail.com")
 
     @Before
     fun setUp() = Dispatchers.setMain(UnconfinedTestDispatcher())
@@ -48,6 +50,7 @@ class TripListViewModelTest {
         TripRepository(t.db.tripDao(), auth, t.writer),
         ExpenseRepository(t.db.tripMemberDao(), t.db.expenseDao(), t.writer),
         auth,
+        sessions,
         syncReminders = { reminderSyncs += it },
     )
 
@@ -100,6 +103,9 @@ class TripListViewModelTest {
         assertNull(auth.currentUid.value)
         // Signed out: every alarm on this phone is cancelled.
         assertEquals(listOf<String?>(null), reminderSyncs)
+        // M5 stage 5: the remembered e-mail leaves with the account.
+        assertEquals(1, sessions.clears)
+        assertNull(sessions.email)
         viewModel.loaded(trips = 0)
         // Still in Room for the next sign-in of the same account.
         assertEquals(1, t.db.tripDao().observeTrips(TestDatabase.OWNER).first().size)

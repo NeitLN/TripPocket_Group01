@@ -18,7 +18,24 @@ import vn.edu.vlu.trippocket.data.repository.TripIdeaRepository
 import vn.edu.vlu.trippocket.domain.ApiError
 
 /** One row of the list: the idea and whether the signed-in account shared it (Edit / Delete). */
-data class TripIdeaCard(val idea: TripIdea, val mine: Boolean)
+data class TripIdeaCard(
+    val idea: TripIdea,
+    val mine: Boolean,
+    /**
+     * Every string the row shows, formatted once when the list is emitted (see
+     * [vn.edu.vlu.trippocket.ui.ideas.withText]) so onBindViewHolder only sets text.
+     */
+    val text: IdeaCardText? = null,
+)
+
+/** Display text of one idea card; a data class so DiffUtil compares it like the rest of the row. */
+data class IdeaCardText(
+    val meta: String,
+    val budget: String,
+    val author: String,
+    val coverDescription: String,
+    val optionsDescription: String,
+)
 
 /** One-shot messages shown as a Snackbar, then cleared with [TripIdeasViewModel.messageShown]. */
 sealed interface TripIdeasMessage {

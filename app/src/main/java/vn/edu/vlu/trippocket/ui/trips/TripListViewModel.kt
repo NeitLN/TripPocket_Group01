@@ -7,6 +7,8 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
@@ -15,6 +17,7 @@ import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import vn.edu.vlu.trippocket.appContainer
+import vn.edu.vlu.trippocket.data.local.secure.SessionStore
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.data.model.TripTotals
@@ -26,7 +29,19 @@ import vn.edu.vlu.trippocket.domain.TripGrouping
 import java.time.LocalDate
 
 /** A trip with the totals its card shows, so the adapter never reads the repository. */
-data class TripCard(val trip: Trip, val memberCount: Int, val spent: Long)
+data class TripCard(
+    val trip: Trip,
+    val memberCount: Int,
+    val spent: Long,
+    /**
+     * Dates and meta line, formatted once per list emission by
+     * [vn.edu.vlu.trippocket.ui.trips.withRowText] (Stage 4): a bind only assigns text.
+     */
+    val text: TripCardText? = null,
+)
+
+/** Display text of one trip card; compared by DiffUtil like the rest of the row. */
+data class TripCardText(val dates: String, val meta: String)
 
 /** One row of the grouped list: a group label or a trip card. */
 sealed interface TripListRow {
@@ -57,11 +72,15 @@ class TripListViewModel(
     /** Member count and spent total of each card, from Room (A2). */
     expenseRepository: ExpenseRepository,
     private val auth: AuthRepository,
+    /** M5 stage 5: forgotten on sign-out, so the next account is not shown the old e-mail. */
+    private val sessions: SessionStore,
     private val today: () -> LocalDate = LocalDate::now,
     /** Rebuilds reminder alarms for an account; null cancels them all (ReminderReconciler, I5). */
     private val syncReminders: suspend (uid: String?) -> Unit = {},
     /** "Retry backup" of a FAILED trip (A3): back to PENDING and queued again. */
     private val retryBackup: suspend (tripId: String) -> Unit = {},
+    /** Disk write of [sessions] happens here, never on the main thread. */
+    private val io: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     val uiState: StateFlow<TripListUiState> = combine(
@@ -94,8 +113,12 @@ class TripListViewModel(
     fun signOut() {
         viewModelScope.launch {
             auth.signOut()
-            // MainActivity finishes right after this call; do not let that cancel the alarm cleanup.
-            withContext(NonCancellable) { syncReminders(null) }
+            // MainActivity finishes right after this call; do not let that cancel the cleanup.
+            withContext(NonCancellable) {
+                syncReminders(null)
+                // M5 stage 5: the remembered e-mail belongs to the account that just left.
+                withContext(io) { sessions.clear() }
+            }
         }
     }
 
@@ -117,6 +140,7 @@ class TripListViewModel(
                     container.tripRepository,
                     container.expenseRepository,
                     container.authRepository,
+                    container.sessionStore,
                     syncReminders = { uid -> container.reminderReconciler.reconcile(uid) },
                     retryBackup = { tripId -> container.backupRepository.retry(tripId) },
                 )

@@ -7,6 +7,8 @@ import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineDispatcher
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +18,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.appContainer
+import vn.edu.vlu.trippocket.data.local.secure.SessionStore
 import vn.edu.vlu.trippocket.data.repository.AuthException
 import vn.edu.vlu.trippocket.data.repository.AuthRepository
 import vn.edu.vlu.trippocket.domain.AuthProblem
@@ -43,6 +46,11 @@ data class LoginUiState(
      * A1-ui uses it to skip the form instead of showing it for a frame.
      */
     val alreadySignedIn: Boolean = false,
+    /**
+     * E-mail remembered from the last sign-in on this phone, decrypted from the session store
+     * (M5 stage 5). Null until the record is read, or when nobody signed in before.
+     */
+    val rememberedEmail: String? = null,
 )
 
 /**
@@ -52,14 +60,30 @@ data class LoginUiState(
  */
 class LoginViewModel(
     private val auth: AuthRepository,
+    /**
+     * M5 stage 5: remembers the e-mail after a successful sign-in and offers it on the next
+     * launch. Never the password, never the token.
+     */
+    private val sessions: SessionStore,
     /** Sets the reminder alarms of the account that just signed in (ReminderReconciler, I5). */
     private val syncReminders: suspend (uid: String?) -> Unit = {},
+    /** Disk reads and writes of [sessions] happen here, never on the main thread. */
+    private val io: CoroutineDispatcher = Dispatchers.IO,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
         LoginUiState(alreadySignedIn = auth.currentUid.value != null),
     )
     val uiState: StateFlow<LoginUiState> = _uiState.asStateFlow()
+
+    init {
+        // Decrypting the record reads the disk, so it is done off the main thread and then
+        // published as state; the form is usable while this runs.
+        viewModelScope.launch {
+            val remembered = withContext(io) { sessions.lastEmail() }
+            if (remembered != null) _uiState.update { it.copy(rememberedEmail = remembered) }
+        }
+    }
 
     // Clear an error as soon as the user starts fixing the field.
     fun onEmailChanged() = _uiState.update { it.copy(emailError = null, formError = null) }
@@ -106,8 +130,13 @@ class LoginViewModel(
         viewModelScope.launch {
             try {
                 auth.signIn(email.trim(), password)
-                // The screen closes once signedIn is set; finish the alarms first, uncancellable.
-                withContext(NonCancellable) { syncReminders(auth.currentUid.value) }
+                // The screen closes once signedIn is set; finish the session record and the
+                // alarms first, uncancellable.
+                withContext(NonCancellable) {
+                    val uid = auth.currentUid.value
+                    syncReminders(uid)
+                    if (uid != null) withContext(io) { sessions.remember(email.trim(), uid) }
+                }
                 _uiState.update { it.copy(loading = false, signedIn = true) }
             } catch (e: CancellationException) {
                 throw e
@@ -140,8 +169,13 @@ class LoginViewModel(
         viewModelScope.launch {
             try {
                 auth.register(email.trim(), password)
-                // The screen closes once signedIn is set; finish the alarms first, uncancellable.
-                withContext(NonCancellable) { syncReminders(auth.currentUid.value) }
+                // The screen closes once signedIn is set; finish the session record and the
+                // alarms first, uncancellable.
+                withContext(NonCancellable) {
+                    val uid = auth.currentUid.value
+                    syncReminders(uid)
+                    if (uid != null) withContext(io) { sessions.remember(email.trim(), uid) }
+                }
                 _uiState.update { it.copy(loading = false, signedIn = true) }
             } catch (e: CancellationException) {
                 throw e
@@ -155,7 +189,11 @@ class LoginViewModel(
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 val container = appContainer()
-                LoginViewModel(container.authRepository) { uid -> container.reminderReconciler.reconcile(uid) }
+                LoginViewModel(
+                    container.authRepository,
+                    container.sessionStore,
+                    syncReminders = { uid -> container.reminderReconciler.reconcile(uid) },
+                )
             }
         }
     }

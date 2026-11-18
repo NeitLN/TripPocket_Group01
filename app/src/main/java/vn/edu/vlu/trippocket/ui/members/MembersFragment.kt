@@ -84,6 +84,7 @@ class MembersFragment : Fragment() {
         )
 
         binding.rvMembers.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvMembers.setHasFixedSize(true)
         binding.rvMembers.adapter = adapter
 
         binding.etNewMember.doAfterTextChanged { binding.tilNewMember.error = null }

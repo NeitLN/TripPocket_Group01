@@ -26,6 +26,9 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
     private val viewModel: LoginViewModel by viewModels { LoginViewModel.Factory }
 
+    /** The remembered e-mail is written into the field once, never on top of typing. */
+    private var emailPrefilled = false
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         // Skip the login form immediately if a session already exists to avoid frame flash
@@ -117,6 +120,20 @@ class LoginActivity : AppCompatActivity() {
         binding.tilEmail.error = state.emailError?.let(::getString)
         binding.tilPassword.error = state.passwordError?.let(::getString)
         binding.tilConfirmPassword.error = state.confirmPasswordError?.let(::getString)
+
+        // M5 stage 5: the e-mail of the last account on this phone, decrypted from the session
+        // store; the cursor starts in the password field, which is the only thing left to type.
+        if (!emailPrefilled && !state.alreadySignedIn) {
+            val remembered = state.rememberedEmail
+            if (remembered != null) {
+                emailPrefilled = true
+                if (binding.etEmail.text.isNullOrEmpty()) {
+                    binding.etEmail.setText(remembered)
+                    binding.etEmail.setSelection(remembered.length)
+                }
+                binding.etPassword.requestFocus()
+            }
+        }
 
         if (state.formError != null) {
             binding.tvAuthError.setText(state.formError)

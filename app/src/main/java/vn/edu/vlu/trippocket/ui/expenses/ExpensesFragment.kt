@@ -55,6 +55,7 @@ class ExpensesFragment : Fragment() {
         val balancesModeAdapter = ConcatAdapter(balanceAdapter, headerAdapter, settlementAdapter)
 
         binding.rvExpenses.layoutManager = LinearLayoutManager(requireContext())
+        binding.rvExpenses.setHasFixedSize(true)
         binding.toggleMode.addOnButtonCheckedListener { _, checkedId, isChecked ->
             if (isChecked) viewModel.showBalances(checkedId == R.id.btnModeBalances)
         }

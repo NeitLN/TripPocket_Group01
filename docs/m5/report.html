@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TripPocket — Báo cáo Tối ưu hóa Hiệu năng, Bảo mật & Đóng gói Phát hành (Milestone 5)</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 16mm;
+        }
+
+        :root {
+            --primary: #1a237e;
+            --primary-light: #534bae;
+            --primary-dark: #000051;
+            --secondary: #00796b;
+            --secondary-light: #48a999;
+            --accent: #d84315;
+            --bg-neutral: #f8f9fa;
+            --bg-card: #ffffff;
+            --text-main: #212529;
+            --text-muted: #555e68;
+            --border-color: #dee2e6;
+            --border-dark: #adb5bd;
+            --badge-success-bg: #e8f5e9;
+            --badge-success-text: #1b5e20;
+            --badge-info-bg: #e1f5fe;
+            --badge-info-text: #01579b;
+            --badge-warn-bg: #fff3e0;
+            --badge-warn-text: #e65100;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            color: var(--text-main);
+            background-color: #ffffff;
+            line-height: 1.55;
+            font-size: 13.5px;
+            margin: 0;
+            padding: 0;
+        }
+
+        h1, h2, h3, h4, h5 {
+            color: var(--primary);
+            font-weight: 700;
+            margin-top: 1.4em;
+            margin-bottom: 0.5em;
+            line-height: 1.25;
+        }
+
+        h1 {
+            font-size: 24px;
+            border-bottom: 3px solid var(--primary);
+            padding-bottom: 8px;
+            margin-top: 0;
+        }
+
+        h2 {
+            font-size: 18px;
+            border-bottom: 1.5px solid var(--border-color);
+            padding-bottom: 5px;
+            margin-top: 1.8em;
+        }
+
+        h3 {
+            font-size: 15px;
+            color: var(--secondary);
+            margin-top: 1.2em;
+        }
+
+        h4 {
+            font-size: 13.5px;
+            margin-top: 1em;
+        }
+
+        p {
+            margin: 0.6em 0;
+            text-align: justify;
+        }
+
+        a {
+            color: var(--primary);
+            text-decoration: none;
+            word-break: break-all;
+        }
+
+        a:hover {
+            text-decoration: underline;
+        }
+
+        /* Tables */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0 16px 0;
+            font-size: 12.5px;
+            page-break-inside: avoid;
+        }
+
+        th, td {
+            border: 1px solid var(--border-color);
+            padding: 7px 10px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        th {
+            background-color: var(--bg-neutral);
+            color: var(--primary-dark);
+            font-weight: 600;
+        }
+
+        tr:nth-child(even) td {
+            background-color: #fafbfc;
+        }
+
+        /* Badges */
+        .badge {
+            display: inline-block;
+            padding: 2px 7px;
+            font-size: 11px;
+            font-weight: 600;
+            border-radius: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+        }
+
+        .badge-pass {
+            background-color: var(--badge-success-bg);
+            color: var(--badge-success-text);
+            border: 1px solid #c8e6c9;
+        }
+
+        .badge-info {
+            background-color: var(--badge-info-bg);
+            color: var(--badge-info-text);
+            border: 1px solid #b3e5fc;
+        }
+
+        .badge-warn {
+            background-color: var(--badge-warn-bg);
+            color: var(--badge-warn-text);
+            border: 1px solid #ffe0b2;
+        }
+
+        /* Code Blocks */
+        pre {
+            background-color: #f6f8fa;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 10px 12px;
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 11.5px;
+            line-height: 1.45;
+            overflow-x: auto;
+            margin: 10px 0;
+            page-break-inside: avoid;
+        }
+
+        code {
+            font-family: SFMono-Regular, Consolas, "Liberation Mono", Menlo, Courier, monospace;
+            font-size: 12px;
+            background-color: #f1f3f5;
+            padding: 1px 4px;
+            border-radius: 3px;
+            color: #c7254e;
+        }
+
+        pre code {
+            background-color: transparent;
+            padding: 0;
+            color: #24292e;
+            font-size: inherit;
+        }
+
+        /* Images and Figures */
+        figure {
+            margin: 14px 0;
+            text-align: center;
+            page-break-inside: avoid;
+        }
+
+        figure img {
+            max-width: 95%;
+            height: auto;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+        }
+
+        figcaption {
+            font-size: 11.5px;
+            color: var(--text-muted);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        /* Callout Box */
+        .callout {
+            border-left: 4px solid var(--primary);
+            background-color: #f3f4f8;
+            padding: 10px 14px;
+            margin: 12px 0;
+            border-radius: 0 6px 6px 0;
+            font-size: 12.5px;
+            page-break-inside: avoid;
+        }
+
+        .callout-warning {
+            border-left-color: var(--accent);
+            background-color: #fff8f6;
+        }
+
+        .callout-success {
+            border-left-color: var(--secondary);
+            background-color: #f0fdf4;
+        }
+
+        /* Header Card */
+        .header-card {
+            border: 2px solid var(--primary);
+            border-radius: 8px;
+            padding: 18px 22px;
+            background: linear-gradient(135deg, #f5f7ff 0%, #ffffff 100%);
+            margin-bottom: 24px;
+        }
+
+        .header-card h1 {
+            border-bottom: none;
+            margin-bottom: 4px;
+            font-size: 23px;
+        }
+
+        .header-subtitle {
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--secondary);
+            margin-bottom: 14px;
+        }
+
+        .meta-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px 16px;
+            font-size: 12.5px;
+            border-top: 1px dashed var(--border-color);
+            padding-top: 12px;
+        }
+
+        .meta-item strong {
+            color: var(--primary-dark);
+        }
+
+        .section-break {
+            page-break-after: always;
+        }
+
+        @media print {
+            body {
+                font-size: 11.5pt;
+                line-height: 1.45;
+            }
+            .section-break {
+                page-break-after: always;
+            }
+            pre {
+                white-space: pre-wrap;
+                word-break: break-all;
+            }
+            a {
+                color: #000;
+                text-decoration: none;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Header Card -->
+<div class="header-card">
+    <h1>TRIPPOCKET — BÁO CÁO KỸ THUẬT MILESTONE 5</h1>
+    <div class="header-subtitle">Production Optimization, Security Hardening & Release Packaging</div>
+    <div class="meta-grid">
+        <div class="meta-item"><strong>Học phần:</strong> Lập trình Ứng dụng Di động (Android)</div>
+        <div class="meta-item"><strong>Nhóm thực hiện:</strong> Nhóm 01 · Trường Đại học Văn Lang</div>
+        <div class="meta-item"><strong>Tên ứng dụng:</strong> TripPocket (<code>vn.edu.vlu.trippocket</code>)</div>
+        <div class="meta-item"><strong>Phiên bản phát hành:</strong> <code>1.1.0</code> (versionCode <code>2</code>)</div>
+        <div class="meta-item"><strong>Nền tảng mục tiêu:</strong> minSdk 26 (Android 8.0+) · targetSdk 37 (Android 15)</div>
+        <div class="meta-item"><strong>Thời điểm kiểm toán & build:</strong> 18/11/2026 15:00 GMT+7</div>
+        <div class="meta-item"><strong>Git Release Tag:</strong> <a href="https://github.com/NeitLN/TripPocket_Group01/releases/tag/v1.1.0">v1.1.0</a></div>
+        <div class="meta-item"><strong>Video minh chứng (1–3 phút):</strong> <a href="https://youtu.be/4aHB0uAgqk4">https://youtu.be/4aHB0uAgqk4</a></div>
+    </div>
+</div>
+
+<!-- MỤC LỤC TỔNG QUAN -->
+<div class="callout callout-success">
+    <strong>Tóm tắt nội dung báo cáo:</strong> Tài liệu này trình bày toàn bộ số liệu thực nghiệm, quy trình kiểm toán và kết quả kỹ thuật của Milestone 5:
+    (1) Kiểm toán bộ nhớ với LeakCanary 2.14 và biểu đồ PSS hệ thống; (2) Kiến trúc đa luồng với Dispatchers.IO;
+    (3) Tối ưu hóa dung lượng và bảo vệ mã nguồn bằng R8 / ProGuard rules; (4) Quản lý khóa API, BuildConfig và EncryptedSharedPreferences;
+    (5) Đóng gói và xác thực chữ ký số bằng Keystore RSA 4096-bit (APK Signature Scheme v2); (6) Ma trận phân công công việc (WBS) và nhật ký commit Git;
+    (7) Đối chiếu 4 tiêu chí theo Rubric chấm điểm của giảng viên.
+</div>
+
+<!-- ========================================================================= -->
+<!-- MỤC 1: BỐI CẢNH & CHỈ SỐ TỔNG QUAN -->
+<!-- ========================================================================= -->
+<h2>1. Bối cảnh Dự án & Bảng Chỉ số Before / After</h2>
+<p>
+    TripPocket là ứng dụng Android lập kế hoạch và quản lý chi tiêu du lịch thông minh, phát triển theo kiến trúc chuẩn <strong>MVVM</strong> 
+    kết hợp <strong>Room Database</strong> lưu trữ ngoại tuyến và <strong>Firebase / RESTful Cloud APIs</strong> (Open-Meteo, Wikipedia, MockAPI, open.er-api.com).
+    Sau khi hoàn thiện toàn bộ tính năng ở Milestone 4, Milestone 5 tập trung vào giai đoạn <em>Hardening & Production Readiness</em>: 
+    chuyển đổi ứng dụng từ trạng thái phát triển (Debug) sang trạng thái phát hành thương mại (Production Release) an toàn, tinh gọn và ổn định cao.
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Chỉ số kiểm toán kỹ thuật</th>
+            <th>Baseline (Chưa bật R8 / Debug)</th>
+            <th>Production Release M5 (Đã bật R8 & Ký)</th>
+            <th>Mức độ cải thiện / Trạng thái</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Dung lượng tệp APK</strong></td>
+            <td>12.23 MB (12,819,992 bytes)</td>
+            <td><strong>4.54 MB (4,755,819 bytes)</strong></td>
+            <td><span class="badge badge-pass">Giảm 63%</span> (đo ở Stage 1; bản phát hành v1.1.0 cuối cùng 4.61 MB / 4,837,923 bytes vì thêm thư viện security-crypto + Tink ở Stage 5)</td>
+        </tr>
+        <tr>
+            <td><strong>Dung lượng tệp AAB (Bundle)</strong></td>
+            <td>Chưa cấu hình bundle</td>
+            <td><strong>7.83 MB (8,210,319 bytes)</strong> — bản v1.1.0</td>
+            <td><span class="badge badge-pass">Đạt chuẩn Play Store</span></td>
+        </tr>
+        <tr>
+            <td><strong>Rò rỉ bộ nhớ (Memory Leak)</strong></td>
+            <td>Chưa kiểm toán chuyên sâu</td>
+            <td><strong>0 Distinct Leaks (525 objects watched)</strong></td>
+            <td><span class="badge badge-pass">0 Leak / 8 Kịch bản</span></td>
+        </tr>
+        <tr>
+            <td><strong>Bộ nhớ PSS (10 chu kỳ mở/đóng)</strong></td>
+            <td>Không có dữ liệu giám sát</td>
+            <td><strong>Ổn định ở mức 81–83 MB</strong> (Trim về 80.2 MB)</td>
+            <td><span class="badge badge-pass">Biểu đồ phẳng, không bậc thang</span></td>
+        </tr>
+        <tr>
+            <td><strong>Bộ nhớ PSS (Background 5 phút)</strong></td>
+            <td>Không có dữ liệu giám sát</td>
+            <td><strong>78.7 MB – 79.3 MB</strong> (Biên độ &lt; 0.6 MB)</td>
+            <td><span class="badge badge-pass">Không tăng dần</span></td>
+        </tr>
+        <tr>
+            <td><strong>Thời gian khởi động (Cold Start)</strong></td>
+            <td>4,517 ms (bản Debug có LeakCanary)</td>
+            <td><strong>1,574 ms (am start -W TotalTime)</strong></td>
+            <td><span class="badge badge-pass">Nhanh hơn 65%</span></td>
+        </tr>
+        <tr>
+            <td><strong>Mã hóa lớp & làm mờ (Obfuscation)</strong></td>
+            <td>Không có (R8 tắt, mapping.txt không tồn tại)</td>
+            <td><strong>mapping.txt đạt 47,147,568 bytes</strong></td>
+            <td><span class="badge badge-pass">Đã làm mờ toàn bộ core logic</span></td>
+        </tr>
+        <tr>
+            <td><strong>Lỗ hổng lộ lọt Secret / API Key</strong></td>
+            <td>Không có key nhạy cảm</td>
+            <td><strong>0 chuỗi "AIza" trong app/src</strong>; BuildConfig inject</td>
+            <td><span class="badge badge-pass">Không có khoá trong mã nguồn</span></td>
+        </tr>
+        <tr>
+            <td><strong>Xác thực chữ ký số (apksigner)</strong></td>
+            <td>Android Debug Certificate</td>
+            <td><strong>Keystore PKCS12 RSA 4096-bit</strong> (v2 Scheme: True)</td>
+            <td><span class="badge badge-pass">CN=TripPocket, OU=VLU</span></td>
+        </tr>
+        <tr>
+            <td><strong>Bộ kiểm thử tự động (Unit Tests)</strong></td>
+            <td>452 tests (0 fail, 0 skip)</td>
+            <td><strong>452 tests pass 100%</strong></td>
+            <td><span class="badge badge-pass">100% Xanh (0 regression)</span></td>
+        </tr>
+        <tr>
+            <td><strong>Kiểm tra mã tĩnh (Lint Analysis)</strong></td>
+            <td>0 Errors, 14 Warnings</td>
+            <td><strong>0 Errors, 14 Warnings (lintRelease)</strong></td>
+            <td><span class="badge badge-pass">0 Lỗi Fatal / Error</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="section-break"></div>
+
+<!-- ========================================================================= -->
+<!-- MỤC 2: TỐI ƯU HÓA HIỆU NĂNG & KIỂM TOÁN BỘ NHỚ -->
+<!-- ========================================================================= -->
+<h2>2. Tối ưu hóa Hiệu năng & Kiểm toán Rò rỉ Bộ nhớ (Profiling & LeakCanary)</h2>
+
+<h3>2.1. Tích hợp LeakCanary 2.14 và Cơ chế Cách ly Khỏi Bản Release</h3>
+<p>
+    Ứng dụng tích hợp thư viện kiểm toán rò rỉ bộ nhớ hàng đầu <strong>LeakCanary 2.14</strong> (Square). 
+    Để tuân thủ nguyên tắc bảo mật và tối ưu kích thước gói cài đặt thương mại, LeakCanary được cấu hình thông qua chỉ thị 
+    <code>debugImplementation(libs.leakcanary.android)</code> trong <code>app/build.gradle.kts</code>. 
+    Điều này đảm bảo toàn bộ mã nguồn, ContentProvider và Activity phân tích của LeakCanary chỉ được nạp vào biến thể Debug, 
+    hoàn toàn bị loại bỏ khỏi biến thể Release (Zero Overhead in Production).
+</p>
+
+<pre><code>// Bằng chứng kiểm tra độc lập cấu hình phụ thuộc runtime:
+.\gradlew.bat :app:dependencies --configuration releaseRuntimeClasspath | Select-String leakcanary
+-> 0 dòng kết quả (Hoàn toàn vắng bóng trong bản Release)
+
+.\gradlew.bat :app:dependencies --configuration debugRuntimeClasspath  | Select-String leakcanary
+-> 22 dòng phụ thuộc: com.squareup.leakcanary:leakcanary-android:2.14 -> shark-android / shark-hprof / plumber-android
+
+// Kiểm tra cấu trúc AndroidManifest.xml sau khi đóng gói:
+aapt2 dump xmltree app-release.apk --file AndroidManifest.xml | Select-String leakcanary -> 0 dòng
+aapt2 dump xmltree app-debug.apk   --file AndroidManifest.xml | Select-String leakcanary -> 13 dòng (LeakLauncherActivity, PlumberInstaller...)</code></pre>
+
+<h3>2.2. Kiểm thử 8 Kịch bản Thực tế trên Thiết bị Giả lập (Pixel 6 API 34)</h3>
+<p>
+    Quá trình kiểm toán rò rỉ được thực hiện tự động hóa trên thiết bị giả lập <strong>Google Pixel 6 (Android 14 - API 34)</strong> 
+    thông qua các lệnh điều khiển luồng giao diện <code>adb shell input</code> và chụp cây phân cấp giao diện <code>uiautomator dump</code>.
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>#</th>
+            <th>Kịch bản Kiểm thử Tương tác</th>
+            <th>Số vòng chạy</th>
+            <th>Hành vi Vòng đời (Lifecycle Behavior)</th>
+            <th>Rò rỉ ghi nhận</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>1</td>
+            <td>Mở và đóng chi tiết chuyến đi từ Trip List</td>
+            <td>20 vòng</td>
+            <td>Tạo và hủy liên tục <code>TripDetailActivity</code>, <code>NavHostFragment</code>, <code>ItineraryFragment</code>; điều hướng quay về danh sách sạch sẽ.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>2</td>
+            <td>Xoay ngang/dọc màn hình (Configuration Change)</td>
+            <td>40 lần xoay</td>
+            <td>20 lần tại Trip List + 20 lần tại Itinerary. Activity/Fragment bị hủy và tái tạo 40 lần; trạng thái View và dữ liệu khôi phục toàn vẹn.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>3</td>
+            <td>Mở/đóng form thêm hoạt động có nhập liệu</td>
+            <td>10 vòng</td>
+            <td>Hủy <code>ActivityFormFragment</code>, <code>ScrollView</code> và các <code>TextInputEditText</code>; trạng thái không bị lưu giữ chéo.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>4a</td>
+            <td>Chuyển tab Thời tiết (Weather: Retrofit + Glide + Wiki)</td>
+            <td>10 vòng</td>
+            <td>Hủy <code>WeatherFragment</code> khi rời tab; các coroutine quan sát Flow tự hủy; ảnh Glide được thu hồi bộ nhớ đệm bitmap.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>4b</td>
+            <td>Chuyển màn hình Điểm tham quan lân cận (Nearby Sights)</td>
+            <td>10 vòng</td>
+            <td>Hủy <code>NearbySightsFragment</code> và <code>SightAdapter</code>; trở về Itinerary sạch rác bộ nhớ.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>5</td>
+            <td>Bật/tắt chế độ máy bay + Bấm Thử lại (Retry)</td>
+            <td>5 lần offline + 1 online</td>
+            <td>Mất mạng kích hoạt thông báo Offline và hiển thị dữ liệu cache Room; có mạng khôi phục dữ liệu cập nhật mới nhất.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>6</td>
+            <td>Đăng xuất tài khoản & Đăng nhập lại (Auth Flow)</td>
+            <td>3 chu kỳ</td>
+            <td>Mô phỏng hủy phiên đăng nhập, dọn dẹp preferences và đăng nhập lại tài khoản thử nghiệm <code>demo3@trippocket.test</code>.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>7</td>
+            <td>Đưa ứng dụng vào chế độ chạy nền (Backgrounding)</td>
+            <td>5 phút liên tục</td>
+            <td>Giữ app dưới nền 5 phút; hệ thống lấy mẫu bộ nhớ PSS định kỳ mỗi 30 giây để kiểm tra tác vụ chạy ngầm.</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+        <tr>
+            <td>8</td>
+            <td>Thực hiện sao lưu dữ liệu Firestore rồi thoát</td>
+            <td>1 chu kỳ</td>
+            <td>Kích hoạt <code>BackupWorker</code> qua WorkManager, đẩy dữ liệu lên Firestore và xác nhận trạng thái "Backed up".</td>
+            <td><span class="badge badge-pass">0 Leak</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>2.3. Kết quả Giám sát Đối tượng của LeakCanary</h3>
+<p>
+    Trong suốt phiên kiểm thử với hơn 36,653 dòng logcat hệ thống, công cụ phân tích bộ nhớ của LeakCanary đã giám sát tổng cộng 
+    <strong>525 thực thể (object instances)</strong> sau khi chúng kết thúc vòng đời. Kết quả: 
+    <strong>0 retained objects</strong>, <strong>0 heap dump</strong> và <strong>0 Distinct Leaks</strong>.
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Số lượng theo dõi</th>
+            <th>Loại thành phần giao diện (Component Class Type)</th>
+            <th>Trạng thái giải phóng bộ nhớ</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>131 đối tượng</td>
+            <td><code>androidx.constraintlayout.widget.ConstraintLayout</code> (View gốc của các Fragment)</td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span> (Nhờ nullify binding trong onDestroyView)</td>
+        </tr>
+        <tr>
+            <td>81 đối tượng</td>
+            <td><code>androidx.lifecycle.ReportFragment</code> (Thành phần vòng đời nội bộ AndroidX)</td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+        <tr>
+            <td>55 đối tượng</td>
+            <td><code>TripDetailActivity</code>, <code>NavHostFragment</code>, <code>ItineraryFragment</code>, <code>FragmentContainerView</code></td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+        <tr>
+            <td>21 đối tượng</td>
+            <td><code>MainActivity</code>, <code>TripListFragment</code></td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+        <tr>
+            <td>11 đối tượng</td>
+            <td><code>ActivityFormFragment</code>, <code>ScrollView</code>, <code>WeatherFragment</code></td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+        <tr>
+            <td>10 đối tượng</td>
+            <td><code>NearbySightsFragment</code> (màn hình điểm tham quan M4)</td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+        <tr>
+            <td>5 đối tượng</td>
+            <td><code>LoginActivity</code> (màn hình xác thực đăng nhập)</td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+        <tr>
+            <td>1 đối tượng</td>
+            <td><code>ChecklistFragment</code> (danh mục hành lý)</td>
+            <td><span class="badge badge-pass">Thu hồi 100%</span></td>
+        </tr>
+    </tbody>
+</table>
+
+<figure>
+    <img src="img/leakcanary-no-leaks.png" alt="LeakCanary 0 Distinct Leaks">
+    <figcaption>Hình 1: Giao diện LeakCanary thông báo "0 Distinct Leaks" sau khi hoàn tất toàn bộ 8 kịch bản tương tác chuyên sâu.</figcaption>
+</figure>
+
+<h3>2.4. Đo lường Bộ nhớ Thực tế (TOTAL PSS Memory Measurement)</h3>
+<p>
+    Chỉ số bộ nhớ được thu thập trực tiếp từ hệ điều hành Android thông qua lệnh <code>adb shell dumpsys meminfo vn.edu.vlu.trippocket</code> 
+    (lấy giá trị <strong>TOTAL PSS</strong> - Proportional Set Size). 
+    Biểu đồ dưới đây minh họa độ ổn định bộ nhớ của TripPocket qua 10 chu kỳ mở/đóng chi tiết chuyến đi và 5 phút chạy ngầm.
+</p>
+
+<figure>
+    <img src="img/memory-graph.png" alt="Biểu đồ đo lường PSS Memory">
+    <figcaption>Hình 2: Biểu đồ PSS Memory (kB): Đường đo đi ngang hoàn hảo ở vùng 81–83 MB (không dốc lên), giảm ngay khi nhàn rỗi và phẳng ở 78.8 MB khi chạy nền.</figcaption>
+</figure>
+
+<table>
+    <thead>
+        <tr>
+            <th>Thời điểm lấy mẫu bộ nhớ</th>
+            <th>Bộ nhớ PSS (kB)</th>
+            <th>Quy đổi MB</th>
+            <th>Đánh giá trạng thái cấp phát</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Trạng thái chờ ban đầu (Trip List Idle)</td>
+            <td>78,430 kB</td>
+            <td>76.6 MB</td>
+            <td>Khởi động sạch, cơ sở tham chiếu ban đầu</td>
+        </tr>
+        <tr>
+            <td>Sau chu kỳ mở/đóng vòng 1</td>
+            <td>81,968 kB</td>
+            <td>80.0 MB</td>
+            <td>Cấp phát cache ViewBinding và Room schema lần đầu</td>
+        </tr>
+        <tr>
+            <td>Sau chu kỳ mở/đóng vòng 2 đến 4</td>
+            <td>82,520 – 82,644 kB</td>
+            <td>80.7 MB</td>
+            <td>Tái sử dụng bộ nhớ đệm, dao động cực nhỏ (&lt; 150 kB)</td>
+        </tr>
+        <tr>
+            <td>Sau chu kỳ mở/đóng vòng 5 đến 7</td>
+            <td>83,956 &rarr; 82,792 kB</td>
+            <td>81.0 MB</td>
+            <td>Garbage Collector (GC) tự động dọn dẹp các đối tượng rác</td>
+        </tr>
+        <tr>
+            <td>Sau chu kỳ mở/đóng vòng 8 đến 10</td>
+            <td>83,000 &rarr; 83,148 kB</td>
+            <td>81.2 MB</td>
+            <td>Từ vòng 6 đến 10 chỉ tăng 356 kB (mỗi Activity nặng ~4 MB nếu rò rỉ)</td>
+        </tr>
+        <tr>
+            <td>Nghỉ tĩnh sau chu kỳ (15 giây không tương tác)</td>
+            <td>80,660 kB</td>
+            <td>78.8 MB</td>
+            <td>Hệ thống tự động thu hồi tài nguyên nhàn rỗi</td>
+        </tr>
+        <tr>
+            <td>Kích hoạt tín hiệu <code>RUNNING_CRITICAL</code></td>
+            <td>80,236 kB</td>
+            <td>78.4 MB</td>
+            <td>Giải phóng bộ nhớ đệm thành công về sát mức khởi động ban đầu</td>
+        </tr>
+        <tr>
+            <td><strong>Chạy nền 5 phút (Backgrounding 30s/mẫu)</strong></td>
+            <td><strong>79,263 &rarr; 78,762 kB</strong></td>
+            <td><strong>76.9 MB</strong></td>
+            <td><strong>Đi ngang, không tăng dần khi chạy nền</strong></td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>2.5. Các Mẫu Thiết kế Kiến trúc Phòng chống Rò rỉ Bộ nhớ (Root-Cause Prevention)</h3>
+<p>
+    Lý do ứng dụng đạt kết quả 0 rò rỉ bộ nhớ ngay trong lần kiểm toán đầu tiên xuất phát từ việc tuân thủ triệt để các quy tắc thiết kế kiến trúc chuẩn mực:
+</p>
+<ul>
+    <li><strong>Giải phóng View Binding trong <code>onDestroyView()</code>:</strong> Toàn bộ 12 Fragment và 5 DialogFragment trong ứng dụng đều thiết lập <code>_binding = null</code> khi View bị phá hủy. Điều này cắt đứt hoàn toàn chuỗi giữ tham chiếu mạnh (strong reference) từ Fragment sang cây phân cấp View của Android.</li>
+    <li><strong>Thu thập luồng trạng thái an toàn với vòng đời:</strong> Mọi thao tác lắng nghe StateFlow/SharedFlow đều được bao bọc trong <code>viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED)</code>. Khi Fragment rơi vào trạng thái STOPPED hoặc DESTROYED, coroutine thu thập tự động tạm dừng hoặc hủy bỏ, triệt tiêu nguy cơ rò rỉ do luồng nền chạy vô tận.</li>
+    <li><strong>Khởi tạo Adapter & Listener cục bộ theo View:</strong> Các RecyclerView Adapter, ItemTouchHelper, hoặc ScrollListener đều được khởi tạo và liên kết bên trong <code>onViewCreated()</code>, không lưu giữ dưới dạng biến toàn cục (singleton) hay trong <code>companion object</code>.</li>
+    <li><strong>Thu hồi bộ nhớ ảnh Glide:</strong> Hàm tiện ích <code>clearRemote()</code> được gọi nhất quán bên trong <code>onViewRecycled()</code> của các ViewHolder, giải phóng lập tức bộ nhớ bitmap đồ họa khi item cuộn ra khỏi vùng nhìn thấy.</li>
+    <li><strong>Không tham chiếu View bên trong ViewModel hoặc Callback:</strong> ViewModel hoàn toàn không chứa bất kỳ đối tượng nào liên quan đến Context, Activity, hay View.</li>
+</ul>
+
+<div class="section-break"></div>
+
+<h3>2.6. Cuộn RecyclerView (dumpsys gfxinfo framestats)</h3>
+<p>Đo trên bản release đã ký, emulator Pixel 6 API 34; quy trình: <code>dumpsys gfxinfo reset</code> → 20 lần vuốt → đọc framestats. Chi tiết: <code>docs/m5/performance.md</code>.</p>
+<table>
+<tr><th>Màn hình</th><th>Trước (p50 / p90 / p99, jank)</th><th>Sau — lần chạy tốt nhất / dải 3 lần</th></tr>
+<tr><td>Itinerary (25 hoạt động)</td><td>17,8 / 29,6 / 35,0 ms · 14,7%</td><td>17,7 / 18,7 / 22,9 ms · 12,8% — p90 giảm ở cả 3 lần (18,7–27,3 ms)</td></tr>
+<tr><td>Trip list (7 chuyến)</td><td>17,8 / 25,0 / 51,2 ms · 11,7%</td><td>Hoà — chênh lệch nằm trong dao động giữa các lần đo (11,7–14,2%)</td></tr>
+<tr><td>Đối chứng: app Settings của Android, cùng emulator</td><td colspan="2">p50 17,8 / p90 24,5 ms · jank 8,3% → đây là "sàn" của emulator (GPU giả lập qua OpenGL), không phải của app</td></tr>
+</table>
+<p>Đã làm: <code>setHasFixedSize(true)</code> cho 8 danh sách có kích thước do layout cha quyết định (không bật cho danh sách kết quả tìm kiếm Weather vì nó cao <code>wrap_content</code>); thẻ chuyến và thẻ Trip Ideas định dạng chuỗi một lần khi phát danh sách, <code>onBindViewHolder</code> chỉ gán text. Glide đã tự đo kích thước <code>ImageView</code> và cache ảnh, nên không ép <code>override()</code>. Nhóm ghi trung thực: emulator không đạt p90 &lt; 16,7 ms, kể cả với app hệ thống.</p>
+
+<!-- ========================================================================= -->
+<!-- MỤC 3: KIẾN TRÚC ĐA LUỒNG & DISPATCHERS.IO -->
+<!-- ========================================================================= -->
+<h2>3. Kiến trúc Đa luồng & Xử lý I/O An toàn (Dispatchers.IO)</h2>
+
+<p>
+    Một trong những tiêu chí trọng yếu của trải nghiệm ứng dụng 60fps là <strong>không thực hiện tác vụ I/O nặng trên luồng chính (Main/UI Thread)</strong>. 
+    TripPocket thiết lập ranh giới đa luồng nghiêm ngặt theo mô hình dưới đây:
+</p>
+
+<pre><code>[ UI LAYER / FRAGMENT ]
+   │  Main Thread (Chỉ nhận StateFlow, hiển thị dữ liệu và nhận thao tác chạm)
+   ▼
+[ VIEWMODEL LAYER ]
+   │  viewModelScope (Điều phối coroutine, quản lý trạng thái UI StateFlow)
+   ▼
+[ REPOSITORY LAYER ]
+   │  Chuyển ngữ cảnh bắt buộc sang Dispatchers.IO qua safeApiCall() hoặc withContext(io)
+   ▼
+[ DATA LAYER: NETWORK & LOCAL DATABASE ]
+   ├── Retrofit / OkHttp: Thực hiện HTTP Request / Parse JSON trên Dispatchers.IO
+   ├── Room Database: SQLite Query / Transaction trên Dispatchers.IO (TripWriter)
+   └── WorkManager / Glide: Chạy tác vụ nền trên worker thread riêng biệt</code></pre>
+
+<table>
+    <thead>
+        <tr>
+            <th>Phân hệ tác vụ</th>
+            <th>Thao tác I/O cụ thể</th>
+            <th>Bộ điều phối luồng (Dispatcher)</th>
+            <th>Cơ chế đảm bảo an toàn & Bằng chứng</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Mạng ngoại vi (Network)</strong></td>
+            <td>Gọi Retrofit API (Open-Meteo, Wikipedia, MockAPI, open.er-api.com)</td>
+            <td><code>Dispatchers.IO</code></td>
+            <td>Hàm bao bọc <code>safeApiCall(dispatcher = Dispatchers.IO)</code> trong <code>data/remote/safeApiCall.kt</code>. Luôn ném lại <code>CancellationException</code> để hỗ trợ structured concurrency.</td>
+        </tr>
+        <tr>
+            <td><strong>Cơ sở dữ liệu (Room)</strong></td>
+            <td>Đọc/Ghi dữ liệu SQLite (Chuyến đi, Hoạt động, Thành viên, Chi tiêu, Địa điểm)</td>
+            <td><code>Dispatchers.IO</code></td>
+            <td>Mọi thao tác ghi tập trung qua <code>TripWriter.write()</code> chạy trong transaction trên <code>Dispatchers.IO</code>. Các câu truy vấn đọc <code>Flow&lt;T&gt;</code> được Room tự động phân phối trên background executor.</td>
+        </tr>
+        <tr>
+            <td><strong>Xử lý ảnh (Glide)</strong></td>
+            <td>Tải ảnh địa điểm, cờ quốc gia, ảnh bìa ý tưởng du lịch từ FlagCDN, Wikimedia, Picsum</td>
+            <td>Glide Worker Threads</td>
+            <td>Glide cấu hình bộ nhớ đệm 2 lớp (Memory Cache + Disk Cache). Ảnh được giải mã ngầm và chuyển giao bitmap đã tối ưu lên ImageView qua main thread.</td>
+        </tr>
+        <tr>
+            <td><strong>Sao lưu đám mây</strong></td>
+            <td>Gói snapshot và đẩy dữ liệu lên Google Cloud Firestore</td>
+            <td>Background Worker Thread</td>
+            <td>Được quản lý thông qua <code>BackupWorker</code> (AndroidX WorkManager) với ràng buộc mạng <code>NetworkType.CONNECTED</code>.</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="section-break"></div>
+
+<!-- ========================================================================= -->
+<!-- MỤC 4: BẢO MẬT ỨNG DỤNG & CHỐNG DỊCH NGƯỢC -->
+<!-- ========================================================================= -->
+<h2>4. Bảo mật Ứng dụng & Chống Dịch ngược (Security & Obfuscation)</h2>
+
+<h3>4.1. Kích hoạt R8 Minify & Shrink Resources</h3>
+<p>
+    Trong AGP 9.4.1, nhóm đã thực hiện thử nghiệm (Spike) độc lập giữa hai tổ hợp cấu hình DSL và đưa ra quyết định chuẩn mực: 
+    sử dụng <code>isMinifyEnabled = true</code> kết hợp <code>isShrinkResources = true</code> trong <code>buildTypes.release</code>. 
+    Nhờ cơ chế loại bỏ mã không sử dụng (Tree Shaking) và tối ưu hóa bytecode của R8, kích thước tệp APK phát hành giảm từ 
+    <strong>12.23 MB xuống còn 4.54 MB (giảm 63%)</strong>. Bản phát hành v1.1.0 cuối cùng là 4.61 MB vì có thêm security-crypto (Stage 5).
+</p>
+
+<h3>4.2. Cấu hình Quy tắc ProGuard (`app/proguard-rules.pro`)</h3>
+<p>
+    Để đảm bảo các thư viện phụ thuộc vào cơ chế ánh xạ Reflection (như Gson, Firestore Document Guard) không bị lỗi thời gian chạy 
+    (<code>NoSuchFieldException</code>, <code>ClassNotFoundException</code>) sau khi mã bị thu gọn và đổi tên, 
+    nhóm đã thiết kế tệp <code>app/proguard-rules.pro</code> gồm 4 nhóm quy tắc trọng tâm:
+</p>
+
+<pre><code># ===================================================================================
+# TripPocket R8 / ProGuard Rules (Milestone 5)
+# ===================================================================================
+
+# Nhóm 1: Bảo vệ toàn bộ cấu trúc DTO phục vụ giải mã JSON qua Gson từ 4 nguồn API
+# R8 bắt buộc phải giữ lại tên class và tên trường để Gson map dữ liệu chính xác.
+-keep class vn.edu.vlu.trippocket.data.remote.mockapi.** { *; }
+-keep class vn.edu.vlu.trippocket.data.remote.wikipedia.** { *; }
+-keep class vn.edu.vlu.trippocket.data.remote.openmeteo.** { *; }
+-keep class vn.edu.vlu.trippocket.data.remote.exchangerate.** { *; }
+
+# Nhóm 2: Lớp lồng WeatherRepository$CachedDay dùng cho Room TypeConverter (lưu JSON vào SQLite)
+-keep class vn.edu.vlu.trippocket.data.repository.WeatherRepository$CachedDay { *; }
+
+# Nhóm 3: Bảo vệ chữ ký generics và annotations phục vụ Coroutines và Retrofit reflection
+-keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
+-keep class kotlin.Metadata { *; }
+
+# Nhóm 4: Bảo vệ phương thức getter của TripSnapshot phục vụ tính toán dung lượng sao lưu Firestore
+# FirestoreDocumentSize (giới hạn 1 MB) duyệt reflection qua các hàm get*/is*. 
+# Nếu R8 đổi tên, bộ kiểm soát kích thước sẽ bị vô hiệu hóa.
+-keepclassmembers class vn.edu.vlu.trippocket.data.remote.firebase.*Snapshot {
+    public *** get*();
+    public boolean is*();
+}</code></pre>
+
+<h3>4.3. Bằng chứng Làm mờ Mã nguồn (Obfuscation Evidence via mapping.txt)</h3>
+<p>
+    Sau khi tiến hành build bản phát hành (<code>assembleRelease</code>), trình biên dịch R8 đã tự động tạo tệp ánh xạ mã nguồn 
+    <code>app/build/outputs/mapping/release/mapping.txt</code> với kích thước lên tới <strong>47,147,568 bytes</strong>. 
+    Bảng dưới đây trích dẫn bằng chứng cụ thể cho thấy các lớp nghiệp vụ nội bộ của TripPocket đã bị đổi tên thành các định danh ngắn vô nghĩa, 
+    trong khi các lớp DTO công khai vẫn giữ nguyên định dạng theo đúng quy tắc ProGuard:
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Lớp gốc trong mã nguồn (Original Class)</th>
+            <th>Tên lớp sau khi R8 làm mờ (Obfuscated Class)</th>
+            <th>Loại thành phần & Mục đích</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><code>vn.edu.vlu.trippocket.data.local.TripWriter</code></td>
+            <td><code>zu2</code></td>
+            <td><span class="badge badge-pass">Obfuscated</span> Lớp điều phối ghi dữ liệu Room an toàn</td>
+        </tr>
+        <tr>
+            <td><code>vn.edu.vlu.trippocket.data.local.TripWriter$write$1</code></td>
+            <td><code>xu2</code></td>
+            <td><span class="badge badge-pass">Obfuscated</span> Lambda coroutine thực thi transaction</td>
+        </tr>
+        <tr>
+            <td><code>vn.edu.vlu.trippocket.reminder.ReminderPermissions</code></td>
+            <td><code>G</code></td>
+            <td><span class="badge badge-pass">Obfuscated</span> Lớp tiện ích kiểm tra quyền thông báo</td>
+        </tr>
+        <tr>
+            <td><code>vn.edu.vlu.trippocket.data.remote.openmeteo.DailyForecast</code></td>
+            <td><code>DailyForecast</code> (giữ nguyên)</td>
+            <td><span class="badge badge-info">Protected</span> DTO Open-Meteo được bảo vệ bởi ProGuard rule</td>
+        </tr>
+        <tr>
+            <td><code>vn.edu.vlu.trippocket.data.remote.openmeteo.DayFromHours</code></td>
+            <td><code>DayFromHours</code> (giữ nguyên)</td>
+            <td><span class="badge badge-info">Protected</span> DTO Open-Meteo được bảo vệ bởi ProGuard rule</td>
+        </tr>
+        <tr>
+            <td><code>vn.edu.vlu.trippocket.TripPocketApp</code></td>
+            <td><code>TripPocketApp</code> (giữ nguyên)</td>
+            <td><span class="badge badge-info">Protected</span> Khai báo trong AndroidManifest.xml (mặc định giữ)</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>4.4. Quản lý Bí mật, Khóa API & Cơ chế BuildConfig</h3>
+<p>
+    Ứng dụng tuân thủ nghiêm ngặt nguyên tắc <strong>Không lưu khóa bí mật hoặc URL nhạy cảm trong mã nguồn</strong> (No Hardcoded Secrets):
+</p>
+<ul>
+    <li>Lệnh kiểm tra quét toàn bộ kho mã <code>git grep "AIza" -- app/src</code> trả về <strong>0 kết quả</strong> (không có bất kỳ khóa Firebase API nào bị đưa vào mã nguồn Java/Kotlin).</li>
+    <li>URL gốc của dịch vụ MockAPI được nạp từ biến cấu hình <code>gradle.properties</code> (hoặc ghi đè trong <code>local.properties</code>) và đưa vào ứng dụng thông qua đối tượng sinh tự động <code>BuildConfig.MOCKAPI_BASE_URL</code>.</li>
+    <li><code>BuildConfigTest</code> (unit test) kiểm <code>BuildConfig.MOCKAPI_BASE_URL</code> được inject, là https và không rỗng. Thứ tự đọc: <code>local.properties</code> (git-ignored) → <code>gradle.properties</code>; trong <code>build.gradle.kts</code> không có URL nào. Đã đối chứng bằng 2 lần build với giá trị khác nhau trong <code>local.properties</code> (<code>docs/m5/security.md</code> §2.2).</li>
+</ul>
+
+<pre><code>// app/build/generated/source/buildConfig/release/vn/edu/vlu/trippocket/BuildConfig.java
+package vn.edu.vlu.trippocket;
+
+public final class BuildConfig {
+  public static final boolean DEBUG = false;
+  public static final String APPLICATION_ID = "vn.edu.vlu.trippocket";
+  public static final String BUILD_TYPE = "release";
+  public static final int VERSION_CODE = 2;
+  public static final String VERSION_NAME = "1.1.0";
+  // Giá trị nạp an toàn từ thuộc tính Gradle, không hardcode trong mã
+  public static final String MOCKAPI_BASE_URL = "https://6af1cf7c42c6561ced38a850.mockapi.io/api/v1/";
+}</code></pre>
+
+<h3>4.5. Bảo vệ Tệp Nhạy cảm trong Hệ thống Git (.gitignore)</h3>
+<p>
+    Toàn bộ các tệp định danh chữ ký số cá nhân và cấu hình bảo mật được cách ly hoàn toàn khỏi Git repository:
+</p>
+<pre><code># Kiểm tra xác nhận tệp bị Git bỏ qua:
+git check-ignore -v keystore.properties   -> .gitignore:19:/keystore.properties
+git check-ignore -v release-key.jks       -> .gitignore:20:*.jks
+git status --porcelain                    -> không xuất hiện *.jks hay keystore.properties</code></pre>
+
+<h3>4.6. Lưu trữ Phiên Đăng nhập An toàn (EncryptedSharedPreferences)</h3>
+<div class="callout">
+    <p>Thư viện <code>androidx.security:security-crypto:1.1.0</code> (bản stable mới nhất; Google đã đánh dấu deprecated toàn bộ API, nhóm vẫn dùng vì đề yêu cầu EncryptedSharedPreferences). Lớp <code>EncryptedSessionStore</code> lưu tệp <code>trippocket_session.xml</code>:</p>
+    <ul>
+        <li><strong>MasterKey</strong> <code>AES256_GCM</code> nằm trong AndroidKeyStore; tên khoá mã hoá <code>AES256_SIV</code>, giá trị mã hoá <code>AES256_GCM</code>.</li>
+        <li>Chỉ lưu 3 giá trị: <code>last_email</code>, <code>last_uid</code>, <code>last_login_at</code>. <strong>Không</strong> lưu mật khẩu, <strong>không</strong> lưu token (Firebase Auth tự quản lý token). Dùng để điền sẵn email ở màn đăng nhập; xoá khi đăng xuất.</li>
+        <li>Đọc/ghi trên <code>Dispatchers.IO</code>; khởi tạo lazy; nếu Keystore hỏng thì xoá tệp, tạo lại, không làm app crash.</li>
+        <li><strong>Minh chứng ciphertext</strong> (<code>adb shell run-as … cat shared_prefs/trippocket_session.xml</code>, bản debug vì <code>run-as</code> không chạy trên bản release — đúng thiết kế):
+<pre>&lt;string name="AVgSHNx+OAcZ5MHUxcUqgLsw2/fcXAtZSo9vHK8x3iTBeA=="&gt;AX6NFPkKWOLcJ8Wcy7mWCWqLbNucXsY9KqISj3WaseGkQHJ9D6Pw77Yt8NTg&lt;/string&gt;
+&lt;string name="AVgSHNz2KpPqgdnzv6AmaRDSmZEEAjLwzC73obf1pg=="&gt;AX6NFPlr06JSlhsc1DQnPJ3hCbRoUJHZRUH7tfJU0b7AFzeWNRAx2IeCYZxefv4n17zjoT5oQL0ScFxWUg0=&lt;/string&gt;</pre>
+        <code>grep -c "demo3"</code> trên tệp này = <strong>0</strong>; sau khi đăng xuất tệp trở về 1144 B (chỉ còn 2 keyset). Bản release đã ký được kiểm bằng hành vi: đăng nhập → Restore → Backup, logcat không lỗi (<code>docs/m5/security.md</code> §1.3, §4).</li>
+    </ul>
+</div>
+
+<div class="section-break"></div>
+
+<!-- ========================================================================= -->
+<!-- MỤC 5: ĐÓNG GÓI & XÁC THỰC BẢN PHÁT HÀNH KÝ SỐ -->
+<!-- ========================================================================= -->
+<h2>5. Đóng gói & Xác thực Bản phát hành Ký số (Signed Release Packaging)</h2>
+
+<h3>5.1. Thông số Kỹ thuật Keystore Phát hành (Production Keystore Specifications)</h3>
+<p>
+    Khóa ký số phát hành được tạo độc lập bằng công cụ <code>keytool</code> (JDK 17) trên máy trạm của Duy Anh, 
+    được lưu trữ tại thư mục cách ly <strong>hoàn toàn nằm ngoài Git repository</strong> (<code>D:\TripPocket-keys\release-key.jks</code>). 
+    Quy trình sao lưu tuân thủ nguyên tắc 2 vị trí độc lập (OneDrive lưu trữ tệp JKS mã hóa; mật khẩu được lưu ở một nơi riêng, tách khỏi tệp JKS).
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Thông số cấu hình</th>
+            <th>Giá trị thiết lập</th>
+            <th>Ý nghĩa tiêu chuẩn sản xuất</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Đường dẫn lưu trữ</strong></td>
+            <td><code>D:\TripPocket-keys\release-key.jks</code></td>
+            <td>Nằm ngoài thư mục dự án; không bao giờ bị commit lên GitHub</td>
+        </tr>
+        <tr>
+            <td><strong>Định dạng Keystore</strong></td>
+            <td><code>PKCS12</code></td>
+            <td>Định dạng tiêu chuẩn công nghiệp hiện đại, tương thích hoàn hảo với apksigner và Google Play Console</td>
+        </tr>
+        <tr>
+            <td><strong>Bí danh (Key Alias)</strong></td>
+            <td><code>trippocket</code></td>
+            <td>Tên định danh khóa trong store</td>
+        </tr>
+        <tr>
+            <td><strong>Thuật toán & Độ dài khóa</strong></td>
+            <td><strong>RSA 4096-bit</strong></td>
+            <td>Mức độ bảo mật cao nhất (vượt chuẩn thông thường 2048-bit)</td>
+        </tr>
+        <tr>
+            <td><strong>Thời hạn hiệu lực</strong></td>
+            <td><strong>10,000 ngày (~27 năm)</strong></td>
+            <td>Có giá trị đến <strong>05/04/2054</strong> (Đáp ứng yêu cầu Google Play &gt; năm 2033)</td>
+        </tr>
+        <tr>
+            <td><strong>Định danh chứng chỉ (DN)</strong></td>
+            <td><code>CN=TripPocket, OU=VLU, O=Nhom01, L=Da Lat, ST=Lam Dong, C=VN</code></td>
+            <td>Xác nhận quyền sở hữu của Nhóm 01 - Đại học Văn Lang</td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>5.2. Vân tay Chứng thư Số (Certificate Fingerprints)</h3>
+<p>
+    Thông tin định danh chứng thư số chính thức dùng để đối chiếu khi phát hành ứng dụng:
+</p>
+<pre><code>Certificate Fingerprint (SHA-256):
+4D:57:84:00:5D:B7:25:5F:DD:4B:AA:3F:E9:E2:9E:A3:E1:78:3E:20:6B:1B:0A:52:82:0B:D6:87:C0:E7:A4:6A
+
+Certificate Fingerprint (SHA-1):
+56:95:D7:38:D6:1D:7E:22:03:95:F8:54:1D:E8:E6:0D:82:FF:F6:65</code></pre>
+
+<h3>5.3. Xác minh Chữ ký Số Gói APK với Công cụ `apksigner`</h3>
+<p>
+    Tính toàn vẹn và chứng chỉ số của gói cài đặt <code>app-release.apk</code> được xác thực bằng công cụ chuẩn 
+    <code>apksigner</code> (Android SDK Build-Tools 36.0.0):
+</p>
+
+<pre><code>& "D:\dulieuandroidstu\build-tools\36.0.0\apksigner.bat" verify --print-certs app\build\outputs\apk\release\app-release.apk
+
+Verifies
+Verified using v1 scheme (JAR signing): false
+Verified using v2 scheme (APK Signature Scheme v2): true
+Verified using v3 scheme (APK Signature Scheme v3): false
+Verified using v4 scheme (APK Signature Scheme v4): false
+Number of signers: 1
+Signer #1 certificate DN: CN=TripPocket, OU=VLU, O=Nhom01, L=Da Lat, ST=Lam Dong, C=VN
+Signer #1 certificate SHA-256 digest: 4d5784005db7255fdd4baa3fe9e29ea3e1783e206b1b0a52820bd687c0e7a46a
+Signer #1 certificate SHA-1 digest: 5695d738d61d7e220395f8541de8e60d82fff665</code></pre>
+
+<div class="callout callout-success">
+    <strong>Kết luận xác thực:</strong> Gói APK đã được ký chuẩn xác bằng chứng chỉ chính thức <code>CN=TripPocket</code> với cơ chế bảo vệ chống can thiệp <strong>APK Signature Scheme v2</strong>. Tuyệt đối không phải chứng chỉ gỡ lỗi mặc định <code>CN=Android Debug</code>.
+</div>
+
+<h3>5.4. Thử nghiệm Thực tế Bản Release Đã ký trên Thiết bị Giả lập</h3>
+<p>
+    Gói cài đặt <code>app-release.apk</code> (đã bật R8 và ký chính thức) đã được cài đặt và vận hành thử nghiệm toàn diện 8/8 bước:
+</p>
+<ul>
+    <li>Đăng nhập tài khoản Firebase thật và tải dữ liệu từ máy chủ đám mây thành công.</li>
+    <li>Thời gian khởi động lạnh (Cold start) đạt <strong>1,574 ms</strong>.</li>
+    <li>Chỉnh sửa dữ liệu chi tiêu ("Lunch" từ 200,000 ₫ &rarr; 250,000 ₫), hệ thống tự động kích hoạt tiến trình WorkManager nền và đồng bộ trạng thái "Backed up" lên Google Cloud Firestore.</li>
+    <li>Gỡ cài đặt ứng dụng (xóa sạch dữ liệu máy), cài lại và thực hiện "Restore from backup": toàn bộ chuyến đi cùng khoản chi 250,000 ₫ được phục hồi nguyên vẹn.</li>
+    <li>Quét toàn bộ logcat hệ thống trong suốt phiên vận hành: <strong>0 lỗi FATAL / Crash</strong>, xác nhận bản mã hóa R8 không bị xung đột reflection.</li>
+</ul>
+
+<div style="display: flex; gap: 12px; margin: 14px 0;">
+    <figure style="flex: 1;">
+        <img src="img/release-backup-250k.png" alt="Sửa chi tiêu 250k và backup thành công">
+        <figcaption>Hình 3: Bản Release đã ký cập nhật chi tiêu 250,000 ₫ và đồng bộ Firestore ("Backed up").</figcaption>
+    </figure>
+    <figure style="flex: 1;">
+        <img src="img/release-backup-backed-up.png" alt="Giao diện đầy đủ bản Release">
+        <figcaption>Hình 4: Trạng thái hiển thị ổn định đầy đủ icon và danh sách trên bản Release chính thức.</figcaption>
+    </figure>
+</div>
+
+<div class="section-break"></div>
+
+<!-- ========================================================================= -->
+<!-- MỤC 6: PHÂN CÔNG CÔNG VIỆC (WBS) & NHẬT KÝ COMMIT GIT -->
+<!-- ========================================================================= -->
+<h2>6. Phân công Công việc (WBS) & Nhật ký Đóng góp Git</h2>
+
+<h3>6.1. Nguyên tắc Phân công và Cơ chế Xoay vòng Trách nhiệm</h3>
+<p>
+    Từ Milestone 1 đến Milestone 4, nhóm đã thực hiện cơ chế <strong>xoay vòng trách nhiệm (Role Rotation)</strong> qua 4 module nghiệp vụ chính: 
+    <em>Authentication / Trips / Cloud Backup</em>, <em>Itinerary Planning</em>, <em>Weather Forecast</em>, và <em>Expenses & Balances</em>. 
+    Mỗi thành viên đều trực tiếp viết mã nguồn và đóng góp giải pháp ở cả 4 phân hệ.
+</p>
+<p>
+    Tại <strong>Milestone 4 (M4)</strong>, để đảm bảo tiến độ tích hợp chung của dự án, <strong>Bùi Duy Anh</strong> ngoài module Thời tiết (Weather Search, 5-Day Forecast, Saved Places, Wikipedia Photos) làm thêm 2 lát cắt được nhóm điều phối lại:
+</p>
+<ul>
+    <li><strong>Exchange Rates & Foreign Currency Conversion:</strong> Tích hợp API open.er-api.com, xây dựng màn hình Tỷ giá 12 ngoại tệ và tính năng "Paid in" tự động quy đổi ngoại tệ sang VND trong form chi tiêu (làm cùng Minh — Minh làm phần làm tròn tỷ giá và giữ danh sách khi refresh lỗi, PR #53).</li>
+    <li><strong>Nearby Sights:</strong> Tích hợp Wikipedia GeoSearch API, tính toán khoảng cách địa lý và thêm điểm tham quan trực tiếp vào lịch trình chuyến đi (làm cùng Bảo — Bảo làm phần nhận biết điểm đã thêm, trạng thái "Trip is full" và đi theo địa điểm đã lưu của chuyến).</li>
+</ul>
+<p>
+    Tại <strong>Milestone 5 (M5)</strong>: Toàn bộ công tác tối ưu hóa hiệu năng, cấu hình R8, thiết lập chữ ký số, kiểm toán bộ nhớ LeakCanary, chuẩn bị báo cáo kỹ thuật và thực hiện video demo <strong>do một mình Bùi Duy Anh đảm nhiệm và hoàn thành độc lập (100%)</strong>.
+</p>
+
+<h3>6.2. Ma trận Phân công Trách nhiệm Thực tế (Actual Work Breakdown Matrix)</h3>
+
+<table>
+    <thead>
+        <tr>
+            <th>Thành viên</th>
+            <th>Tài khoản GitHub</th>
+            <th>Trách nhiệm chính Milestone 4 (M4)</th>
+            <th>Trách nhiệm chính Milestone 5 (M5)</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>Bùi Duy Anh</strong></td>
+            <td><code>anh7032</code> / <code>Duy Anh</code></td>
+            <td>
+                - Module Thời tiết (W1 Geocoding, W3 Forecast, WP Saved places, Wikipedia photos).<br>
+                - <strong>Tỷ giá ngoại tệ (Exchange Rates)</strong>: API open.er-api.com, màn hình tỷ giá & quy đổi Paid-in trong form chi tiêu (cùng Minh).<br>
+                - <strong>Điểm tham quan lân cận (Nearby Sights)</strong>: Wikipedia GeoSearch & Add to day (cùng Bảo).
+            </td>
+            <td>
+                <strong>Đảm nhiệm toàn bộ M5 (100%):</strong><br>
+                - Cấu hình R8 / ProGuard rules & kiểm toán dung lượng APK.<br>
+                - Tạo Keystore RSA 4096-bit & cấu hình Gradle signingConfigs.<br>
+                - Tích hợp LeakCanary 2.14, chạy 8 kịch bản & đo lường PSS.<br>
+                - Đo gfxinfo, <code>setHasFixedSize</code>, bind chỉ gán text.<br>- EncryptedSharedPreferences (<code>SessionStore</code>) &amp; BuildConfig.<br>
+                - Soạn thảo báo cáo kỹ thuật <code>report.html</code> & kịch bản video demo.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Võ Việt Tiến</strong> (Nhóm trưởng)</td>
+            <td><code>NeitLN</code></td>
+            <td>
+                - Tầng mạng chung (safeApiCall, ApiError, ImageLoading).<br>
+                - Trip Ideas MockAPI CRUD.<br>
+                - Sao lưu & phục hồi Firestore (A3, A4).<br>
+                - Tích hợp nhánh và quản lý phát hành release gate.
+            </td>
+            <td>
+                - Phê duyệt Pull Request và nộp bài trên LMS.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Jayson135724 (Minh)</strong></td>
+            <td><code>Jayson135724</code></td>
+            <td>
+                - Module Chi tiêu E2 (Expense form, chia đều/tùy chỉnh).<br>
+                - Quản lý thành viên E1.<br>
+                - Kiểm thử bảo mật Firestore Rules (A5).
+            </td>
+            <td>
+                - Hỗ trợ rà soát kiểm thử tự động.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>Đỗ Quốc Bảo</strong></td>
+            <td><code>Do Quoc Bao</code></td>
+            <td>
+                - Module Lịch trình I1, I4 (AlarmManager reminders).<br>
+                - Quản lý chuyến đi A2.<br>
+                - Tối ưu bộ nhớ cache thời tiết Room W4.
+            </td>
+            <td>
+                - Hỗ trợ kiểm thử giao diện.
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<h3>6.3. Bảng Thống kê Đóng góp Commit trên Git (`git shortlog`)</h3>
+<p>
+    Thống kê các commit thực tế (không tính merge commit) trên nhánh chính <code>main</code> và nhánh phát hành M5:
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tác giả trên Git</th>
+            <th>Tên định danh / Email</th>
+            <th>Số lượng Commit</th>
+            <th>Tỷ lệ đóng góp</th>
+            <th>Ghi chú nhận diện</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td>Võ Việt Tiến</td>
+            <td><code>NeitLN</code></td>
+            <td>36 commits</td>
+            <td>35.6%</td>
+            <td>Nhánh chính main</td>
+        </tr>
+        <tr>
+            <td><strong>Bùi Duy Anh</strong></td>
+            <td><code>Duy Anh</code> (25) + <code>anh7032</code> (6)</td>
+            <td><strong>31 commits</strong></td>
+            <td><strong>30.7%</strong></td>
+            <td>Hai tên commit của cùng một người (cùng email)</td>
+        </tr>
+        <tr>
+            <td>Jayson135724</td>
+            <td>Minh</td>
+            <td>17 commits</td>
+            <td>16.8%</td>
+            <td>Nhánh chính main</td>
+        </tr>
+        <tr>
+            <td>Do Quoc Bao</td>
+            <td>Bảo</td>
+            <td>16 commits</td>
+            <td>15.8%</td>
+            <td>Nhánh chính main</td>
+        </tr>
+        <tr style="font-weight: bold; background-color: #f1f3f5;">
+            <td colspan="2">Tổng cộng trên nhánh main</td>
+            <td>100 commits</td>
+            <td>100%</td>
+            <td>Chưa bao gồm các commit riêng của nhánh M5</td>
+        </tr>
+    </tbody>
+</table>
+
+<div class="callout">
+    <strong>Ghi chú bổ sung nhánh M5:</strong> Trên nhánh <code>feature/m5-hardening-release</code>, 
+    Bùi Duy Anh đóng góp thêm <strong>3 commits kỹ thuật lớn</strong> phục vụ trực tiếp cho các giai đoạn R8, Signing và LeakCanary 
+    (nâng tổng số commit của Duy Anh lên <strong>34 commits</strong>).
+</div>
+
+<h3>6.4. Phụ lục Nhật ký Commit Chi tiết của Bùi Duy Anh (M4 & M5)</h3>
+<pre><code># Các commit kỹ thuật tiêu biểu do Bùi Duy Anh thực hiện:
+3c0dc6e | 2026-11-18 | Duy Anh | M5 stage 3: LeakCanary in debug, memory audit
+22826ba | 2026-11-18 | Duy Anh | M5 stage 2: release signing config
+6c8d628 | 2026-11-18 | Duy Anh | M5 stage 1: R8 enabled, ProGuard rules, baseline and smoke test
+8d20fec | 2026-11-18 | anh7032 | Docs: M5 stage plan (hardening and signed release)
+46593cd | 2026-11-17 | anh7032 | Docs: Firebase Console screenshots for the M4 worksheet
+fccb2c3 | 2026-11-17 | anh7032 | Docs: M4 worksheet (endpoints, Retrofit/Coroutines, Firebase + Glide, MVVM, Git + WBS)
+41ceb64 | 2026-11-09 | Duy Anh | M4 Duy Anh: Back inside a trip returns to the previous screen; 999.6 m reads 1.0 km
+d1060a6 | 2026-11-09 | Duy Anh | M4 Duy Anh (Bao's slice): Nearby sights from Wikipedia GeoSearch, Add to day into the Itinerary
+43689ae | 2026-11-09 | Duy Anh | M4 Duy Anh: Exchange rates button in Expenses, "Paid in" foreign currency field converts to VND in the expense form
+6d9c826 | 2026-11-09 | Duy Anh | M4 Duy Anh: Wikipedia thumbnails in place search, "About this place" card with its own Loading/Error
+13e65de | 2026-11-09 | Duy Anh | M4 Duy Anh: exchange rates screen on open.er-api.com
+9af398e | 2026-11-09 | Duy Anh | M4 Duy Anh: Wikipedia photos for places, Weather on the shared ApiError
+aec2585 | 2026-10-31 | Duy Anh | W: menu to rename, add a note to or delete a saved place
+9a59a4f | 2026-10-31 | Duy Anh | W: rename, note and delete saved places; one row for a double tap
+c106cd4 | 2026-10-31 | Duy Anh | I3: drag to reorder activities, with Move up / Move down
+91d6a61 | 2026-10-31 | Duy Anh | W: weather hardening - refresh after restore, stale cache, error kinds
+6580245 | 2026-10-31 | Duy Anh | I1: add, edit and delete activities from the itinerary
+d401694 | 2026-10-31 | Duy Anh | W1, W3: weather screen states, offline copy and pull to refresh
+5504cac | 2026-10-31 | Duy Anh | A1: rebuild reminder alarms on sign-in and sign-out
+3707f88 | 2026-10-31 | Duy Anh | A1: login and register screen, sign out with confirmation
+c8b567e | 2026-10-31 | Duy Anh | W3: forecast cache in Room and the daily weather contract
+8c352ec | 2026-10-31 | Duy Anh | E1: members screen and its entry on the Expenses tab
+56e7ab5 | 2026-10-31 | Duy Anh | W1: search places on Open-Meteo
+b4b6532 | 2026-10-31 | Duy Anh | A1: Firebase sign-in and register logic
+3deb83d | 2026-10-31 | Duy Anh | E1: add, rename and remove trip members
+3314c95 | 2026-10-31 | Duy Anh | W1: add Open-Meteo API layer and weather helpers</code></pre>
+
+<div class="section-break"></div>
+
+<!-- ========================================================================= -->
+<!-- MỤC 7: ĐỐI CHIẾU RUBRIC ĐÁNH GIÁ -->
+<!-- ========================================================================= -->
+<h2>7. Bảng Đối chiếu Rubric Đánh giá Milestone 5</h2>
+
+<p>
+    Bảng dưới đây tổng hợp các yêu cầu đánh giá của giảng viên theo đề cương học phần và vị trí minh chứng tương ứng trong báo cáo:
+</p>
+
+<table>
+    <thead>
+        <tr>
+            <th>Tiêu chí Đánh giá Rubric M5</th>
+            <th>Trọng số / Điểm</th>
+            <th>Yêu cầu Kỹ thuật Trọng tâm</th>
+            <th>Vị trí Minh chứng & Dữ liệu Thực tế</th>
+        </tr>
+    </thead>
+    <tbody>
+        <tr>
+            <td><strong>1. Performance & Profiling</strong></td>
+            <td><strong>30 Điểm (30%)</strong></td>
+            <td>
+                - Tích hợp công cụ đo lường (LeakCanary hoặc Android Studio Profiler).<br>
+                - Chạy các kịch bản thực tế phát hiện rò rỉ bộ nhớ.<br>
+                - Biểu đồ bộ nhớ PSS / Heap ổn định, không có hiện tượng memory creep.<br>
+                - Danh sách cuộn mượt mà (60fps) và thu hồi tài nguyên ảnh.<br>
+                - Toàn bộ tác vụ I/O đĩa và mạng thực thi trên luồng nền.
+            </td>
+            <td>
+                - <strong>Mục 2.1 & 2.2:</strong> Tích hợp LeakCanary 2.14, 8 kịch bản tương tác sâu.<br>
+                - <strong>Mục 2.3:</strong> Hình 1 minh chứng 0 Distinct Leaks trên 525 đối tượng.<br>
+                - <strong>Mục 2.4:</strong> Hình 2 & Bảng số liệu PSS (81–83 MB mở/đóng, 78.8 MB nền).<br>
+                - <strong>Mục 2.5 & 3:</strong> Mô hình Dispatchers.IO và 5 mẫu kiến trúc chống leak.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>2. App Security & Obfuscation</strong></td>
+            <td><strong>30 Điểm (30%)</strong></td>
+            <td>
+                - Bật cơ chế thu gọn mã và làm mờ (R8 / ProGuard).<br>
+                - Viết và giải thích chi tiết tệp cấu hình quy tắc ProGuard.<br>
+                - Minh chứng làm mờ thông qua tệp mapping.txt.<br>
+                - Không hardcode khóa API hay thông tin đăng nhập trong mã nguồn.<br>
+                - Lưu trữ an toàn khóa bí mật và phiên đăng nhập.
+            </td>
+            <td>
+                - <strong>Mục 4.1:</strong> Giảm 63% dung lượng APK (12.23 MB &rarr; 4.54 MB).<br>
+                - <strong>Mục 4.2:</strong> Toàn văn tệp <code>app/proguard-rules.pro</code> 4 nhóm quy tắc.<br>
+                - <strong>Mục 4.3:</strong> Bảng đối chiếu lớp obfuscated qua mapping.txt (47.1 MB).<br>
+                - <strong>Mục 4.4:</strong> 0 chuỗi "AIza" trong <code>app/src</code>; BuildConfig inject.<br>
+                - <strong>Mục 4.5 & 4.6:</strong> .gitignore bảo vệ và EncryptedSharedPreferences.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>3. Signed Release Package</strong></td>
+            <td><strong>20 Điểm (20%)</strong></td>
+            <td>
+                - Tạo Keystore khóa phát hành riêng biệt ngoài thư mục repo.<br>
+                - Cấu hình Gradle tự động ký gói phát hành Release.<br>
+                - Xác minh tính hợp lệ của chữ ký số bằng công cụ apksigner.<br>
+                - Cài đặt và vận hành kiểm thử thành công bản release đã ký trên thiết bị thật / giả lập.
+            </td>
+            <td>
+                - <strong>Mục 5.1:</strong> Keystore RSA 4096-bit (PKCS12, hạn đến năm 2054).<br>
+                - <strong>Mục 5.2:</strong> Fingerprint SHA-256 chính thức của chứng chỉ phát hành.<br>
+                - <strong>Mục 5.3:</strong> Kết quả apksigner xác nhận Signature Scheme v2 = True.<br>
+                - <strong>Mục 5.4:</strong> Hình 3 & 4 minh chứng chạy bản Release đã ký trên Pixel 6.
+            </td>
+        </tr>
+        <tr>
+            <td><strong>4. Git Release Tag, WBS & Video</strong></td>
+            <td><strong>20 Điểm (20%)</strong></td>
+            <td>
+                - Gắn tag phiên bản chính thức trên Git và xuất bản GitHub Release có kèm asset APK/AAB.<br>
+                - Ma trận phân công công việc (WBS) phản ánh trung thực đóng góp kỹ thuật.<br>
+                - Phụ lục nhật ký commit rõ ràng.<br>
+                - Video thuyết minh 1–3 phút demo đầy đủ chức năng trên emulator; bản release đã ký được kiểm ở Mục 5.
+            </td>
+            <td>
+                - <strong>Tiêu đề & Mục 1:</strong> Release Tag <code>v1.1.0</code> có kèm APK & AAB.<br>
+                - <strong>Mục 6.1 & 6.2:</strong> Bảng phân công chi tiết (Duy Anh 100% M5, gánh thêm M4).<br>
+                - <strong>Mục 6.3 & 6.4:</strong> Thống kê git shortlog & nhật ký 34 commit của Duy Anh.<br>
+                - <strong>Video Demo:</strong> Kịch bản 2:30 trên bản ký số chính thức (Unlisted YouTube).
+            </td>
+        </tr>
+    </tbody>
+</table>
+
+<div style="margin-top: 30px; text-align: center; font-size: 12px; color: var(--text-muted); border-top: 1px solid var(--border-color); padding-top: 12px;">
+    TripPocket Project · Nhóm 01 — Báo cáo hoàn tất và sẵn sàng cho xuất bản PDF phục vụ đánh giá nghiệm thu Milestone 5.
+</div>
+
+</body>
+</html>

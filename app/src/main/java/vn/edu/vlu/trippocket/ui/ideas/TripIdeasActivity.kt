@@ -68,7 +68,7 @@ class TripIdeasActivity : AppCompatActivity() {
                 viewModel.uiState.collect { state ->
                     // ListAdapter keeps the old first row in place when a row is inserted above
                     // it, so a newly shared idea would sit just off screen.
-                    adapter.submitList(state.ideas) {
+                    adapter.submitList(state.ideas.map { it.withText(resources) }) {
                         if (scrollToTop && !state.loading) {
                             scrollToTop = false
                             binding.rvIdeas.scrollToPosition(0)
