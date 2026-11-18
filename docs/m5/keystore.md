@@ -86,8 +86,8 @@ Ghi lại vào mục 5 bên dưới: ngày tạo, SHA-256 fingerprint của cert
 | `app-release.aab` | 7.919.703 B (7,55 MB) — SHA-256 `F0B6BEFE3EF2AA550AF2E1F5F4E0393BC7D9DB99BA3F1F1DCD2E0A3D8B196AFD` (bản build lúc 14:04, Stage 2) |
 | `mapping.txt` (R8) | 47.147.568 B — **chỉ để local**, không đưa vào repo/báo cáo (báo cáo chỉ dán đoạn trích) |
 | Mật khẩu | chỉ nằm ở `D:\TripPocket-keys\password.txt` + `keystore.properties` (cả hai **ngoài git**) — không có trong file này, không có trong commit |
-| Nơi sao lưu 1 | _chưa sao lưu_ |
-| Nơi sao lưu 2 | _chưa sao lưu_ |
+| Nơi sao lưu 1 | 18/11/2026 — OneDrive (chỉ file `.jks`, SHA-256 khớp bản gốc; mật khẩu **không** để chung chỗ) |
+| Nơi sao lưu 2 | 18/11/2026 — mật khẩu do Duy Anh tự lưu ở nơi riêng, tách khỏi OneDrive; USB: _chưa có_ (tuỳ chọn) |
 
 > **Lưu ý về SHA-256 file:** R8/zip không tất định theo byte. Bản `assembleRelease` chạy lại ngày 18/11 lúc 14:54
 > (sau Stage 3) ra **cùng dung lượng 4.755.819 B** nhưng SHA-256 khác: `ECABCE8F4F1D6850B23E03745CB73C943A001B8ADE6FF507E6AD893A314771F6`.

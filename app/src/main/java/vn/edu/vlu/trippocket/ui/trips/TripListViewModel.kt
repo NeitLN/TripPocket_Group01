@@ -26,7 +26,19 @@ import vn.edu.vlu.trippocket.domain.TripGrouping
 import java.time.LocalDate
 
 /** A trip with the totals its card shows, so the adapter never reads the repository. */
-data class TripCard(val trip: Trip, val memberCount: Int, val spent: Long)
+data class TripCard(
+    val trip: Trip,
+    val memberCount: Int,
+    val spent: Long,
+    /**
+     * Dates and meta line, formatted once per list emission by
+     * [vn.edu.vlu.trippocket.ui.trips.withRowText] (Stage 4): a bind only assigns text.
+     */
+    val text: TripCardText? = null,
+)
+
+/** Display text of one trip card; compared by DiffUtil like the rest of the row. */
+data class TripCardText(val dates: String, val meta: String)
 
 /** One row of the grouped list: a group label or a trip card. */
 sealed interface TripListRow {

@@ -54,6 +54,7 @@ class TripListFragment : Fragment() {
             }
         }
         binding.rvTrips.adapter = adapter
+        binding.rvTrips.setHasFixedSize(true)
 
         // Shrink the extended FAB to an icon while scrolling down.
         binding.rvTrips.addOnScrollListener(object : RecyclerView.OnScrollListener() {
@@ -72,7 +73,11 @@ class TripListFragment : Fragment() {
         viewLifecycleOwner.lifecycleScope.launch {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
-                    adapter.submitList(state.rows)
+                    adapter.submitList(
+                        state.rows.map { row ->
+                            if (row is TripListRow.Item) row.copy(card = row.card.withRowText(resources)) else row
+                        },
+                    )
                     render(state)
                 }
             }
