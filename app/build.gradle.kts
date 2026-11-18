@@ -21,8 +21,8 @@ android {
         applicationId = "vn.edu.vlu.trippocket"
         minSdk = 26
         targetSdk = 37
-        versionCode = 1
-        versionName = "0.3-final"
+        versionCode = 2
+        versionName = "1.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -34,9 +34,16 @@ android {
 
     buildTypes {
         release {
-            optimization {
-                enable = false
-            }
+            // M5 spike (18/11): in AGP 9.4.1 `optimization.enable`, `isMinifyEnabled` and both
+            // together produce the same APK (4.52 MB) and the same mapping.txt, so the two DSLs
+            // drive one pipeline. Keep the explicit pair below: it names exactly what the
+            // milestone requires (R8 + resource shrinking) and avoids two switches for one thing.
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(
+                getDefaultProguardFile("proguard-android-optimize.txt"),
+                "proguard-rules.pro",
+            )
         }
     }
 

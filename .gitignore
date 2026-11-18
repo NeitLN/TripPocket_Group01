@@ -13,6 +13,11 @@
 # Firebase config is shared privately, never committed (proposal 6.3)
 google-services.json
 
+# M5: release signing material, never committed
+*.jks
+*.keystore
+/keystore.properties
+
 # A5 rules tests (firestore-tests/): npm packages and emulator logs
 node_modules/
 firestore-debug.log

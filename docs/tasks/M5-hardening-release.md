@@ -28,7 +28,8 @@ Bản nộp gồm 4 thứ, tất cả đều là **link hoặc file thật**, kh
 | WBS + commit log | Có bảng trong `docs/worksheet.md` mục 7 và `git shortlog` | Stage 8 (xuất vào PDF) |
 | Video | Có video 1:53 nhưng quay tính năng M4, trên bản debug | Stage 9 |
 
-Điểm hay: **không phải sửa kiến trúc**. Rủi ro chính của M5 là R8 làm app crash và máy thật để đo/ quay.
+Điểm hay: **không phải sửa kiến trúc**. Rủi ro chính của M5 là R8 làm app crash, và mọi bước kiểm phải chạy trên
+emulator `Pixel_6_API_34` (không còn dựa vào máy thật).
 
 ## 1. Nguyên tắc chung
 
@@ -40,10 +41,11 @@ Bản nộp gồm 4 thứ, tất cả đều là **link hoặc file thật**, kh
    copy từ output lệnh thật, lưu vào `docs/m5/` kèm ngày chạy. Không viết lại từ trí nhớ.
 4. **Thứ tự làm không đảo:** Stage 1 (R8) trước Stage 2 (ký) vì phải chắc bản minify chạy được rồi mới ký; Stage 3–6
    trước Stage 7 vì bản ký cuối phải chứa toàn bộ thay đổi.
-5. **Máy thật:** Stage 3, 4, 5 (kiểm), 7 (cài), 9 cần điện thoại. Emulator trên máy này không dùng được
-   (thiếu RAM, `systemui`/`gms` ANR). Nếu không mượn được máy: xem mục 11 "Phương án B".
+5. **Thiết bị để kiểm:** đường chính là emulator **`Pixel_6_API_34`** (SDK `D:\dulieuandroidstu`, đã dùng quay
+   video M4 ngày 09–10/11 — chạy được). Máy thật chỉ là phụ. Stage 3, 4, 5 (kiểm), 7 (cài), 9 chạy trên emulator;
+   smoke test 8 bước do OpenCode tự chạy trên emulator và ghi logcat. Không dựng được emulator thì xem mục 11.
 
-## 2. Lịch (deadline: Chủ nhật 22/11/2026, 23:59 GMT+7 — Tiến xác nhận lại trên LMS)
+## 2. Lịch (deadline: Chủ nhật 22/11/2026, 23:59 GMT+7 — đã chốt)
 
 | Ngày | Buổi | Việc | Stage |
 |---|---|---|---|
@@ -76,8 +78,8 @@ Việc:
    *.keystore
    /keystore.properties
    ```
-3. `app/build.gradle.kts`: `versionCode = 2`, `versionName = "1.1.0"`.
-   *(File dùng chung — trong chế độ nhóm, Tiến sửa 2 dòng này; Duy Anh ghi vào handoff.)*
+3. `app/build.gradle.kts`: `versionCode = 2`, `versionName = "1.1.0"` — sửa trực tiếp (M5 chỉ còn Duy Anh làm,
+   không còn chia file dùng chung).
 4. Ghi baseline vào `docs/m5/baseline.md`:
    ```
    ./gradlew testDebugUnitTest lintDebug assembleDebug
@@ -136,43 +138,53 @@ Nếu Kotlin DSL báo lỗi ở `proguardFiles(...)`: dùng `proguardFiles += li
 
 ### 1.3 `app/proguard-rules.pro` — chỉ giữ thứ thật sự bị reflection
 
-Trong app có **3 chỗ** dùng reflection, mỗi chỗ cần một rule có lý do:
+Đã đọc code trước khi viết rule (18/11), kết quả:
 
-| Chỗ | Vì sao cần keep | Rule |
+| Chỗ | Có reflection thật? | Rule |
 |---|---|---|
-| Gson (`retrofit-converter-gson`) đọc/ghi DTO | Gson map theo **tên field**, R8 đổi tên là mất dữ liệu | keep package DTO |
-| Firestore map `TripSnapshot` (POJO, có no-arg constructor + field) | Firestore cũng map theo tên field | keep `*Snapshot` |
-| Kotlin metadata / annotation | Retrofit + coroutines đọc `@GET`, `@SerializedName`, `Signature` | keep attributes |
+| Gson của Retrofit (`converter-gson`) đọc/ghi DTO: `mockapi/TripIdeaDto`, `wikipedia/*Response`, `openmeteo/*Response`, `exchangerate/*Response` | **Có** — Gson map theo tên field; R8 đổi tên/xoá field là mất dữ liệu | keep các package DTO |
+| `WeatherRepository.CachedDay` | **Có** — `gson.toJson`/`fromJson` cho cột JSON của cache thời tiết; là class private lồng nhau nên R8 càng dễ xoá field | keep class + field |
+| Firestore map `TripSnapshot` | Firestore **không** (`TripSnapshotCodec` dùng `Map<String, Any?>`), nhưng `FirestoreDocumentSize` (chốt 1 MB của backup) gọi getter `get*`/`is*` bằng reflection | `-keepclassmembers` giữ tên getter của `*Snapshot` (review 18/11) |
+| Retrofit annotation + generic signature | Có — `@GET/@POST`, `@SerializedName`, `TypeToken` đọc lúc runtime | `-keepattributes` + `kotlin.Metadata` |
 
-Nội dung khởi điểm:
+Nội dung `app/proguard-rules.pro`:
 
 ```proguard
-# Reflection-based JSON (Gson): field names are the JSON keys.
+# Reflection-based JSON (Gson): field names are the JSON keys, so they must survive R8.
 -keep class vn.edu.vlu.trippocket.data.remote.mockapi.** { *; }
 -keep class vn.edu.vlu.trippocket.data.remote.wikipedia.** { *; }
 -keep class vn.edu.vlu.trippocket.data.remote.openmeteo.** { *; }
 -keep class vn.edu.vlu.trippocket.data.remote.exchangerate.** { *; }
 
-# Firestore maps these data classes by reflection (users/{uid}/trips/{tripId}).
--keep class vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshot { *; }
--keep class vn.edu.vlu.trippocket.data.remote.firebase.*Snapshot { *; }
+# The weather cache stores this list as JSON in Room (Gson). Private nested class: R8 would
+# remove fields it cannot see being read.
+-keep class vn.edu.vlu.trippocket.data.repository.WeatherRepository$CachedDay { *; }
 
 # Retrofit/coroutines read generic signatures and annotations at runtime.
 -keepattributes Signature, InnerClasses, EnclosingMethod, *Annotation*
 -keep class kotlin.Metadata { *; }
 
-# Libraries that only warn (no runtime effect).
--dontwarn org.jetbrains.annotations.**
+# FirestoreDocumentSize reads snapshot getters by reflection (1 MB backup guard).
+-keepclassmembers class vn.edu.vlu.trippocket.data.remote.firebase.*Snapshot {
+    public *** get*();
+    public boolean is*();
+}
 ```
 
-Room, WorkManager, Firebase, Glide, OkHttp đều có consumer rules sẵn — **không** viết lại. Mỗi lần thêm rule phải
-ghi lý do bằng comment; rule "cho chắc" là dấu hiệu chưa hiểu lỗi.
+Chỉ giữ **tên getter** của `*Snapshot` (xem bảng trên), không keep cả class: rule chỉ được thêm khi có lý do thật, và lý do phải ghi
+bằng comment. Room, WorkManager, Firebase, Glide, OkHttp đều có consumer rules sẵn — không viết lại.
 
-### 1.4 Kiểm bản minify (quan trọng nhất)
+### 1.4 Kiểm bản minify trên emulator (quan trọng nhất)
 
-1. `./gradlew testDebugUnitTest lintDebug assembleRelease` — test và lint không chạy trên bản minify nên **không**
-   chứng minh được gì cho R8; phải cài thật.
-2. `adb install -r app\build\outputs\apk\release\app-release-unsigned.apk` (hoặc bản đã ký ở Stage 2).
+1. `./gradlew testDebugUnitTest lintDebug assembleRelease` — test/lint chạy trên `debug` nên **không** chứng minh
+   gì cho R8; phải cài bản release lên emulator.
+2. Dựng emulator `Pixel_6_API_34` và cài:
+   ```powershell
+   & "D:\dulieuandroidstu\emulator\emulator.exe" -avd Pixel_6_API_34 -no-snapshot-load
+   & "D:\dulieuandroidstu\platform-tools\adb.exe" wait-for-device
+   & "D:\dulieuandroidstu\platform-tools\adb.exe" install -r app\build\outputs\apk\release\app-release-unsigned.apk
+   ```
+   (Stage 2 xong thì cài file đã ký `app-release.apk`.)
 3. Smoke test 8 bước, đúng thứ tự, mỗi bước ghi pass/fail:
    1. Đăng nhập Firebase (email/password) → vào Trip list.
    2. Danh sách chuyến hiện (Room + seed).
@@ -182,7 +194,8 @@ ghi lý do bằng comment; rule "cho chắc" là dấu hiệu chưa hiểu lỗi
    6. Itinerary → Nearby sights (Wikipedia GeoSearch) → Add to day.
    7. Trip Ideas: GET list, tạo idea mới, sửa, xoá (MockAPI).
    8. Backup lên Firestore → xem document trên console; Restore.
-4. `adb logcat -d | Select-String "FATAL|VerifyError|NoSuchField|ClassNotFoundException"` phải rỗng.
+4. `adb logcat -d | Select-String "FATAL|VerifyError|NoSuchField|ClassNotFoundException"` phải rỗng
+   (`adb` = `D:\dulieuandroidstu\platform-tools\adb.exe`).
 5. Nếu crash: đọc `app/build/outputs/mapping/release/mapping.txt` + retrace stack, thêm **đúng** rule cho class
    bị thiếu, không tắt minify.
 
@@ -253,16 +266,16 @@ release (`./gradlew lintRelease`, nếu task không tồn tại thì `lint`) kh�
 4. Build + xác minh:
    ```powershell
    ./gradlew assembleRelease bundleRelease
-   & "D:\dulieuandroidstu\build-tools\35.0.0\apksigner.bat" verify --print-certs `
+   & "D:\dulieuandroidstu\build-tools\36.0.0\apksigner.bat" verify --print-certs `
        app\build\outputs\apk\release\app-release.apk
    Get-FileHash app\build\outputs\apk\release\app-release.apk -Algorithm SHA256
    ```
    `apksigner` phải in `Verified using v2 scheme (APK Signature Scheme v2): true` và certificate
    `CN=TripPocket` (**không** phải `CN=Android Debug`).
-5. Cài lên máy: `adb install -r …\app-release.apk` (không phải `-t`, không phải debug).
+5. Cài lên emulator: `adb install -r …\app-release.apk` (không phải `-t`, không phải debug).
 
 **Xong khi:** `apksigner verify` pass với cert riêng; `git status` **không** thấy `.jks`/`keystore.properties`;
-APK cài được trên máy thật, mở app bình thường; `git check-ignore -v keystore.properties` in ra rule.
+APK cài được trên emulator, mở app bình thường; `git check-ignore -v keystore.properties` in ra rule.
 
 **Bằng chứng cho PDF:** output `apksigner verify --print-certs` (che mật khẩu, **không** che fingerprint),
 ảnh `Settings → Apps → TripPocket → App info` có version `1.1.0`.
@@ -272,11 +285,11 @@ mật khẩu ở 2 nơi; ghi vào `docs/m5/keystore.md`: đường dẫn, alias,
 
 ---
 
-## Stage 3 — LeakCanary + memory audit (nửa ngày, cần máy thật)
+## Stage 3 — LeakCanary + memory audit (nửa ngày, trên emulator)
 
 **Mục tiêu:** tìm và sửa ít nhất 1 leak thật (nếu có), chứng minh app không leak khi đi qua các màn hình.
 
-1. `gradle/libs.versions.toml` (file dùng chung):
+1. `gradle/libs.versions.toml`:
    ```toml
    leakcanary = "2.14"
    leakcanary-android = { group = "com.squareup.leakcanary", name = "leakcanary-android", version.ref = "leakcanary" }
@@ -284,7 +297,7 @@ mật khẩu ở 2 nơi; ghi vào `docs/m5/keystore.md`: đường dẫn, alias,
    `app/build.gradle.kts`: `debugImplementation(libs.leakcanary.android)`. **Chỉ debug** — bản release không được
    chứa LeakCanary (`./gradlew :app:dependencies --configuration releaseRuntimeClasspath | Select-String leakcanary`
    phải rỗng; đó là một dòng bằng chứng cho PDF).
-2. Kịch bản chạy trên máy thật (mỗi bước chờ LeakCanary báo, hoặc bấm "Dump heap now" trong app Leaks):
+2. Kịch bản chạy trên emulator (mỗi bước chờ LeakCanary báo, hoặc bấm "Dump heap now" trong app Leaks):
    1. Mở app → Trip list → mở/đóng 20 chuyến.
    2. Xoay màn hình 20 lần ở Trip list và ở Itinerary (kiểm `_binding = null` trong `onDestroyView`).
    3. Mở/đóng dialog thêm hoạt động 10 lần, có nhập text.
@@ -358,8 +371,8 @@ Mục tiêu: **p90 < 16.7ms, jank < 5%** khi cuộn Trip list và Itinerary. N�
 **Bằng chứng cho PDF:** bảng before/after (p50/p90/p95/jank), ảnh Profiler **Frame timeline** khi cuộn,
 ảnh `Layout Inspector` (nếu có) chứng minh không có tầng layout dư.
 
-**Rủi ro:** máy thật yếu (60Hz nhưng chip thấp) có thể không đạt p90; khi đó báo cáo **số thật** + giải thích
-(so sánh với baseline, mức giảm jank), không sửa số.
+**Rủi ro:** frame time trên emulator (GPU phần mềm) không đại diện máy thật — ghi rõ môi trường đo
+(AVD `Pixel_6_API_34`, API 34) và báo cáo **số thật** + so sánh với baseline, không sửa số.
 
 ---
 
@@ -370,8 +383,10 @@ Mục tiêu: **p90 < 16.7ms, jank < 5%** khi cuộn Trip list và Itinerary. N�
 Hiện app không dùng SharedPreferences: session Firebase do SDK giữ. Đề yêu cầu mã hoá credential/session token,
 nên làm đúng phạm vi: **mã hoá phần định danh phiên do app tự giữ**, không nhân bản token của Firebase.
 
-1. Thêm dependency `androidx.security:security-crypto` (`1.1.0-alpha06`; nếu lỗi runtime trên API 37 thì lùi
-   `1.0.0` — ghi lại lựa chọn trong report).
+1. Thêm dependency `androidx.security:security-crypto` — lấy **bản mới nhất trên Google Maven** (sau khi thêm,
+   kiểm bằng `./gradlew :app:dependencies` và ghi đúng version vào report). Nếu bản đó bị Google đánh dấu
+   **deprecated** thì **vẫn dùng** (đề bắt buộc `EncryptedSharedPreferences`), thêm đúng 1 câu trong report:
+   dùng bản deprecated vì API đề yêu cầu, kèm rủi ro (không còn được vá).
 2. Tạo `data/local/secure/SessionStore.kt`:
    ```kotlin
    /** What this phone remembers between launches, encrypted at rest. Never a password or token. */
@@ -389,7 +404,10 @@ nên làm đúng phạm vi: **mã hoá phần định danh phiên do app tự gi
    - `LoginViewModel`: sau `signIn`/`register` thành công → `sessionStore.remember(email, uid)`; khi mở màn →
      điền sẵn email (`lastEmail()`), con trỏ ở ô mật khẩu.
    - `signOut` → `sessionStore.clear()`.
-   - `AppContainer` tạo 1 instance (file dùng chung → nếu làm theo nhóm, ghi dòng cần thêm vào handoff cho Tiến).
+   - `AppContainer` tạo instance **lazy**: `val sessionStore: SessionStore by lazy { EncryptedSessionStore(appContext) }`.
+     Bắt buộc lazy: `EncryptedSharedPreferences` mở AndroidKeyStore ngay trong constructor, mà Robolectric
+     **không có AndroidKeyStore** → nếu container khởi tạo sớm, mọi unit test Robolectric crash. Cũng vì vậy
+     **không** unit test nào được chạm `EncryptedSessionStore`; test chỉ dùng fake.
 4. Test: unit test chỉ chạy trên **interface** với fake (`InMemorySessionStore`) — Robolectric không có Android
    Keystore nên **không** test `EncryptedSharedPreferences` bằng unit test; phần thật kiểm trên máy (bước 5).
    Thêm test: đăng nhập → `remember` được gọi; đăng xuất → `clear` được gọi.
@@ -413,7 +431,7 @@ còn `last_email`; test fake pass; 0 warning lint mới.
 **Mục tiêu:** có bằng chứng dạng lệnh + 1 test tự động, không chỉ nói miệng.
 
 1. `MOCKAPI_BASE_URL` đọc theo thứ tự: `local.properties` → `gradle.properties` → mặc định. Sửa trong
-   `app/build.gradle.kts` (file dùng chung):
+   `app/build.gradle.kts`:
    ```kotlin
    val localProps = java.util.Properties().apply {
        rootProject.file("local.properties").takeIf { it.exists() }?.inputStream()?.use { load(it) }
@@ -453,23 +471,24 @@ có dòng `MOCKAPI_BASE_URL` (ảnh chụp file generated là bằng chứng tr�
    phải chạy được Firebase). File vẫn không commit.
 3. Kiểm:
    ```powershell
-   & "D:\dulieuandroidstu\build-tools\35.0.0\apksigner.bat" verify --print-certs app\build\outputs\apk\release\app-release.apk
-   & "D:\dulieuandroidstu\build-tools\35.0.0\apksigner.bat" verify app\build\outputs\bundle\release\app-release.aab
+   & "D:\dulieuandroidstu\build-tools\36.0.0\apksigner.bat" verify --print-certs app\build\outputs\apk\release\app-release.apk
+   & "D:\dulieuandroidstu\build-tools\36.0.0\apksigner.bat" verify app\build\outputs\bundle\release\app-release.aab
    Get-FileHash app\build\outputs\apk\release\app-release.apk -Algorithm SHA256
    ```
-4. Cài lên máy thật **bằng đúng file sẽ nộp** (`adb install -r`), chạy smoke test 8 bước của Stage 1.4.
+4. Cài lên emulator **bằng đúng file sẽ nộp** (`adb install -r`), chạy smoke test 8 bước của Stage 1.4.
 5. Tag + Release:
    ```
    v1.1.0   (annotated, message: "TripPocket 1.1.0 — M5 hardening and signed release")
    ```
-   Asset: `app-release.apk`, `app-release.aab`, `mapping-v1.1.0.txt` (mapping.txt để retrace nếu cần).
+   Asset: **chỉ** `app-release.apk` + `app-release.aab`. **Không** đưa `mapping.txt` lên Release (nó giải ngược
+   obfuscation); giữ ở máy `D:\TripPocket-keys\mapping\` để retrace, report chỉ chụp một đoạn mapping.
    Release body: link PR M5, điểm khác biệt so với `v1.0` (R8 bật, đã ký, EncryptedSharedPreferences,
    LeakCanary audit, số test), sha256 của APK, yêu cầu Android 8+ (`minSdk 26`).
 6. Ghi mọi số vào `docs/m5/release-notes.md`: dung lượng APK/AAB, sha256, fingerprint SHA-256 của cert,
    số test, ngày build.
 
-**Xong khi:** tag trỏ đúng commit trên `main`; Release có 3 asset tải được (kiểm bằng tab ẩn danh);
-`apksigner verify` pass; APK cài trên máy **không phải** bản debug (kiểm `Settings` không có nhãn "debug");
+**Xong khi:** tag trỏ đúng commit trên `main`; Release có 2 asset tải được (kiểm bằng tab ẩn danh);
+`apksigner verify` pass; APK cài trên emulator **không phải** bản debug (kiểm `Settings` không có nhãn "debug");
 app chạy đủ 8 bước.
 
 **Rủi ro:** upload nhầm APK debug → kiểm `apksigner --print-certs` phải là cert `CN=TripPocket`; nếu vẫn ra
@@ -500,9 +519,15 @@ git shortlog -sn --no-merges main
 git log --no-merges --date=short --pretty=format:"%h|%ad|%an|%s" main > docs/m5/wbs-commits.txt
 ```
 
-Bảng WBS ghi theo **việc**, không chỉ theo số commit: ví dụ Tiến (network/ideas/backup), Duy Anh (weather/places,
-M5 hardening), Minh (exchange rates), Bảo (itinerary/sights). Số commit chỉ là cột tham khảo — nói rõ "commit
-trên `main`, chưa tính merge commit" để khỏi bị bắt bẻ.
+Bảng WBS ghi theo **việc thật**, không suy từ tên nhánh:
+
+- **M4** (theo TASKBOARD): Duy Anh — Weather (search + forecast + saved places), place photos, **Exchange rates**
+  (lát của Minh, Tiến giao lại) và **Nearby sights** (lát của Bảo, Bảo + Tiến đồng ý 10/11). Vì vậy **không**
+  ghi "Minh = exchange rates", **không** ghi "Bảo = nearby sights". Tiến — network/ideas/backup + tích hợp.
+  Minh, Bảo — các lát M1–M3 của mình (E2 expenses, I-itinerary…), đúng như TASKBOARD.
+- **M5**: Duy Anh làm một mình (R8, ký số, LeakCanary, 60fps, EncryptedSharedPreferences, report, video).
+
+Số commit chỉ là cột tham khảo — nói rõ "commit trên `main`, chưa tính merge commit" để khỏi bị bắt bẻ.
 
 Xuất PDF bằng Chrome headless (không cần cài gì thêm):
 
@@ -561,36 +586,42 @@ hoặc quay bằng điện thoại khác ở 60fps để thấy độ mượt.
 
 ---
 
-## 11. Phương án B (khi không có máy thật)
+## 11. Phương án B (khi emulator không dựng được)
+
+Đường chính là emulator **`Pixel_6_API_34`** (SDK `D:\dulieuandroidstu`) — đã dùng quay video M4 nên chạy được trên
+máy này; OpenCode tự bật, tự cài bản release, tự chạy 8 bước và đọc logcat. Chỉ khi emulator chết mới dùng bảng dưới:
 
 | Thiếu gì | Làm gì | Ảnh hưởng rubric |
 |---|---|---|
-| Không đo được frame | Dùng `gfxinfo` trên emulator cấu hình thấp + ghi rõ "emulator, không đại diện máy thật"; bù bằng Profiler Frame timeline khi cuộn trên emulator | Mất 1 phần nhỏ của 30% perf |
-| Không chạy được LeakCanary | Chạy trên emulator (LeakCanary chạy được, chỉ chậm); chụp "No leaks" + heap graph | Đủ 30% nếu có ảnh |
-| Không cài được APK ký | Nhờ 1 bạn trong nhóm cài hộ (cùng 1 file), chụp ảnh Settings + app chạy | 20% signed package vẫn tính |
-| Không quay được video | Quay bằng điện thoại khác hướng vào màn hình; hoặc `scrcpy`/`screenrecord` từ máy | 20% Git/WBS+video bị trừ |
-| Không có `google-services.json` lúc build | Bản nộp **phải** có (không thì không đăng nhập được); lấy từ Tiến | Chặn Stage 7 |
+| Emulator không boot | Đóng bớt app nặng (Chrome, Android Studio), boot lại với `-no-snapshot-load`; nếu vẫn treo thì `-gpu swiftshader_indirect` | – |
+| Emulator hỏng hẳn, có máy thật | Cài đúng file `app-release.apk` bằng `adb` lên máy thật, chạy 8 bước | Đủ |
+| Không có cả hai | Ghi "chưa kiểm được" cho bước đó + lý do, vẫn nộp phần build/report | Trừ phần tương ứng |
+| Không quay được video | `adb shell screenrecord --bit-rate 8M` trên emulator rồi ghép | 20% Git/WBS+video bị trừ |
+| Không có `google-services.json` lúc build | Bản nộp **phải** có (không thì không đăng nhập được); file đang có trên máy này, vẫn không commit | Chặn Stage 7 |
 
 Nguyên tắc: **không bịa ảnh, không tick khi chưa chạy**. Thiếu thì ghi "chưa kiểm được" + lý do; người chấm
 trừ điểm ít hơn là phát hiện bằng chứng giả.
 
 ## 12. Định nghĩa "xong" của M5
 
-- [ ] `mapping.txt` tồn tại, APK release nhỏ hơn ≥25% so với baseline, 8/8 smoke test pass trên bản minify
+- [ ] `mapping.txt` tồn tại, APK release nhỏ hơn ≥25% so với baseline, 8/8 smoke test pass trên emulator (logcat sạch)
 - [ ] `apksigner verify` pass với cert `CN=TripPocket`; `git status` không có `.jks`/`keystore.properties`
 - [ ] `docs/m5/leaks.md` có before/after + ảnh LeakCanary + ảnh Profiler heap
 - [ ] Bảng frame p50/p90/p99/jank before/after + ảnh Frame timeline
 - [ ] `EncryptedSharedPreferences` chạy, ảnh `shared_prefs` là ciphertext, test fake pass
 - [ ] `BuildConfigTest` xanh, `git grep AIza` rỗng, ảnh `BuildConfig.java` generated
-- [ ] Release `v1.1.0` có APK + AAB + mapping, sha256 ghi trong release body
+- [ ] Release `v1.1.0` có APK + AAB (mapping giữ ở máy, không public), sha256 ghi trong release body
 - [ ] `docs/m5/Production-Security-Report.pdf` đủ 7 mục, không TODO
 - [ ] Video 1–3 phút Unlisted, xem được ở tab ẩn danh
 - [ ] WBS có bảng theo người + phụ lục commit log (`wbs-commits.txt`)
 
-## 13. Cần Tiến chốt trước khi bắt đầu
+## 13. Đã chốt (18/11/2026)
 
-1. Deadline chính xác trên LMS (ghi "Week 10" — dự kiến CN 22/11/2026 23:59 GMT+7).
-2. Tên tag: `v1.1.0` hay `v1.1.0-release` (đề chỉ nói "official release tag").
-3. Ai tạo keystore và giữ mật khẩu (đề nghị: Duy Anh tạo, Tiến giữ bản sao — mất là không update được app).
-4. Ai nộp LMS và ai quay video (đề nghị Tiến nộp, Duy Anh quay vì đã quen kịch bản).
-5. Có cần đưa `mapping.txt` lên Release công khai không (nếu ngại lộ tên class thì để riêng, chỉ nộp khi được hỏi).
+1. Deadline: **CN 22/11/2026, 23:59 GMT+7**.
+2. Tag: **`v1.1.0`**.
+3. Keystore: **Duy Anh tạo và giữ**, sao lưu 2 nơi (mất keystore = không update được app đã phát hành).
+4. Video: **Duy Anh quay**. Nộp LMS: Tiến (nhóm trưởng) dán link.
+5. `mapping.txt`: **không** public trên Release — giữ ở máy, report chỉ chụp một đoạn.
+6. Phạm vi: M5 **chỉ còn Duy Anh làm** — bỏ mọi câu "file dùng chung gửi Tiến"; sửa trực tiếp trên nhánh
+   `feature/m5-hardening-release`. Luật cũ vẫn giữ: **không** commit/push; xong mỗi stage viết handoff +
+   TASKBOARD `chờ review` rồi dừng.
