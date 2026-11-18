@@ -1,3 +1,5 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.ksp)
@@ -8,6 +10,14 @@ plugins {
 // still builds and every unit test runs; only Firebase calls fail at runtime.
 if (file("google-services.json").exists()) {
     apply(plugin = "com.google.gms.google-services")
+}
+
+// Release signing material lives outside the repo (keystore.properties is git-ignored).
+// A machine without that file — CI, a teammate, a fresh clone — must still build: the release
+// APK then stays unsigned instead of failing the build.
+val keystoreProps = Properties().apply {
+    val f = rootProject.file("keystore.properties")
+    if (f.exists()) f.inputStream().use { load(it) }
 }
 
 android {
@@ -32,6 +42,17 @@ android {
         buildConfigField("String", "MOCKAPI_BASE_URL", "\"$mockApiBaseUrl\"")
     }
 
+    signingConfigs {
+        if (keystoreProps.isNotEmpty()) {
+            create("release") {
+                storeFile = file(keystoreProps.getProperty("storeFile"))
+                storePassword = keystoreProps.getProperty("storePassword")
+                keyAlias = keystoreProps.getProperty("keyAlias")
+                keyPassword = keystoreProps.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             // M5 spike (18/11): in AGP 9.4.1 `optimization.enable`, `isMinifyEnabled` and both
@@ -44,6 +65,8 @@ android {
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro",
             )
+            // Null when keystore.properties is missing, so the build still succeeds.
+            signingConfig = signingConfigs.findByName("release")
         }
     }
 
