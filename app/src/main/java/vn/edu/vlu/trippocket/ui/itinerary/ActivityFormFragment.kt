@@ -24,6 +24,7 @@ import com.google.android.material.timepicker.MaterialTimePicker
 import com.google.android.material.timepicker.TimeFormat
 import kotlinx.coroutines.launch
 import vn.edu.vlu.trippocket.R
+import vn.edu.vlu.trippocket.data.model.Trip
 import vn.edu.vlu.trippocket.databinding.FragmentActivityFormBinding
 import vn.edu.vlu.trippocket.domain.ActivityProblem
 import vn.edu.vlu.trippocket.reminder.ReminderPermissions
@@ -122,6 +123,13 @@ class ActivityFormFragment : Fragment() {
             viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
                 viewModel.uiState.collect { state ->
                     render(state)
+                }
+            }
+        }
+        viewLifecycleOwner.lifecycleScope.launch {
+            viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED) {
+                detailViewModel.gate.collect { gate ->
+                    if (fieldsFilled && gate is TripGate.Ready) showDays(viewModel.uiState.value, gate.trip)
                 }
             }
         }
@@ -286,7 +294,15 @@ class ActivityFormFragment : Fragment() {
         binding.etNote.doAfterTextChanged { viewModel.onNoteChanged(it?.toString().orEmpty()) }
         binding.etReminder.doAfterTextChanged { viewModel.onReminderChanged(it?.toString().orEmpty()) }
 
-        val trip = (detailViewModel.gate.value as? TripGate.Ready)?.trip
+        showDays(state, (detailViewModel.gate.value as? TripGate.Ready)?.trip)
+    }
+
+    /**
+     * Fills the day dropdown: "Day 2 (22 Nov)" once the trip is known, "Day 2" until then. After
+     * Android killed the app the form can fill its fields before Trip Detail has read the trip
+     * again, so the labels are drawn a second time when it arrives (see onViewCreated).
+     */
+    private fun showDays(state: ItineraryFormUiState, trip: Trip?) {
         val dayLabels = (0 until state.dayCount).map { i ->
             val date = trip?.dateOfDay(i)
             if (date != null) {
