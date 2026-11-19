@@ -2,93 +2,89 @@
 
 Group 01, Mobile Application Programming (261_72ITSE30603), Văn Lang University.
 
-## Task assignment (Milestone 2)
+TripPocket is an offline-first Android trip planner: trips, a day-by-day itinerary with reminders, a packing list,
+weather for saved places, and shared expenses with balances and suggested payments. Everything is stored in Room
+first and works in Airplane Mode; a signed-in account backs its trips up to Firestore and can restore them on a
+new install.
+
+**Release:** [`v1.1.0`](https://github.com/NeitLN/TripPocket_Group01/releases/tag/v1.1.0) — signed release APK and
+AAB (`CN=TripPocket, OU=VLU, O=Nhom01`). Demo video: https://youtu.be/4aHB0uAgqk4
+
+## Team and work split
+
+Each member owns one module and also built features in the other three (rotation, proposal section 5); every
+feature has its own branch `feature/<name>-<ID>` and pull request.
 
 | | Võ Việt Tiến (leader) | Đỗ Quốc Bảo | Bùi Duy Anh | Võ Hoàng Minh |
 |---|---|---|---|---|
 | Student ID | 2474802010391 | 2474802015084 | 2474802010525 | 2474802010242 |
-| Screen | Login, Trip List | Itinerary | Weather & Saved Places | Expenses & Budget |
-| ViewModel | `LoginViewModel`, `TripListViewModel`, `TripDetailViewModel` | `ItineraryViewModel` | `WeatherViewModel` | `ExpensesViewModel` |
-| Model / domain | `TripRepository`, `LoginValidator` | `TripRepository` (itinerary queries) | `WeatherRepository` | `ExpenseCalculator` |
-| View Binding | `LoginActivity`, `MainActivity`, `TripDetailActivity`, `TripListFragment`, `TripAdapter` | `ItineraryFragment`, `ActivityAdapter` | `WeatherFragment`, `PlaceResultAdapter`, `ForecastAdapter`, `view_place_chip` | `ExpensesFragment`, `ExpenseAdapters` |
-
-TripPocket is an offline-first trip planner: itinerary, packing list, weather for saved places and shared expenses.
-Milestone 1 built the five core screens as flat ConstraintLayout XML layouts. Milestone 2 refactors the source
-code to Model – View – ViewModel with View Binding (see [Architecture](#architecture-mvvm)). The app still runs on
-mock data (`data/local/MockData.kt`) so every layout state can be shown; Room, Retrofit and Firebase come in later
-milestones.
+| Owns | Auth, Trips, Backup & Restore | Itinerary, Checklist, Reminders | Places & Weather | Members, Expenses & Budget |
+| Auth / Trips / Backup | A3 backup (#24), A4 restore (#25) | A2 trip CRUD (#18) | A1 login / register (#8, #23) | A5 rules + size tests (#3, #33, #34) |
+| Itinerary | I2 checklist (#22, #49) | I1 itinerary (#12), I4 reminders (#20, #29) | I3 drag to reorder (#14) | I5 reminder reconciler (#5) |
+| Weather | W5 weather in the itinerary (#27) | W4 weather tests (#19) | W1 search, W3 forecast cache (#9, #16, #28, #38) | W2 saved places (#4) |
+| Expenses | E4 budget + share (#26) | E3 balances (#21) | E1 members (#7) | E2 expense + split (#2, #32), members layout (#6), sample-expense order (#31) |
+| Network & cloud (M4) | Trip Ideas on MockAPI (#36), network layer (#46) | Nearby sights (#47, #48, #52) | Wikipedia photos, exchange-rate screen (#41, #43, #44, #45) | Exchange-rate rounding (#53) |
+| Release | Release-gate fixes and evidence (#50, #51) | — | v1.0 release and M4 worksheet (#55, #56), M5 hardening and signed release v1.1.0 (#60, #61) | — |
 
 ## Architecture (MVVM)
 
 ```
-vn.edu.vlu.trippocket
-├── data                      Model
-│   ├── model                 Trip, TripMember, ItineraryActivity, Expense, Place, ForecastDay, ...
-│   ├── local                 MockData: the only static data source (Room DAOs later)
-│   └── repository            TripRepository, WeatherRepository: what the ViewModels call
-├── domain                    ExpenseCalculator, LoginValidator: pure Kotlin rules, unit-tested
-├── ui                        View + ViewModel, one package per screen
-│   ├── login                 LoginActivity, LoginViewModel
-│   ├── trips                 MainActivity, TripListFragment, TripAdapter, TripListViewModel
-│   ├── detail                TripDetailActivity, TripDetailViewModel, TripArgs
-│   ├── itinerary             ItineraryFragment, ActivityAdapter, ItineraryViewModel
-│   ├── weather               WeatherFragment, PlaceResultAdapter, ForecastAdapter, WeatherViewModel
-│   └── expenses              ExpensesFragment, ExpenseAdapters, ExpensesViewModel
-└── util                      Format, Insets
+View (Activity / Fragment + ViewBinding)  ->  ViewModel (StateFlow<UiState>, SavedStateHandle)
+  ->  Repository (suspend, Dispatchers.IO)  ->  Room DAO  |  Retrofit API  |  Firebase Auth / Firestore
 ```
 
-| Rule | How it is done |
+```
+vn.edu.vlu.trippocket
+├── ui            View + ViewModel, one package per feature: login, trips, detail, itinerary, checklist,
+│                 weather, expenses, members, ideas, common
+├── data
+│   ├── local     Room: AppDatabase (thread-safe singleton), entity/, dao/, TripWriter, secure/
+│   ├── remote    Retrofit APIs: openmeteo/, wikipedia/, mockapi/, exchangerate/; firebase/ (auth, backup)
+│   ├── repository  what the ViewModels call; the only layer that touches DAOs and APIs
+│   └── model     UI-facing models
+├── domain        pure Kotlin rules (expense split and settlement, reminder time, ordering, limits)
+├── di            AppContainer: manual dependency injection
+├── work          WorkManager backup job
+└── reminder      AlarmManager reminders, boot / time-zone receivers
+```
+
+- ViewModels hold no `Context` or View; Fragments observe with `repeatOnLifecycle(STARTED)` and clear their binding
+  in `onDestroyView`.
+- Every change to a trip's rows goes through `TripWriter` in one Room transaction, so the trip is marked for backup
+  exactly once; caps (15 members, 200 activities, 100 checklist items, 30 places, 300 expenses) are checked inside it.
+- Network calls return `ApiResult`; every failure becomes one `ApiError` (offline, timeout, rate limited, server,
+  bad response...), shown as Loading / Success / Error / Empty states with Retry.
+
+Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+
+## Data, APIs and cloud
+
+| Part | What |
 |---|---|
-| No `findViewById` | View Binding in every Activity, Fragment and Adapter, including the inflated weather chip (`ViewPlaceChipBinding`). |
-| Static data in the ViewModel layer | Only the repositories read `MockData`. Each ViewModel turns it into a `XxxUiState` data class exposed as a `StateFlow`; adapters receive ready-made rows (`TripCard`, `ExpenseRow`, `MemberBalance`, `SettlementRow`, `ForecastRow`). |
-| ViewModels hold no View / Activity / Fragment / Context | Text that needs resources is exposed as `@StringRes` ids or raw values and formatted by the View. The trip id comes from `SavedStateHandle` (intent extras / fragment arguments). `ViewModelTest` runs every ViewModel on the plain JVM. |
-| Lifecycle-aware observation | Fragments: `viewLifecycleOwner.repeatOnLifecycle(Lifecycle.State.STARTED)`. Activities: `repeatOnLifecycle` on the activity's lifecycle. |
-| No leaked bindings | Fragments inflate in `onCreateView` and set `_binding = null` in `onDestroyView`; adapters are created per view, not kept in fields. |
+| Room | 8 tables: `trip`, `trip_member`, `activity`, `checklist_item`, `saved_place`, `expense`, `expense_share`, `weather_cache`; schema frozen at version 1 (`app/schemas`) |
+| REST (Retrofit + OkHttp + kotlinx.serialization) | Open-Meteo geocoding and 16-day forecast, Wikipedia GeoSearch and page summary, MockAPI.io Trip Ideas (GET / POST / PUT / DELETE), open.er-api.com exchange rates |
+| Firebase | Auth (email / password, session kept), Firestore backup `users/{uid}/trips/{tripId}` with owner-only rules (`firestore.rules`, tested in the emulator) |
+| Images | Glide: Trip Idea covers, place photos, country flags, with placeholders |
 
-UI state that must survive rotation (selected day, Expenses/Balances mode, empty-state preview) is kept in
-`SavedStateHandle`. MainActivity and TripListFragment share one `TripListViewModel` (`activityViewModels()`)
-so the overflow menu no longer looks the fragment up.
-
-## Screens and layout files
-
-| Screen | Layouts |
-|---|---|
-| 1. Login | `activity_login.xml`, `layout-land/activity_login.xml` |
-| 2. Trip List | `activity_main.xml`, `fragment_trip_list.xml`, `item_trip.xml` |
-| 3. Itinerary | `activity_trip_detail.xml`, `fragment_itinerary.xml`, `item_activity.xml` |
-| 4. Weather & Saved Places | `fragment_weather.xml`, `item_place_result.xml`, `item_forecast_day.xml`, `view_place_chip.xml` |
-| 5. Expenses & Budget | `fragment_expenses.xml`, `layout-land/fragment_expenses.xml`, `item_expense.xml`, `item_balance.xml`, `item_settlement.xml`, `item_section_header.xml` |
-
-Resources: `values/dimens.xml` (spacing scale, max widths, Guideline fractions), `values-sw600dp/dimens.xml`
-(tablet overrides), `values/strings.xml`, `values/colors.xml` + `themes.xml` (Material 3 color roles),
-`values*/integers.xml` (trip grid span 1 / 2 / 3).
-
-## Layout techniques
-
-- One ConstraintLayout per screen. The only nesting is required by a Material component
-  (MaterialCardView child, TextInputLayout + EditText, ChipGroup, MaterialButtonToggleGroup).
-- Percentage Guidelines whose fractions come from `@dimen`, so phones and tablets share one file.
-- Barriers for columns whose width depends on text (sync chip, time, amounts) and for headers that grow with font size.
-- Packed and spread_inside chains instead of wrapper LinearLayouts; Groups to toggle empty states.
-- "Flat panels": a View with a rounded background drawn behind sibling texts, sized by a Space under a Barrier.
-- `layout-land` variants for Login and Expenses; `layout_constraintWidth_max` keeps forms and lists readable on tablets.
-
-## Try the states
-
-- Login: an invalid email or a password without a digit shows TextInputLayout errors. Any valid pair signs in.
-- Trip List: overflow menu > "Preview empty state".
-- Itinerary: Day 4 has no activities (empty state).
-- Weather: type `da lat` (accents optional) for results, `xyz` for "No places found", `offline` for a network error.
-  Picking a new city saves it; its first forecast load fails so the Retry row can be seen.
-- Expenses: switch to Balances for member balances and suggested payments; the share icon opens the share sheet.
+Endpoint table: [`docs/worksheet.md`](docs/worksheet.md#3-bảng-endpoint).
 
 ## Build
 
 Open the folder in Android Studio and run the `app` configuration, or:
 
 ```bash
-./gradlew assembleDebug testDebugUnitTest lintDebug
+./gradlew testDebugUnitTest lintDebug assembleDebug
 ```
 
-Unit tests: `ExpenseCalculatorTest` (equal split with leftover dong, the 300,000 VND demo from the proposal,
-balances sum to zero), `LoginValidatorTest` and `ViewModelTest` (every screen's ViewModel on the plain JVM).
+- Without `app/google-services.json` the app builds and runs on an offline stand-in account with sample trips.
+  With it, Firebase sign-in and backup are on. The file is shared privately and never committed.
+- A signed release needs `keystore.properties` (see `keystore.properties.example` and
+  [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
+- 457 unit tests (Robolectric for Room, MockWebServer for the APIs); CI runs them plus the Firestore rules tests on
+  every pull request.
+
+## Documents
+
+- Proposal tasks and status: [`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/STATUS.md`](docs/STATUS.md)
+- Milestone 4 worksheet (APIs, Firebase, Glide): [`docs/worksheet.md`](docs/worksheet.md)
+- Milestone 5 report (performance, security, signed release): [`docs/m5/report.pdf`](docs/m5/report.pdf)
