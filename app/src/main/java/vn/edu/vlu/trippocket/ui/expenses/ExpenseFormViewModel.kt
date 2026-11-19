@@ -8,6 +8,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -292,6 +293,11 @@ class ExpenseFormViewModel(
                 _state.update { it.copy(saving = false, message = R.string.expenses_limit_reached, messageArg = e.max) }
             } catch (e: InvalidExpenseException) {
                 _state.update { it.copy(saving = false, message = messageFor(e.problem)) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A database failure: keep the form open, the user can try again.
+                _state.update { it.copy(saving = false, message = R.string.expense_error_save_failed) }
             }
         }
     }
@@ -304,6 +310,10 @@ class ExpenseFormViewModel(
                 _state.update { it.copy(done = true) }
             } catch (e: InvalidExpenseException) {
                 _state.update { it.copy(message = messageFor(e.problem)) }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                _state.update { it.copy(message = R.string.expense_error_save_failed) }
             }
         }
     }

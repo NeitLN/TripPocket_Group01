@@ -7,6 +7,7 @@ import androidx.lifecycle.createSavedStateHandle
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.initializer
 import androidx.lifecycle.viewmodel.viewModelFactory
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -76,6 +77,11 @@ class MembersViewModel(
                 message.value = null
             } catch (e: InvalidMemberException) {
                 message.value = e.problem
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A database failure: say so instead of crashing the screen.
+                message.value = MemberProblem.SAVE_FAILED
             }
         }
     }
@@ -87,6 +93,11 @@ class MembersViewModel(
                 message.value = null
             } catch (e: InvalidMemberException) {
                 message.value = e.problem
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A database failure: say so instead of crashing the screen.
+                message.value = MemberProblem.SAVE_FAILED
             }
         }
     }
@@ -98,6 +109,11 @@ class MembersViewModel(
                 message.value = null
             } catch (e: InvalidMemberException) {
                 message.value = e.problem
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                // A database failure: say so instead of crashing the screen.
+                message.value = MemberProblem.SAVE_FAILED
             }
         }
     }

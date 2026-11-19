@@ -191,6 +191,8 @@ class NearbySightsViewModel(
                 SightsMessage.LimitReached
             } catch (e: InvalidActivityException) {
                 SightsMessage.AddFailed
+            } catch (e: Exception) {
+                SightsMessage.AddFailed
             } finally {
                 addingSight = false
             }

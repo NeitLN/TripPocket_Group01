@@ -210,6 +210,23 @@ class ItineraryFormViewModelTest {
     }
 
     @Test
+    fun theLimitMessage_isShownOnce_notAgainOnEveryKeystroke() = runBlocking {
+        repeat(Limits.MAX_ACTIVITIES) { i ->
+            t.db.activityDao().insert(ActivityEntity("seed$i", trip, 0, "Stop $i", "", 9 * 60, 0, "", i, null))
+        }
+        val viewModel = form()
+        viewModel.onTitleChanged("One more stop")
+        viewModel.save()
+        withTimeout(5_000) { viewModel.uiState.first { it.limitReached } }
+
+        // The screen showed the Snackbar: the flag goes, so typing does not raise it again.
+        viewModel.messageShown()
+        viewModel.onTitleChanged("One more stop!")
+        assertFalse(viewModel.uiState.value.limitReached)
+        assertFalse(viewModel.uiState.value.saveFailed)
+    }
+
+    @Test
     fun anActivityOfAnotherTripOrAMissingOne_isNotFound() = runBlocking {
         t.db.tripDao().insert(t.trip("t2"))
         val other = repository.addActivity("t2", input())

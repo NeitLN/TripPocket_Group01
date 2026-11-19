@@ -106,6 +106,7 @@ class TripFormDialogFragment : DialogFragment() {
         }
         if (state.saveFailed) {
             Snackbar.make(binding.root, R.string.trip_error_save_failed, Snackbar.LENGTH_LONG).show()
+            viewModel.messageShown()
         }
     }
 

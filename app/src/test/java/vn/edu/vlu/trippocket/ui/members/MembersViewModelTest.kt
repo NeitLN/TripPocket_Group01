@@ -72,6 +72,17 @@ class MembersViewModelTest {
     }
 
     @Test
+    fun aDatabaseError_showsSaveFailed_insteadOfCrashing(): Unit = runBlocking {
+        val viewModel = viewModel()
+        viewModel.loaded(3)
+        t.close() // the next write fails with a database error, not a name problem
+
+        viewModel.addMember("Dũng")
+
+        viewModel.awaitMessage(MemberProblem.SAVE_FAILED)
+    }
+
+    @Test
     fun addAndRename_updateTheList_andClearPreviousErrors(): Unit = runBlocking {
         val viewModel = viewModel()
         viewModel.loaded(3)

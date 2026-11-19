@@ -22,6 +22,7 @@ import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.TripDetailActivity
 import vn.edu.vlu.trippocket.ui.detail.tripViewModels
 import vn.edu.vlu.trippocket.util.Format
+import vn.edu.vlu.trippocket.util.navigateOnce
 
 /** Screen 3: day-by-day itinerary. */
 class ItineraryFragment : Fragment() {
@@ -50,7 +51,7 @@ class ItineraryFragment : Fragment() {
 
         val adapter = ActivityAdapter(
             onItemClick = { activity ->
-                findNavController().navigate(
+                findNavController().navigateOnce(
                     R.id.action_itinerary_to_form,
                     Bundle().apply { putString(ARG_ACTIVITY_ID, activity.activityId) },
                 )
@@ -134,7 +135,7 @@ class ItineraryFragment : Fragment() {
         binding.btnSights.setOnClickListener { openNearbySights() }
         binding.fabAddActivity.setOnClickListener {
             if (viewModel.uiState.value.canAdd) {
-                findNavController().navigate(R.id.action_itinerary_to_form)
+                findNavController().navigateOnce(R.id.action_itinerary_to_form)
             }
         }
 
@@ -202,7 +203,7 @@ class ItineraryFragment : Fragment() {
      * carried as a nav argument, so "Add to day" there writes to the same day the user sees.
      */
     private fun openNearbySights() {
-        findNavController().navigate(
+        findNavController().navigateOnce(
             R.id.action_itinerary_to_sights,
             Bundle().apply { putInt(ARG_DAY_INDEX, viewModel.uiState.value.selectedDay) },
         )

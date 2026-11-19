@@ -1,7 +1,7 @@
 package vn.edu.vlu.trippocket.domain
 
 /** Why a member was not saved or removed (E1). */
-enum class MemberProblem { BLANK_NAME, NAME_TOO_LONG, LIMIT, IN_USE, NOT_FOUND }
+enum class MemberProblem { BLANK_NAME, NAME_TOO_LONG, LIMIT, IN_USE, NOT_FOUND, SAVE_FAILED }
 
 /**
  * The one rule for a member name (proposal 3.4): trimmed, not empty, at most

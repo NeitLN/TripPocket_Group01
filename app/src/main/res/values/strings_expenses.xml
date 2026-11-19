@@ -24,6 +24,7 @@
     <string name="members_error_limit">This trip already has 15 members</string>
     <string name="members_error_in_use">Someone who paid or shares an expense cannot be removed.</string>
     <string name="members_error_not_found">Member was not found.</string>
+    <string name="members_error_save_failed">Couldn\'t save the change. Please try again.</string>
 
     <string name="expenses_spent_label">Spent so far</string>
     <string name="expenses_of_planned">of %1$s planned</string>
@@ -83,6 +84,7 @@
     <string name="expense_error_custom_number">Enter each share as a whole number of dong</string>
     <string name="expense_error_member">A member in this split is no longer in the trip</string>
     <string name="expense_error_not_found">This expense was deleted</string>
+    <string name="expense_error_save_failed">Couldn\'t save the expense. Please try again.</string>
 
     <!-- Exchange rates (M4) -->
     <string name="exchange_rates_title">Exchange rates</string>

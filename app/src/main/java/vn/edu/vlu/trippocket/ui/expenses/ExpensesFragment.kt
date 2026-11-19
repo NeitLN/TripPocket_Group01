@@ -22,6 +22,7 @@ import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.databinding.FragmentExpensesBinding
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.util.Format
+import vn.edu.vlu.trippocket.util.navigateOnce
 
 /** Screen 5: budget summary, expenses, member balances and suggested payments. */
 class ExpensesFragment : Fragment() {
@@ -60,8 +61,8 @@ class ExpensesFragment : Fragment() {
             if (isChecked) viewModel.showBalances(checkedId == R.id.btnModeBalances)
         }
         binding.btnShare.setOnClickListener { shareSummary() }
-        binding.btnMembers.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_members) }
-        binding.btnExchangeRates.setOnClickListener { findNavController().navigate(R.id.action_expenses_to_exchangeRates) }
+        binding.btnMembers.setOnClickListener { findNavController().navigateOnce(R.id.action_expenses_to_members) }
+        binding.btnExchangeRates.setOnClickListener { findNavController().navigateOnce(R.id.action_expenses_to_exchangeRates) }
         binding.fabAddExpense.setOnClickListener { fab ->
             val state = viewModel.uiState.value
             when {
@@ -112,7 +113,7 @@ class ExpensesFragment : Fragment() {
 
     private fun openForm(expenseId: String?) {
         val args = Bundle().apply { putString(ExpenseFormViewModel.ARG_EXPENSE_ID, expenseId) }
-        findNavController().navigate(R.id.action_expenses_to_form, args)
+        findNavController().navigateOnce(R.id.action_expenses_to_form, args)
     }
 
     private fun showMessage(anchor: View, text: String) {
