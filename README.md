@@ -22,7 +22,7 @@ feature has its own branch `feature/<name>-<ID>` and pull request.
 | Auth / Trips / Backup | A3 backup (#24), A4 restore (#25) | A2 trip CRUD (#18) | A1 login / register (#8, #23) | A5 rules + size tests (#3, #33, #34) |
 | Itinerary | I2 checklist (#22, #49) | I1 itinerary (#12), I4 reminders (#20, #29) | I3 drag to reorder (#14) | I5 reminder reconciler (#5) |
 | Weather | W5 weather in the itinerary (#27) | W4 weather tests (#19) | W1 search, W3 forecast cache (#9, #16, #28, #38) | W2 saved places (#4) |
-| Expenses | E4 budget + share (#26) | E3 balances (#21) | E1 members (#6, #7) | E2 expense + split (#2, #32) |
+| Expenses | E4 budget + share (#26) | E3 balances (#21) | E1 members (#7) | E2 expense + split (#2, #32), members layout (#6), sample-expense order (#31) |
 | Network & cloud (M4) | Trip Ideas on MockAPI (#36), network layer (#46) | Nearby sights (#47, #48, #52) | Wikipedia photos, exchange-rate screen (#41, #43, #44, #45) | Exchange-rate rounding (#53) |
 | Release | Release-gate fixes and evidence (#50, #51) | — | v1.0 release and M4 worksheet (#55, #56), M5 hardening and signed release v1.1.0 (#60, #61) | — |
 
