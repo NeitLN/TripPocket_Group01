@@ -5,13 +5,25 @@ import androidx.room.Room
 import androidx.test.core.app.ApplicationProvider
 import vn.edu.vlu.trippocket.data.local.entity.TripEntity
 import vn.edu.vlu.trippocket.data.model.SyncStatus
+import java.util.concurrent.Executor
 
-/** Shared helpers for DAO tests: an in-memory database and a TripWriter that records backup requests. */
-class TestDatabase {
+/**
+ * Shared helpers for DAO tests: an in-memory database and a TripWriter that records backup requests.
+ *
+ * [roomExecutor]: optional executor for Room's queries and transactions. A test that tears down
+ * Dispatchers.Main passes its own, so it can wait for Room's background work to finish first
+ * (see WeatherViewModelTest). Null keeps Room's default executors.
+ */
+class TestDatabase(roomExecutor: Executor? = null) {
     val db: AppDatabase = Room.inMemoryDatabaseBuilder(
         ApplicationProvider.getApplicationContext<Context>(),
         AppDatabase::class.java,
-    ).build()
+    ).apply {
+        if (roomExecutor != null) {
+            setQueryExecutor(roomExecutor)
+            setTransactionExecutor(roomExecutor)
+        }
+    }.build()
 
     /** Owner uids passed to the backup scheduler, in order. */
     val backupRequests = mutableListOf<String>()

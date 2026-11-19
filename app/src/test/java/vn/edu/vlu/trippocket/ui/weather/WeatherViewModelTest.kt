@@ -55,6 +55,8 @@ import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
 import java.io.IOException
 import java.time.LocalDate
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /**
  * W1 search and W3 saved places + cached forecast of the Weather screen.
@@ -65,7 +67,13 @@ import java.time.LocalDate
 @RunWith(RobolectricTestRunner::class)
 class WeatherViewModelTest {
 
-    private val t = TestDatabase()
+    /**
+     * Room's own threads, so tearDown can wait for them. A query that finishes after a test ends
+     * resumes its (cancelled) ViewModel coroutine through Dispatchers.Main; if that happens while
+     * tearDown resets Main, kotlinx-coroutines-test throws IllegalStateException (flaky on CI).
+     */
+    private val roomExecutor = Executors.newFixedThreadPool(4)
+    private val t = TestDatabase(roomExecutor)
     private val forecastApi = FakeForecastApi()
     private var clock = 1_000L
     private var nextId = 0
@@ -111,6 +119,9 @@ class WeatherViewModelTest {
     fun tearDown() {
         // A ViewModel still collecting Room would touch Main while the next test sets it.
         viewModels.clear()
+        // Let Room finish what it already started (and its resumes reach Main) before Main changes.
+        roomExecutor.shutdown()
+        roomExecutor.awaitTermination(10, TimeUnit.SECONDS)
         Dispatchers.resetMain()
         t.close()
     }
