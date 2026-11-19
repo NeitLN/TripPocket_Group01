@@ -106,6 +106,20 @@ class ExpenseFormViewModelTest {
     private suspend fun revision() = t.db.tripDao().observeTrip("t1", TestDatabase.OWNER).first()!!.localRevision
 
     @Test
+    fun aDatabaseError_endsSaving_withAMessage_insteadOfCrashing() = runBlocking {
+        val viewModel = form()
+        viewModel.setTitle("Bánh căn")
+        viewModel.setAmount("100000")
+        t.close() // the write fails with a database error, not a validation problem
+
+        viewModel.save()
+
+        val state = withTimeout(5_000) { viewModel.state.first { !it.saving && it.message != null } }
+        assertEquals(R.string.expense_error_save_failed, state.message)
+        assertFalse(state.done)
+    }
+
+    @Test
     fun newExpense_defaultsToEveryoneAndSplitsLeftoverDongInMemberOrder() = runBlocking {
         val viewModel = form()
         val state = viewModel.state.value

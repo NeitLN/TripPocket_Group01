@@ -25,7 +25,6 @@ class ExchangeRatesFragment : Fragment() {
     private val binding get() = _binding!!
 
     private val viewModel: ExchangeRatesViewModel by viewModels { ExchangeRatesViewModel.Factory }
-    private val adapter = CurrencyAdapter()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -41,7 +40,8 @@ class ExchangeRatesFragment : Fragment() {
 
         binding.rvCurrencies.layoutManager = LinearLayoutManager(requireContext())
         binding.rvCurrencies.setHasFixedSize(true)
-        binding.rvCurrencies.adapter = adapter
+        // A new adapter per view: a field would keep the old RecyclerView alive after onDestroyView.
+        binding.rvCurrencies.adapter = CurrencyAdapter()
 
         binding.swipeRefresh.setOnRefreshListener { viewModel.refresh() }
         binding.networkError.btnNetworkRetry.setOnClickListener { viewModel.retry() }
@@ -81,7 +81,7 @@ class ExchangeRatesFragment : Fragment() {
                         state.rates.lastUpdatedUtc,
                     )
                 }
-                adapter.submitList(state.rates.items)
+                (binding.rvCurrencies.adapter as CurrencyAdapter).submitList(state.rates.items)
             }
             is ExchangeRatesUiState.Error -> {
                 binding.progressBar.isVisible = false

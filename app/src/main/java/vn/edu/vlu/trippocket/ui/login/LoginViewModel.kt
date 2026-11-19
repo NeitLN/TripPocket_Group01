@@ -142,6 +142,9 @@ class LoginViewModel(
                 throw e
             } catch (e: AuthException) {
                 _uiState.update { it.withAuthProblem(e.problem) }
+            } catch (e: Exception) {
+                // Anything else (a storage error, a Firebase surprise) ends the spinner with a message.
+                _uiState.update { it.withAuthProblem(AuthProblem.UNKNOWN) }
             }
         }
     }
@@ -181,6 +184,9 @@ class LoginViewModel(
                 throw e
             } catch (e: AuthException) {
                 _uiState.update { it.withAuthProblem(e.problem) }
+            } catch (e: Exception) {
+                // Anything else (a storage error, a Firebase surprise) ends the spinner with a message.
+                _uiState.update { it.withAuthProblem(AuthProblem.UNKNOWN) }
             }
         }
     }

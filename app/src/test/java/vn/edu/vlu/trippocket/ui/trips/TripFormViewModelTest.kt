@@ -63,6 +63,23 @@ class TripFormViewModelTest {
     }
 
     @Test
+    fun theSaveFailedMessage_isShownOnce_notAgainOnEveryKeystroke() = runBlocking {
+        val form = form()
+        form.onNameChanged("Đà Lạt")
+        form.onDestinationChanged("Lâm Đồng")
+        form.onDatesChanged(nov3, nov3.plusDays(2))
+        t.close() // any write now fails with a database error, not a validation problem
+
+        form.save()
+        withTimeout(5_000) { form.uiState.first { it.saveFailed } }
+
+        // The screen showed the Snackbar: the flag goes, so typing does not raise it again.
+        form.messageShown()
+        form.onNameChanged("Đà Lạt 2")
+        assertEquals(false, form.uiState.value.saveFailed)
+    }
+
+    @Test
     fun missingFields_showErrors_andWriteNothing() = runBlocking {
         val form = form()
 

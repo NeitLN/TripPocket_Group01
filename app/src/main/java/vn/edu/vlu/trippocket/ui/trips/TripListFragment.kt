@@ -36,12 +36,26 @@ class TripListFragment : Fragment() {
         return binding.root
     }
 
+    /** true from a trip tap until this screen is back on top, so a double tap opens one Trip Detail. */
+    private var openingTrip = false
+
+    private fun openTrip(tripId: String) {
+        if (openingTrip) return
+        openingTrip = true
+        startActivity(TripDetailActivity.newIntent(requireContext(), tripId))
+    }
+
+    override fun onResume() {
+        super.onResume()
+        openingTrip = false
+    }
+
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         highlightTitle()
 
         val adapter = TripAdapter(
-            onClick = { card -> startActivity(TripDetailActivity.newIntent(requireContext(), card.trip.tripId)) },
+            onClick = { card -> openTrip(card.trip.tripId) },
             onRetry = { card -> viewModel.retryBackup(card.trip.tripId) },
         )
 
@@ -66,7 +80,7 @@ class TripListFragment : Fragment() {
         // A2: a trip just created opens straight away; an edit (from Trip Detail) never lands here.
         childFragmentManager.setFragmentResultListener(TripFormDialogFragment.REQUEST_KEY, viewLifecycleOwner) { _, bundle ->
             bundle.getString(TripFormDialogFragment.RESULT_TRIP_ID)?.let { tripId ->
-                startActivity(TripDetailActivity.newIntent(requireContext(), tripId))
+                openTrip(tripId)
             }
         }
 

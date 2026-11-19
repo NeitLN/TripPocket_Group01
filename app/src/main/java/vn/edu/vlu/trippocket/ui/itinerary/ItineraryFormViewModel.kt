@@ -226,6 +226,14 @@ class ItineraryFormViewModel(
         _uiState.update { it.copy(deleted = false) }
     }
 
+    /**
+     * The screen showed the limit or save-failed Snackbar. Clearing the flags stops every later
+     * state (each keystroke) from showing it again.
+     */
+    fun messageShown() {
+        _uiState.update { it.copy(limitReached = false, saveFailed = false) }
+    }
+
     /** Field checks for immediate feedback; the repository checks the same rules again. */
     private fun ItineraryFormUiState.toInput(): ActivityInput {
         val title = title.trim()

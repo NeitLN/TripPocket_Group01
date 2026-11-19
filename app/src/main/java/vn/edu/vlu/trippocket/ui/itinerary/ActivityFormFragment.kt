@@ -264,9 +264,10 @@ class ActivityFormFragment : Fragment() {
 
         if (state.limitReached) {
             Snackbar.make(binding.root, R.string.itinerary_limit_reached, Snackbar.LENGTH_LONG).show()
-        }
-        if (state.saveFailed) {
+            viewModel.messageShown()
+        } else if (state.saveFailed) {
             Snackbar.make(binding.root, R.string.itinerary_error_save_failed, Snackbar.LENGTH_LONG).show()
+            viewModel.messageShown()
         }
     }
 

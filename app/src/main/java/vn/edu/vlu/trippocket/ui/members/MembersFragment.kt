@@ -140,6 +140,7 @@ class MembersFragment : Fragment() {
                 MemberProblem.LIMIT -> getString(R.string.members_error_limit)
                 MemberProblem.IN_USE -> getString(R.string.members_error_in_use)
                 MemberProblem.NOT_FOUND -> getString(R.string.members_error_not_found)
+                MemberProblem.SAVE_FAILED -> getString(R.string.members_error_save_failed)
             }
             Snackbar.make(binding.root, text, Snackbar.LENGTH_SHORT).show()
             viewModel.messageShown()

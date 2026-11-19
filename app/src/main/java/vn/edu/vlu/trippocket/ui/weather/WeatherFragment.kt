@@ -96,7 +96,7 @@ class WeatherFragment : Fragment() {
         binding.etSearch.doAfterTextChanged { viewModel.onQueryChanged(it?.toString().orEmpty()) }
         binding.btnRefresh.setOnClickListener {
             viewModel.refresh()
-            Snackbar.make(it, R.string.weather_refresh, Snackbar.LENGTH_SHORT).show()
+            Snackbar.make(it, R.string.weather_refreshing, Snackbar.LENGTH_SHORT).show()
         }
         binding.btnPlaceOptions.setOnClickListener { anchor ->
             viewModel.places.value.selected?.let { selected ->

@@ -24,6 +24,7 @@
     <string name="weather_attribution">Weather data by Open-Meteo.com</string>
     <string name="weather_retry">Retry</string>
     <string name="weather_refresh">Refresh forecast</string>
+    <string name="weather_refreshing">Updating the forecast…</string>
     <string name="weather_saved_toast">%1$s saved to this trip</string>
     <string name="weather_place_exists">%1$s is already saved to this trip</string>
     <string name="weather_place_limit">This trip already has 30 places</string>

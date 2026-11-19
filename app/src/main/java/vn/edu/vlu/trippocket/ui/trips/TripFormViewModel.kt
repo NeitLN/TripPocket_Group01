@@ -155,6 +155,9 @@ class TripFormViewModel(
     /** The screen handled [TripFormUiState.savedTripId]. */
     fun savedShown() = _uiState.update { it.copy(savedTripId = null) }
 
+    /** The screen showed the save-failed Snackbar; later states (each keystroke) must not show it again. */
+    fun messageShown() = _uiState.update { it.copy(saveFailed = false) }
+
     private fun fieldProblem(state: TripFormUiState): TripProblem? {
         val name = state.name.trim()
         val destination = state.destination.trim()
