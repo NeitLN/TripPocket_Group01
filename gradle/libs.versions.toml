@@ -25,6 +25,9 @@ googleServices = "4.5.0"
 coroutines = "1.10.2"
 robolectric = "4.17"
 testCore = "1.7.0"
+# Instrumented UI tests (A3): runner + orchestrator, so every test starts from a cleared app.
+testRunner = "1.7.0"
+testOrchestrator = "1.6.1"
 # Debug-only leak detector (M5 stage 3). Never on the release classpath.
 leakcanary = "2.14"
 # M5 stage 5: EncryptedSharedPreferences. 1.1.0 is the latest stable on Google Maven, but Google
@@ -37,6 +40,9 @@ androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = 
 junit = { group = "junit", name = "junit", version.ref = "junit" }
 androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "junitVersion" }
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
+androidx-espresso-contrib = { group = "androidx.test.espresso", name = "espresso-contrib", version.ref = "espressoCore" }
+androidx-test-runner = { group = "androidx.test", name = "runner", version.ref = "testRunner" }
+androidx-test-orchestrator = { group = "androidx.test", name = "orchestrator", version.ref = "testOrchestrator" }
 androidx-appcompat = { group = "androidx.appcompat", name = "appcompat", version.ref = "appcompat" }
 material = { group = "com.google.android.material", name = "material", version.ref = "material" }
 androidx-activity-ktx = { group = "androidx.activity", name = "activity-ktx", version.ref = "activityKtx" }
