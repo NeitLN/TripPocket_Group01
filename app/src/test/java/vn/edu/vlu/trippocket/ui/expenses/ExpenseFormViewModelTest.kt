@@ -286,6 +286,23 @@ class ExpenseFormViewModelTest {
     }
 
     @Test
+    fun paidIn_aConversionLongerThanTheAmountField_isRefused_notWritten() = runBlocking {
+        val viewModel = form()
+        viewModel.setPaidInCurrency("USD") // 1 USD = 25,000 VND
+
+        // 39,999,999 USD = 999,999,975,000 VND: 12 digits, fits the field.
+        viewModel.setPaidInAmount("39999999")
+        assertEquals("999999975000", viewModel.state.value.amountText)
+        assertEquals(null, viewModel.state.value.amountError)
+
+        // 40,000,000 USD = 1,000,000,000,000 VND: 13 digits. The field holds 12, so writing it
+        // would cut it to a wrong amount (and crash the cursor); keep the old amount, show why.
+        viewModel.setPaidInAmount("40000000")
+        assertEquals("999999975000", viewModel.state.value.amountText)
+        assertEquals(R.string.expense_error_amount_too_large, viewModel.state.value.amountError)
+    }
+
+    @Test
     fun paidIn_manualVndEditWins() = runBlocking {
         val viewModel = form()
         viewModel.setPaidInCurrency("USD")

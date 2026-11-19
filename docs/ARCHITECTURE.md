@@ -43,9 +43,9 @@ Quy tắc:
   thì gửi kèm **đúng đoạn cần sửa** trong PR, Tiến ghép vào lần merge kế tiếp.
 - Mỗi module có file string riêng: `strings_itinerary.xml` (Bảo), `strings_weather.xml` (Duy Anh),
   `strings_expenses.xml` (Minh). `strings.xml` gốc giữ chuỗi dùng chung và chuỗi của login/danh sách chuyến (Tiến).
-- **Lớp tạm thời (F0), sẽ bị xoá:** `SampleTripRepository` (MockData cho các màn chưa lên Room) và
-  `DevAuthRepository` (luôn đăng nhập là `dev-user`, có seed chuyến mẫu ở bản debug). Module nào chuyển sang Room thì
-  bỏ dùng `SampleTripRepository`; A1 thay `DevAuthRepository` bằng Firebase.
+- **Tài khoản offline cho bản debug:** khi không có `google-services.json`, `DevAuthRepository` đăng nhập sẵn là
+  `dev-user` và seed các chuyến mẫu từ `MockData` vào Room. Có Firebase thì dùng `FirebaseAuthRepository`.
+  `SampleTripRepository` (lớp tạm của F0) đã xoá vì mọi module đã đọc từ Room.
 
 ## Dữ liệu (Room, proposal 4.2)
 - Đủ 8 entity của proposal được tạo trong F0. Đổi field sau đó phải qua Tiến.
@@ -86,7 +86,7 @@ Test: `data/local/TripWriterTest.kt`. Riêng `WeatherCache` không nằm trong b
 
 ### Migration
 `exportSchema = true`. Schema đã đóng băng ở version 1 (`app/schemas`) từ 30/10. Đổi schema thì **tăng version và
-viết Migration**. Từ 10/11 không còn destructive fallback, kể cả bản debug (bản demo là APK debug): thiếu migration
+viết Migration**. Từ 10/11 không còn destructive fallback, kể cả bản debug; bản demo là APK release đã ký (v1.1.x): thiếu migration
 thì app báo lỗi ngay khi mở, không lặng lẽ xoá chuyến chưa backup.
 
 ## Tài khoản, phiên và backup
@@ -135,8 +135,12 @@ thì app báo lỗi ngay khi mở, không lặng lẽ xoá chuyến chưa backup
 - `TripDetailViewModel` có trạng thái Loading / Ready / NotFound; module chỉ tải dữ liệu khi đã Ready.
 
 ## Remote
-- **Open-Meteo:** chỉ `WeatherRepository` gọi Retrofit, với 2 base URL (geocoding và forecast). Forecast ghi vào
-  Room trước, UI đọc từ Room. Kết quả tìm kiếm giữ trong ViewModel. `CancellationException` phải được ném lại.
+- **Retrofit (Gson):** mỗi host một Retrofit trong `AppContainer`, dùng chung một `OkHttpClient` có timeout. Mọi
+  lời gọi đi qua `safeApiCall` → `ApiResult`, lỗi quy về `ApiError`. `CancellationException` phải được ném lại.
+  - Open-Meteo (geocoding, forecast 16 ngày): `WeatherRepository`; forecast ghi vào Room trước, UI đọc từ Room.
+  - Wikipedia (GeoSearch, page summary): `SightRepository`, `PlaceInfoRepository`.
+  - MockAPI.io (Trip Ideas, GET/POST/PUT/DELETE): `TripIdeaRepository`.
+  - open.er-api.com (tỷ giá về VND): `ExchangeRateRepository`.
 - **Firebase:** plugin google-services khai báo `apply false` ở root và chỉ apply ở app khi có
   `app/google-services.json`. Firebase được lấy **lười** qua `AppContainer`. Test dùng Application riêng và fake,
   không bao giờ khởi tạo Firebase. Firestore rules phải được deploy trước lần thử cloud đầu tiên.

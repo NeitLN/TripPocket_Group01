@@ -36,7 +36,6 @@ import vn.edu.vlu.trippocket.data.repository.ExpenseRepository
 import vn.edu.vlu.trippocket.data.repository.ItineraryRepository
 import vn.edu.vlu.trippocket.data.repository.PlaceInfoRepository
 import vn.edu.vlu.trippocket.data.repository.RestoreRepository
-import vn.edu.vlu.trippocket.data.repository.SampleTripRepository
 import vn.edu.vlu.trippocket.data.repository.SavedPlaceRepository
 import vn.edu.vlu.trippocket.data.repository.SightRepository
 import vn.edu.vlu.trippocket.data.repository.TripIdeaRepository
@@ -144,7 +143,7 @@ class AppContainer(context: Context) {
         ExpenseRepository(database.tripMemberDao(), database.expenseDao(), tripWriter)
     }
 
-    /** I1: the activities of a trip, in Room. */
+    /** I2: the packing checklist of a trip, in Room. */
     val checklistRepository: ChecklistRepository by lazy {
         ChecklistRepository(database.checklistDao(), tripWriter)
     }
@@ -155,8 +154,6 @@ class AppContainer(context: Context) {
         }
     }
 
-    /** Mock data for the module screens until they move to Room. */
-    val sampleTripRepository = SampleTripRepository()
     val weatherRepository by lazy {
         WeatherRepository(
             geocodingRetrofit.create(GeocodingApi::class.java),

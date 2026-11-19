@@ -208,7 +208,10 @@ class ExpenseFormViewModel(
         val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd ?: return
         if (rate <= 0.0) return
         val vnd = CurrencyConverter.toVnd(foreignAmount, rate)
-        if (vnd > 0L) {
+        if (vnd > MAX_AMOUNT_VND) {
+            // The amount field holds 12 digits: keep the old amount and say why instead.
+            _state.update { it.copy(amountError = R.string.expense_error_amount_too_large) }
+        } else if (vnd > 0L) {
             _state.update { it.copy(amountText = vnd.toString(), amountError = null, splitError = null) }
         }
     }
@@ -306,6 +309,9 @@ class ExpenseFormViewModel(
     companion object {
         /** Nav argument of expenseFormFragment; absent when adding. */
         const val ARG_EXPENSE_ID = "expenseId"
+
+        /** etAmount has maxLength 12 (fragment_expense_form.xml): the largest amount it can show. */
+        const val MAX_AMOUNT_VND = 999_999_999_999L
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {

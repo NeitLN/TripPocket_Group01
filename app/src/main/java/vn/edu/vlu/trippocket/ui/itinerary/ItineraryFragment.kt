@@ -151,12 +151,18 @@ class ItineraryFragment : Fragment() {
     }
 
     private fun render(state: ItineraryUiState) {
-        // The day tabs are built once; later states only move the selection.
-        if (binding.tabDays.tabCount != state.days.size) {
+        // Tabs are rebuilt only when the number of days changes; otherwise their labels are updated
+        // in place, so moving the trip to other dates (same length) still shows the new dates.
+        val labels = state.days.mapIndexed { index, date ->
+            getString(R.string.itinerary_day_tab, index + 1, date.format(Format.dayMonth))
+        }
+        if (binding.tabDays.tabCount != labels.size) {
             binding.tabDays.removeAllTabs()
-            state.days.forEachIndexed { index, date ->
-                val label = getString(R.string.itinerary_day_tab, index + 1, date.format(Format.dayMonth))
-                binding.tabDays.addTab(binding.tabDays.newTab().setText(label), false)
+            labels.forEach { binding.tabDays.addTab(binding.tabDays.newTab().setText(it), false) }
+        } else {
+            labels.forEachIndexed { index, label ->
+                val tab = binding.tabDays.getTabAt(index)
+                if (tab != null && tab.text != label) tab.text = label
             }
         }
         if (binding.tabDays.selectedTabPosition != state.selectedDay) {

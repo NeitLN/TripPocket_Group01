@@ -19,9 +19,9 @@ import androidx.security.crypto.MasterKey
  *   never in the file.
  * - Three values only: `last_email`, `last_uid`, `last_login_at`. No password, no token.
  *
- * The constructor opens the keystore, which is why [vn.edu.vlu.trippocket.di.AppContainer] creates
- * this lazily: Robolectric has no AndroidKeyStore, so an early instance would break every unit
- * test. For the same reason no test touches this class; tests use a fake [SessionStore].
+ * The keystore is opened on the first read or write, never on the main thread.
+ * Robolectric has no AndroidKeyStore, so no unit test touches this class; tests use a fake
+ * [SessionStore].
  */
 @Suppress("DEPRECATION") // see the file-level note above
 class EncryptedSessionStore(
@@ -29,8 +29,15 @@ class EncryptedSessionStore(
     private val now: () -> Long = System::currentTimeMillis,
 ) : SessionStore {
 
-    /** Null when the keystore stays unusable after one retry: the app runs, it just forgets. */
-    private val prefs: SharedPreferences? = open(context.applicationContext)
+    private val appContext = context.applicationContext
+
+    /**
+     * Null when the keystore stays unusable after one retry: the app runs, it just forgets.
+     * Opened on first use, not in the constructor: every read and write runs on the io
+     * dispatcher (LoginViewModel, TripListViewModel), while the ViewModel factories that create
+     * this store run on the main thread.
+     */
+    private val prefs: SharedPreferences? by lazy { open(appContext) }
 
     override fun lastEmail(): String? = read { getString(KEY_EMAIL, null) }
 

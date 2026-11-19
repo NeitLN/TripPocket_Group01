@@ -67,7 +67,7 @@ Hành vi offline của từng lát (đã sửa ở #53: kéo làm mới lỗi v�
 
 ## 3. Bảng endpoint
 
-Tất cả đều là REST qua Retrofit + OkHttp; response parse bằng `kotlinx.serialization`. Mọi lỗi được quy về
+Tất cả đều là REST qua Retrofit + OkHttp; response parse bằng Gson (`converter-gson`). Mọi lỗi được quy về
 `ApiError` (`OFFLINE`, `TIMEOUT`, `BAD_REQUEST`, `FORBIDDEN`, `NOT_FOUND`, `RATE_LIMITED`, `SERVER`, `BAD_RESPONSE`).
 
 | # | API | Method + path | Dùng cho | File |
