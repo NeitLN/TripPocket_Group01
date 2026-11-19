@@ -1,0 +1,5 @@
+# Who GitHub asks for a review when a pull request opens.
+# Since 20/11 Tiến writes the changes and Minh reviews them (CONTRIBUTING.md). The author is
+# skipped automatically, so every PR asks the other one.
+# Module ownership during the build (Milestones 1-4) is listed in docs/PROJECT.md.
+*  @NeitLN @Jayson135724
