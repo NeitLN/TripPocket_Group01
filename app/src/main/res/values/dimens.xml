@@ -26,6 +26,11 @@
     <dimen name="icon_badge_size">48dp</dimen>
     <dimen name="avatar_size">40dp</dimen>
     <dimen name="empty_icon_size">96dp</dimen>
+    <!-- Itinerary empty day: smaller in landscape so the whole message fits above the FAB. -->
+    <dimen name="itinerary_empty_icon_size">96dp</dimen>
+    <dimen name="itinerary_empty_icon_padding">24dp</dimen>
+    <!-- Weather: the forecast list keeps this height when the page has to scroll (landscape). -->
+    <dimen name="forecast_min_height">280dp</dimen>
     <dimen name="timeline_divider_width">2dp</dimen>
     <dimen name="fab_clearance">88dp</dimen>
     <dimen name="results_max_height">240dp</dimen>

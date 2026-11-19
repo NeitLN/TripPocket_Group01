@@ -26,12 +26,19 @@
     - Search results (rvResults / tvNoResults / layoutSearchError) are declared last
       and have elevation, so they float over the screen like a dropdown.
 -->
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
+<!-- fillViewport: in portrait the page fits and looks exactly as before; on a short landscape
+     screen it scrolls instead of squeezing the forecast list to nothing. -->
+<androidx.core.widget.NestedScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
+    android:fillViewport="true"
     tools:context=".ui.weather.WeatherFragment">
+
+<androidx.constraintlayout.widget.ConstraintLayout
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <!-- ===== Trip header with sticker ===== -->
     <FrameLayout
@@ -576,6 +583,8 @@
         android:id="@+id/swipeRefresh"
         android:layout_width="0dp"
         android:layout_height="0dp"
+        app:layout_constraintHeight_min="@dimen/forecast_min_height"
+        app:layout_constraintVertical_bias="0"
         app:layout_constraintBottom_toTopOf="@id/tvAttribution"
         app:layout_constraintEnd_toEndOf="@id/tilSearch"
         app:layout_constraintStart_toStartOf="@id/tilSearch"
@@ -669,3 +678,5 @@
     </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
+
+</androidx.core.widget.NestedScrollView>

@@ -12,6 +12,7 @@ import androidx.lifecycle.repeatOnLifecycle
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.snackbar.Snackbar
 import kotlinx.coroutines.launch
+import vn.edu.vlu.trippocket.BuildConfig
 import vn.edu.vlu.trippocket.R
 import vn.edu.vlu.trippocket.TripPocketApp
 import vn.edu.vlu.trippocket.databinding.ActivityMainBinding
@@ -63,6 +64,8 @@ class MainActivity : AppCompatActivity() {
         // Without google-services.json there is no backup to restore from.
         binding.toolbar.menu.findItem(R.id.action_restore).isVisible =
             !(application as TripPocketApp).container.usesDevAuth
+        // The empty-state preview is a review helper: debug builds only, never in the release.
+        binding.toolbar.menu.findItem(R.id.action_toggle_empty).isVisible = BuildConfig.DEBUG
 
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {

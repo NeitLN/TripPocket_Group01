@@ -116,6 +116,14 @@
         app:layout_constraintStart_toEndOf="@id/tvSpentTotal"
         tools:text="of 2,950,000 ₫ planned" />
 
+    <!-- Under the total AND the planned text: the planned text can wrap to 2 lines ("... over"). -->
+    <androidx.constraintlayout.widget.Barrier
+        android:id="@+id/barrierSpent"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        app:barrierDirection="bottom"
+        app:constraint_referenced_ids="tvSpentTotal,tvPlanned" />
+
     <com.google.android.material.progressindicator.LinearProgressIndicator
         android:id="@+id/progressBudget"
         android:layout_width="0dp"
@@ -125,7 +133,7 @@
         android:max="100"
         app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
         app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
-        app:layout_constraintTop_toBottomOf="@id/tvSpentTotal"
+        app:layout_constraintTop_toBottomOf="@id/barrierSpent"
         app:trackCornerRadius="4dp"
         app:trackThickness="8dp"
         tools:progress="73" />

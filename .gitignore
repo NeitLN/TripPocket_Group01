@@ -22,3 +22,7 @@ google-services.json
 node_modules/
 firestore-debug.log
 firebase-debug.log
+
+# Local secrets (Claude API key for reviews), never committed
+.env
+.env.*

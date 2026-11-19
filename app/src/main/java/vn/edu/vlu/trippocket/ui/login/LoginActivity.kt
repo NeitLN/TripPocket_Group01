@@ -31,6 +31,12 @@ class LoginActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        // Tapping the app icon while the app is still open: bring that task back as it was,
+        // instead of stacking a second trip list on top of the screen the user left.
+        if (isLauncherRelaunch(isTaskRoot, intent)) {
+            finish()
+            return
+        }
         // Skip the login form immediately if a session already exists to avoid frame flash
         if (viewModel.uiState.value.alreadySignedIn) {
             startActivity(Intent(this, MainActivity::class.java))
@@ -174,3 +180,11 @@ class LoginActivity : AppCompatActivity() {
         const val LARGE_FONT_SCALE = 1.3f
     }
 }
+
+/**
+ * True when the launcher icon was tapped while the app's task is still alive: LoginActivity
+ * finished long ago, so this new copy is not the task root. Finishing it shows the task as the
+ * user left it. A cold start, or the login screen opened after sign-out, is the task root.
+ */
+internal fun isLauncherRelaunch(isTaskRoot: Boolean, intent: Intent?): Boolean =
+    !isTaskRoot && intent?.action == Intent.ACTION_MAIN && intent.hasCategory(Intent.CATEGORY_LAUNCHER)
