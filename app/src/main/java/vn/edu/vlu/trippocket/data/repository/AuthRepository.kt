@@ -28,7 +28,10 @@ interface AuthRepository {
     /** Ends the session; trips saved on this phone stay in Room (proposal 6.2). */
     suspend fun signOut()
 
-    /** Short name of the signed-in account for what it shares (Trip Ideas): the part of the email before "@". */
+    /**
+     * Profile name of the signed-in account for what it shares (Trip Ideas), or null when the
+     * account has none. Never derived from the email, so a shared idea does not leak it.
+     */
     val displayName: String? get() = null
 }
 

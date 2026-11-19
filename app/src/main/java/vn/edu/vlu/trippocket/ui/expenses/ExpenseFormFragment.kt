@@ -83,12 +83,13 @@ class ExpenseFormFragment : Fragment() {
 
         if (binding.etAmount.text?.toString() != state.amountText) {
             binding.etAmount.setText(state.amountText)
-            binding.etAmount.setSelection(state.amountText.length)
+            // The field's maxLength can cut the text: put the cursor at what it really holds.
+            binding.etAmount.setSelection(binding.etAmount.length())
         }
         // The ViewModel rewrites the "Paid in" amount after a VND edit, so it is rendered too.
         if (binding.etPaidInAmount.text?.toString() != state.paidInAmountText) {
             binding.etPaidInAmount.setText(state.paidInAmountText)
-            binding.etPaidInAmount.setSelection(state.paidInAmountText.length)
+            binding.etPaidInAmount.setSelection(binding.etPaidInAmount.length())
         }
 
         when {

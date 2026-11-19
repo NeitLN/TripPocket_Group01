@@ -162,7 +162,7 @@ class ItineraryRepository(
     suspend fun moveDown(tripId: String, activityId: String) = moveBy(tripId, activityId, offset = 1)
 
     /**
-     * Debug builds only, until A2 adds the activity form: copies the sample activities into
+     * Debug builds without Firebase (offline sample account): copies the sample activities into
      * Room for the sample trips (same ids as
      * [vn.edu.vlu.trippocket.data.repository.TripRepository.seedSampleTrips]), so a fresh
      * install shows an itinerary. A trip that is not on this phone (or was deleted) and a trip

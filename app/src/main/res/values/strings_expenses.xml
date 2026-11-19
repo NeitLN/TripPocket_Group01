@@ -75,6 +75,7 @@
     <string name="expense_cancel">Cancel</string>
     <string name="expense_error_title">Say what the money was for</string>
     <string name="expense_error_amount">Enter an amount above 0</string>
+    <string name="expense_error_amount_too_large">That is more than 999,999,999,999 ₫</string>
     <string name="expense_error_payer">Choose who paid</string>
     <string name="expense_error_participants">Pick at least one person to split with</string>
     <string name="expense_error_equal_too_small">Each person needs at least 1 ₫. Raise the amount or split with fewer people.</string>

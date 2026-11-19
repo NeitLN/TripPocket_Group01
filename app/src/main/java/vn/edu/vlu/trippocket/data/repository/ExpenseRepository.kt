@@ -155,7 +155,7 @@ class ExpenseRepository(
     }
 
     /**
-     * Debug builds only, until E1 adds the members screen: copies the sample members and
+     * Debug builds without Firebase (offline sample account): copies the sample members and
      * expenses of the sample trips into Room (same ids as TripRepository.seedSampleTrips).
      * Not a user change, so it does not go through TripWriter.
      *

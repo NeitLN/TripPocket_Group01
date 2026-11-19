@@ -62,7 +62,7 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 | Part | What |
 |---|---|
 | Room | 8 tables: `trip`, `trip_member`, `activity`, `checklist_item`, `saved_place`, `expense`, `expense_share`, `weather_cache`; schema frozen at version 1 (`app/schemas`) |
-| REST (Retrofit + OkHttp + kotlinx.serialization) | Open-Meteo geocoding and 16-day forecast, Wikipedia GeoSearch and page summary, MockAPI.io Trip Ideas (GET / POST / PUT / DELETE), open.er-api.com exchange rates |
+| REST (Retrofit + OkHttp + Gson) | Open-Meteo geocoding and 16-day forecast, Wikipedia GeoSearch and page summary, MockAPI.io Trip Ideas (GET / POST / PUT / DELETE), open.er-api.com exchange rates |
 | Firebase | Auth (email / password, session kept), Firestore backup `users/{uid}/trips/{tripId}` with owner-only rules (`firestore.rules`, tested in the emulator) |
 | Images | Glide: Trip Idea covers, place photos, country flags, with placeholders |
 
@@ -80,7 +80,7 @@ Open the folder in Android Studio and run the `app` configuration, or:
   With it, Firebase sign-in and backup are on. The file is shared privately and never committed.
 - A signed release needs `keystore.properties` (see `keystore.properties.example` and
   [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
-- 460 unit tests (Robolectric for Room, MockWebServer for the APIs); CI runs them plus the Firestore rules tests on
+- 462 unit tests (Robolectric for Room, MockWebServer for the APIs); CI runs them plus the Firestore rules tests on
   every pull request.
 
 ## Documents
