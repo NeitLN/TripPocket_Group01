@@ -121,9 +121,10 @@ class WeatherViewModelTest {
         viewModels.clear()
         // Let Room finish what it already started (and its resumes reach Main) before Main changes.
         roomExecutor.shutdown()
-        roomExecutor.awaitTermination(10, TimeUnit.SECONDS)
+        val roomIdle = roomExecutor.awaitTermination(10, TimeUnit.SECONDS)
         Dispatchers.resetMain()
         t.close()
+        assertTrue("Room work was still running 10 s after the test; resetting Main could race it", roomIdle)
     }
 
     /** Main uses the runTest scheduler, so debounce and requests run on virtual time. */
