@@ -89,7 +89,10 @@
     <!-- Exchange rates (M4) -->
     <string name="exchange_rates_title">Exchange rates</string>
     <string name="exchange_rates_updated">Updated: %1$s</string>
+    <!-- A1: offline, the last rates saved on the phone. -->
+    <string name="exchange_rates_updated_offline">Offline copy · rates from %1$s</string>
     <string name="exchange_rates_rate_format">1 %1$s ≈ %2$s</string>
+    <string name="exchange_rates_rate_format_saved">1 %1$s ≈ %2$s (saved rate, offline)</string>
     <string name="exchange_rates_empty">No exchange rates available</string>
     <string name="expense_field_paid_in">Paid in</string>
     <string name="expense_field_foreign_amount">Foreign amount</string>

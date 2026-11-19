@@ -77,7 +77,7 @@ class ExchangeRatesFragment : Fragment() {
                 binding.tvLastUpdated.isVisible = state.rates.lastUpdatedUtc.isNotBlank()
                 if (state.rates.lastUpdatedUtc.isNotBlank()) {
                     binding.tvLastUpdated.text = getString(
-                        R.string.exchange_rates_updated,
+                        if (state.rates.fromCache) R.string.exchange_rates_updated_offline else R.string.exchange_rates_updated,
                         state.rates.lastUpdatedUtc,
                     )
                 }
