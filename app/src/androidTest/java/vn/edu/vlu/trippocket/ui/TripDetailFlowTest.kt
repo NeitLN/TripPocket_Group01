@@ -17,6 +17,7 @@ import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import org.hamcrest.Matchers.allOf
 import org.hamcrest.Matchers.startsWith
+import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import vn.edu.vlu.trippocket.R
@@ -26,6 +27,9 @@ import vn.edu.vlu.trippocket.ui.trips.MainActivity
 /** I1 and E2 on a device: adding an activity and an expense to the sample Đà Lạt trip. */
 @RunWith(AndroidJUnit4::class)
 class TripDetailFlowTest {
+
+    @Before
+    fun setUp() = clearTheScreen()
 
     private val dalat = MockData.trips.first { it.tripId == MockData.TRIP_DALAT }
     private val firstMember = MockData.membersOf(MockData.TRIP_DALAT).first().name
