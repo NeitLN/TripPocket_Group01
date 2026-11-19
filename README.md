@@ -81,7 +81,9 @@ Open the folder in Android Studio and run the `app` configuration, or:
 - A signed release needs `keystore.properties` (see `keystore.properties.example` and
   [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
 - 471 unit tests (Robolectric for Room, MockWebServer for the APIs); CI runs them plus the Firestore rules tests on
-  every pull request.
+  every pull request, builds the release APK (R8 + resource shrinking, unsigned) and attaches a JaCoCo coverage
+  report (`./gradlew createDebugUnitTestCoverageReport`, about 55 % of instructions; repositories, DAOs and the
+  domain rules are above 90 %).
 
 ## Documents
 

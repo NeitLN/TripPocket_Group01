@@ -3,6 +3,10 @@
 ## Chạy local
 - Mở thư mục bằng Android Studio, chạy cấu hình `app`. Trước khi mở PR, chạy:
   `./gradlew testDebugUnitTest lintDebug assembleDebug`
+- Độ phủ test: `./gradlew createDebugUnitTestCoverageReport`, mở
+  `app/build/reports/coverage/test/debug/index.html`. CI chạy lệnh này, ghi bảng tổng vào Summary của lần chạy và
+  đính kèm báo cáo (artifact `coverage`). CI cũng chạy `assembleRelease lintRelease` để bắt lỗi R8 / keep rule
+  trước khi ký bản phát hành.
 - **Đường dẫn có dấu tiếng Việt** (vd `Lập trình ứng dụng di động`) làm Gradle/Java không tìm thấy
   `gradle-wrapper.jar` khi chạy từ terminal. Cách xử lý: clone repo vào đường dẫn không dấu, hoặc gán ổ ảo:
   `subst T: "<đường dẫn repo>"` rồi chạy Gradle từ `T:\`.
