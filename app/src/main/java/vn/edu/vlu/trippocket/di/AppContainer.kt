@@ -170,7 +170,10 @@ class AppContainer(context: Context) {
 
     /** M4: photos and a short introduction of a place, from Wikipedia. */
     val placeInfoRepository by lazy {
-        PlaceInfoRepository(wikipediaRetrofit.create(PageSummaryApi::class.java))
+        PlaceInfoRepository(
+            wikipediaRetrofit.create(PageSummaryApi::class.java),
+            cache = database.placeInfoCacheDao(),
+        )
     }
 
     /** M4: nearby sights around the trip's saved place, from Wikipedia GeoSearch. */
