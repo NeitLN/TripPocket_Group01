@@ -102,6 +102,14 @@ class ExpenseFormViewModel(
     private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
     private val expenseId: String? = savedStateHandle[ARG_EXPENSE_ID]
 
+    /**
+     * A restored draft holds the VND amount as the user left it. The "Paid in" amount next to it
+     * may be only the 2-decimal echo of that VND, so converting it back when the rates arrive
+     * could change the amount (300,001 -> 300,000). Until the user edits the amount, the
+     * currency or the "Paid in" amount, the rates must not rewrite it.
+     */
+    private var keepRestoredAmount = false
+
     private val _state = MutableStateFlow(ExpenseFormState(isEdit = expenseId != null, spentAt = today()))
     val state: StateFlow<ExpenseFormState> = _state.asStateFlow()
 
@@ -137,7 +145,10 @@ class ExpenseFormViewModel(
                     )
                 }
             }
-            if (_state.value.paidInCurrency != null) fetchExchangeRates()
+            if (draft && _state.value.paidInCurrency != null) {
+                keepRestoredAmount = true
+                fetchExchangeRates()
+            }
             // From now on every change is copied into the saved state (see [keepDraft]).
             _state.collect { if (!it.loading && !it.done) keepDraft(it) }
         }
@@ -192,6 +203,7 @@ class ExpenseFormViewModel(
     fun setAmount(text: String) {
         val typed = text.trim()
         if (typed == _state.value.amountText) return
+        keepRestoredAmount = false
         _state.update { it.copy(amountText = typed, amountError = null, splitError = null) }
         syncPaidInFromVnd()
     }
@@ -213,6 +225,7 @@ class ExpenseFormViewModel(
     }
 
     fun setPaidInCurrency(currency: String?) {
+        keepRestoredAmount = false
         _state.update { it.copy(paidInCurrency = currency) }
         if (currency != null && _state.value.exchangeRates == null && !_state.value.ratesLoading) {
             fetchExchangeRates()
@@ -224,6 +237,7 @@ class ExpenseFormViewModel(
     fun setPaidInAmount(text: String) {
         // Echo of a value [syncPaidInFromVnd] wrote: converting it back would undo the VND edit.
         if (text == _state.value.paidInAmountText) return
+        keepRestoredAmount = false
         _state.update { it.copy(paidInAmountText = text) }
         recalculateVndFromPaidIn()
     }
@@ -238,7 +252,7 @@ class ExpenseFormViewModel(
             when (val result = exchangeRateRepository.getExchangeRates()) {
                 is ApiResult.Success -> {
                     _state.update { it.copy(ratesLoading = false, exchangeRates = result.data, ratesError = null) }
-                    recalculateVndFromPaidIn()
+                    if (!keepRestoredAmount) recalculateVndFromPaidIn()
                 }
                 is ApiResult.Failure -> {
                     _state.update { it.copy(ratesLoading = false, ratesError = result.error) }

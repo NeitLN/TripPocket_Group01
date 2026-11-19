@@ -9,6 +9,7 @@ import kotlinx.coroutines.test.UnconfinedTestDispatcher
 import kotlinx.coroutines.test.resetMain
 import kotlinx.coroutines.test.setMain
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -135,6 +136,33 @@ class ExpenseFormViewModelTest {
         assertEquals(SplitType.CUSTOM, state.splitType)
         assertEquals(mapOf("a" to "100000", "c" to "200000"), state.customShares)
         assertEquals(setOf("a", "b"), state.participants)
+    }
+
+    @Test
+    fun aRestoredDraft_keepsTheTypedVnd_whenTheRatesArriveAgain() = runBlocking {
+        val handle = SavedStateHandle(mapOf(ARG_TRIP_ID to "t1"))
+        val first = ExpenseFormViewModel(handle, repository, exchangeRateRepository) { day }
+        withTimeout(5_000) { first.state.first { !it.loading } }
+        first.setPaidInCurrency("USD")
+        withTimeout(5_000) { first.state.first { it.exchangeRates != null } }
+        first.setAmount("300001") // 1 USD = 25,000 VND: "Paid in" shows only the rounded 12
+        assertEquals("12", first.state.value.paidInAmountText)
+
+        val restored = ExpenseFormViewModel(
+            SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }),
+            repository,
+            exchangeRateRepository,
+        ) { day }
+
+        val state = withTimeout(5_000) { restored.state.first { !it.loading && it.exchangeRates != null } }
+        assertEquals("USD", state.paidInCurrency)
+        // The rates arrive on the Room thread: give a wrong recalculation time to show up.
+        val changed = withTimeoutOrNull(1_000) { restored.state.first { it.amountText != "300001" } }
+        assertNull("the restored amount was rewritten to ${changed?.amountText}", changed)
+
+        // A real edit of "Paid in" afterwards converts again, as before.
+        restored.setPaidInAmount("10")
+        assertEquals("250000", restored.state.value.amountText)
     }
 
     @Test
