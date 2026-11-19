@@ -303,6 +303,29 @@ class ExpenseFormViewModelTest {
     }
 
     @Test
+    fun save_whilePaidInIsTooLarge_savesNothing_andKeepsTheError() = runBlocking {
+        val viewModel = form()
+        viewModel.setTitle("Villa")
+        viewModel.setPaidInCurrency("USD")
+        viewModel.setPaidInAmount("39999999") // fits: 999,999,975,000 VND
+        viewModel.setPaidInAmount("40000000") // refused: the old VND amount stays in the field
+
+        // Saving now would store 999,999,975,000 VND while "Paid in" says 40,000,000 USD.
+        viewModel.save()
+        val state = viewModel.state.value
+        assertEquals(R.string.expense_error_amount_too_large, state.amountError)
+        assertFalse(state.done)
+        assertEquals(0, t.db.expenseDao().countByTrip("t1"))
+
+        // Typing the VND amount by hand rewrites "Paid in" to match, so the form can be saved again.
+        viewModel.setAmount("300000")
+        assertEquals(null, viewModel.state.value.amountError)
+        viewModel.save()
+        viewModel.awaitDone()
+        assertEquals(1, t.db.expenseDao().countByTrip("t1"))
+    }
+
+    @Test
     fun paidIn_manualVndEditWins() = runBlocking {
         val viewModel = form()
         viewModel.setPaidInCurrency("USD")

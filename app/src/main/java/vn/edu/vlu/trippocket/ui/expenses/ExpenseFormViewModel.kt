@@ -201,13 +201,17 @@ class ExpenseFormViewModel(
         }
     }
 
+    /** The "Paid in" amount in VND, or null without a currency, a usable amount or a rate. */
+    private fun paidInVnd(state: ExpenseFormState): Long? {
+        val currency = state.paidInCurrency ?: return null
+        val foreignAmount = parseForeignAmount(state.paidInAmountText) ?: return null
+        val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd ?: return null
+        if (rate <= 0.0) return null
+        return CurrencyConverter.toVnd(foreignAmount, rate)
+    }
+
     private fun recalculateVndFromPaidIn() {
-        val state = _state.value
-        val currency = state.paidInCurrency ?: return
-        val foreignAmount = parseForeignAmount(state.paidInAmountText) ?: return
-        val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd ?: return
-        if (rate <= 0.0) return
-        val vnd = CurrencyConverter.toVnd(foreignAmount, rate)
+        val vnd = paidInVnd(_state.value) ?: return
         if (vnd > MAX_AMOUNT_VND) {
             // The amount field holds 12 digits: keep the old amount and say why instead.
             _state.update { it.copy(amountError = R.string.expense_error_amount_too_large) }
@@ -259,7 +263,13 @@ class ExpenseFormViewModel(
         }
         val checked = state.copy(
             titleError = R.string.expense_error_title.takeIf { state.title.isBlank() },
-            amountError = R.string.expense_error_amount.takeIf { amount == null },
+            // A refused "Paid in" conversion leaves the old VND amount in the field: saving it
+            // would store an amount that does not match what "Paid in" shows.
+            amountError = when {
+                (paidInVnd(state) ?: 0L) > MAX_AMOUNT_VND -> R.string.expense_error_amount_too_large
+                amount == null -> R.string.expense_error_amount
+                else -> null
+            },
             payerError = R.string.expense_error_payer.takeIf { state.payerId == null },
             splitError = splitError,
         )
