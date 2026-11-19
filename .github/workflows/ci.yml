@@ -1,7 +1,8 @@
 name: CI
 
-# Unit tests, lint and a debug build on every pull request into develop or main.
-# No google-services.json here: the app builds and tests without it (see docs/RUNBOOK.md).
+# Unit tests (with coverage), lint and a debug + release build on every pull request into
+# develop or main. No google-services.json and no keystore here: the app builds and tests
+# without them, and the release APK comes out unsigned (see docs/RUNBOOK.md).
 on:
   pull_request:
     branches: [develop, main]
@@ -23,8 +24,33 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
-      - name: Test, lint, build
-        run: ./gradlew testDebugUnitTest lintDebug assembleDebug --console=plain
+      - name: Test with coverage, lint, build
+        run: ./gradlew createDebugUnitTestCoverageReport lintDebug assembleDebug --console=plain
+      # The release build runs R8 and resource shrinking, which a debug build never does: a
+      # missing keep rule shows up here instead of on the phone.
+      - name: Release build and lint
+        run: ./gradlew assembleRelease lintRelease --console=plain
+      - name: Coverage summary
+        if: always()
+        run: |
+          xml=app/build/reports/coverage/test/debug/report.xml
+          [ -f "$xml" ] || exit 0
+          python3 - "$xml" >> "$GITHUB_STEP_SUMMARY" <<'PY'
+          import sys, xml.etree.ElementTree as ET
+          root = ET.parse(sys.argv[1]).getroot()
+          print("### Unit test coverage (JaCoCo)\n\n| Counter | Covered | Total | % |\n|---|---|---|---|")
+          for c in root.findall("counter"):
+              missed, covered = int(c.get("missed")), int(c.get("covered"))
+              total = missed + covered
+              print(f"| {c.get('type').title()} | {covered} | {total} | {100 * covered / total:.1f} |")
+          PY
+      - name: Upload coverage report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage
+          path: app/build/reports/coverage/test/debug
+          if-no-files-found: ignore
       - name: Upload reports on failure
         if: failure()
         uses: actions/upload-artifact@v4
