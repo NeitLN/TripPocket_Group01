@@ -90,3 +90,4 @@ Open the folder in Android Studio and run the `app` configuration, or:
 - Proposal tasks and status: [`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/STATUS.md`](docs/STATUS.md)
 - Milestone 4 worksheet (APIs, Firebase, Glide): [`docs/worksheet.md`](docs/worksheet.md)
 - Milestone 5 report (performance, security, signed release): [`docs/m5/report.pdf`](docs/m5/report.pdf)
+- How we branch, test, review and merge: [`CONTRIBUTING.md`](CONTRIBUTING.md)
