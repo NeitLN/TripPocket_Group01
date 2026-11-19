@@ -48,6 +48,8 @@ sealed interface TripIdeasMessage {
  * - Loading: [loading] with no rows yet -> ProgressBar.
  * - Success: [ideas] -> RecyclerView (or the empty state when the server has none).
  * - Error: [error] -> error banner with Retry; rows from an earlier load stay on screen.
+ * - Offline copy (A1): the download failed but a saved list exists -> those rows, marked
+ *   [offlineCopy], instead of the error banner.
  */
 data class TripIdeasUiState(
     val loading: Boolean = true,
@@ -58,6 +60,8 @@ data class TripIdeasUiState(
     /** Ids being deleted, so their row cannot be deleted twice. */
     val deleting: Set<String> = emptySet(),
     val message: TripIdeasMessage? = null,
+    /** A1: the download failed and [ideas] is the copy saved by the last good load. */
+    val offlineCopy: Boolean = false,
 ) {
     val showEmpty: Boolean get() = !loading && !refreshing && error == null && ideas.isEmpty()
 }
@@ -112,11 +116,13 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
                         refreshing = false,
                         ideas = result.data.filterNot { it.id in deletedIds }.map { it.toCard() },
                         error = null,
+                        offlineCopy = false,
                     )
                     // Keep the rows of the last good load so a failed refresh hides nothing.
                     is ApiResult.Failure -> state.copy(loading = false, refreshing = false, error = result.error)
                 }
             }
+            if (result is ApiResult.Failure) showSavedCopy()
         }
     }
 
@@ -148,6 +154,17 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
     }
 
     fun messageShown() = _uiState.update { it.copy(message = null) }
+
+    /**
+     * After a failed load: when nothing fresher is on screen, the saved list replaces the error
+     * banner. Rows from a good load in this session stay as they are (they are newer).
+     */
+    private suspend fun showSavedCopy() {
+        if (_uiState.value.ideas.isNotEmpty() && !_uiState.value.offlineCopy) return
+        val saved = repository.savedIdeas().filterNot { it.id in deletedIds }
+        if (saved.isEmpty()) return
+        _uiState.update { it.copy(ideas = saved.map { idea -> idea.toCard() }, error = null, offlineCopy = true) }
+    }
 
     private fun TripIdea.toCard(): TripIdeaCard {
         val uid = repository.currentUid

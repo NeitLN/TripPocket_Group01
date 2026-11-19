@@ -11,6 +11,7 @@ import vn.edu.vlu.trippocket.data.local.dao.ExchangeRateCacheDao
 import vn.edu.vlu.trippocket.data.local.dao.ExpenseDao
 import vn.edu.vlu.trippocket.data.local.dao.SavedPlaceDao
 import vn.edu.vlu.trippocket.data.local.dao.TripDao
+import vn.edu.vlu.trippocket.data.local.dao.TripIdeaCacheDao
 import vn.edu.vlu.trippocket.data.local.dao.TripMemberDao
 import vn.edu.vlu.trippocket.data.local.dao.WeatherCacheDao
 import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
@@ -59,6 +60,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
     abstract fun weatherCacheDao(): WeatherCacheDao
     abstract fun exchangeRateCacheDao(): ExchangeRateCacheDao
+    abstract fun tripIdeaCacheDao(): TripIdeaCacheDao
     abstract fun backupDao(): BackupDao
 
     companion object {
