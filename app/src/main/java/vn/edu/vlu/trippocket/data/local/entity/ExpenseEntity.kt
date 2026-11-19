@@ -32,4 +32,12 @@ data class ExpenseEntity(
     val spentAt: Long,
     /** Epoch millis. */
     val createdAt: Long,
+    /**
+     * Schema v2: what was actually paid when it was not VND ("Paid in"), so reopening the expense
+     * shows "12.50 USD" again. All three are null for a VND expense and for rows from v1.
+     */
+    val originalCurrency: String? = null,
+    val originalAmount: Double? = null,
+    /** VND per 1 [originalCurrency] at the time of the expense. */
+    val rateToVnd: Double? = null,
 )

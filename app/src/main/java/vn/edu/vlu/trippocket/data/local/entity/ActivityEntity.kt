@@ -11,7 +11,9 @@ import androidx.room.PrimaryKey
     foreignKeys = [
         ForeignKey(TripEntity::class, ["tripId"], ["tripId"], onDelete = ForeignKey.CASCADE),
     ],
-    indices = [Index("tripId")],
+    // Schema v2: one day's activities are read in order (tripId, dayIndex, orderIndex); the
+    // composite index serves that query and, starting with tripId, the foreign key too.
+    indices = [Index("tripId", "dayIndex", "orderIndex")],
 )
 data class ActivityEntity(
     @PrimaryKey val activityId: String,
