@@ -52,6 +52,9 @@ class TripListViewModelTest {
         auth,
         sessions,
         syncReminders = { reminderSyncs += it },
+        // The session-store write runs on this dispatcher. Dispatchers.IO raced the asserts right after
+        // signOut() (flaky on CI); Unconfined finishes the write before signOut() returns.
+        io = Dispatchers.Unconfined,
     )
 
     private suspend fun TripListViewModel.loaded(trips: Int) =

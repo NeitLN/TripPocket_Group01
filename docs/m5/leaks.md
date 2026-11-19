@@ -93,7 +93,7 @@ trường hợp này ("Nếu 0 leak ngay từ đầu: vẫn phải có ảnh No 
 ## 4. Bộ nhớ (PSS) — mở/đóng màn hình và background
 
 Công cụ: `adb shell dumpsys meminfo vn.edu.vlu.trippocket` (dòng `TOTAL PSS`), lấy mẫu bằng PowerShell. Đây là số
-đo thật của hệ thống, **không phải ảnh Android Studio Profiler**: Profiler là GUI, không điều khiển được từ agent,
+đo thật của hệ thống, **không phải ảnh Android Studio Profiler**: Profiler là GUI, không chạy được bằng script,
 nên biểu đồ dưới đây dựng từ chính các mẫu PSS đó (`docs/m5/img/memory-graph.png`, số liệu thô trong
 `m5s3\mem-cycles.txt`).
 

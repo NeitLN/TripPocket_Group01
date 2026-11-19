@@ -53,7 +53,7 @@ Notepad, hoặc bằng PowerShell không BOM:
 (`if (keystoreProps.isNotEmpty())`). Máy không có file — CI, máy bạn khác, bản clone mới — vẫn build được, chỉ là
 APK release **chưa ký**.
 
-## 4. Sau khi tạo xong (Duy Anh chạy, rồi báo lại để agent làm tiếp)
+## 4. Sau khi tạo xong (Duy Anh chạy, rồi báo lại để làm tiếp)
 
 ```powershell
 # 1) xem fingerprint để đối chiếu (không lộ mật khẩu)
@@ -115,3 +115,18 @@ khác nhau (ví dụ: password manager + USB ngoài), và ghi ngày sao lưu và
 Kết luận: bản release **ký bằng khoá thật** vẫn qua được luồng Firestore backup/restore dưới R8, không có lỗi
 reflection nào trong logcat.
 
+
+## 8. Khoá mới từ v1.1.1 (20/11/2026)
+
+Từ bản **v1.1.1**, release được ký bằng một keystore mới do Tiến giữ (keystore v1.1.0 nằm trên máy Duy Anh).
+Thông số giữ nguyên: `PKCS12`, RSA 4096, alias `trippocket`, hạn 10000 ngày,
+`CN=TripPocket, OU=VLU, O=Nhom01, L=Da Lat, ST=Lam Dong, C=VN`. Keystore nằm ngoài repo, mật khẩu chỉ ở
+`keystore.properties` (đã ignore).
+
+| Thứ | Giá trị |
+|---|---|
+| SHA-256 chứng chỉ | `A1:23:B9:43:94:12:3A:65:3B:61:67:31:96:A1:62:31:89:BB:AF:92:AE:6A:F8:C9:9B:D4:FE:36:E7:F5:5B:6D` |
+| Ngày tạo | 20/11/2026, hạn tới 07/04/2054 |
+
+Vân tay khác v1.1.0, nên máy đã cài v1.1.0 phải gỡ app trước khi cài v1.1.1 (Android không cho cập nhật khi
+chữ ký đổi). Dữ liệu chuyến vẫn lấy lại được bằng Restore from backup.
