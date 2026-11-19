@@ -15,6 +15,8 @@ import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import org.hamcrest.Matchers.allOf
+import org.hamcrest.Matchers.startsWith
 import org.junit.Test
 import org.junit.runner.RunWith
 import vn.edu.vlu.trippocket.R
@@ -26,6 +28,10 @@ import vn.edu.vlu.trippocket.ui.trips.MainActivity
 class TripDetailFlowTest {
 
     private val dalat = MockData.trips.first { it.tripId == MockData.TRIP_DALAT }
+    private val firstMember = MockData.membersOf(MockData.TRIP_DALAT).first().name
+
+    /** "Day " as the dropdown writes it, from R.string.itinerary_day_simple ("Day %1$d"). */
+    private fun dayLabelPrefix(): String = string(R.string.itinerary_day_simple).substringBefore("%")
 
     private fun openDalat(): ActivityScenario<MainActivity> {
         val scenario = ActivityScenario.launch(MainActivity::class.java)
@@ -39,6 +45,9 @@ class TripDetailFlowTest {
     fun aNewActivity_appearsInTheItinerary() {
         openDalat().use {
             onView(withId(R.id.fabAddActivity)).perform(click())
+            // The form reads the trip from Room before it fills its fields; typing earlier would be
+            // wiped by that fill. The day dropdown has a label only once loading is done.
+            waitForView(allOf(withId(R.id.actvDay), withText(startsWith(dayLabelPrefix()))))
             onView(withId(R.id.etTitle)).perform(replaceText("Espresso stop"), closeSoftKeyboard())
 
             onView(withId(R.id.btnSave)).perform(scrollTo(), click())
@@ -75,6 +84,8 @@ class TripDetailFlowTest {
             onView(withId(R.id.nav_expenses)).perform(click())
             waitForView(withId(R.id.fabAddExpense))
             onView(withId(R.id.fabAddExpense)).perform(click())
+            // Same for the expense form: it reads the members first, then names the payer.
+            waitForView(allOf(withId(R.id.actPayer), withText(firstMember)))
             onView(withId(R.id.etTitle)).perform(replaceText("Espresso coffee"))
             onView(withId(R.id.etAmount)).perform(replaceText("45000"), closeSoftKeyboard())
 

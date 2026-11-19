@@ -42,8 +42,9 @@ Mẫu mô tả PR có sẵn trong `.github/pull_request_template.md`, GitHub t�
 - Người review đọc diff, đối chiếu với mục tiêu của PR, chạy test nếu cần, rồi chọn approve hoặc request changes
   kèm lý do cụ thể.
 - Request changes: tác giả sửa bằng commit mới trên cùng nhánh (không force-push), trả lời comment, rồi nhờ review lại.
-- Merge khi có approve trên commit mới nhất **và** CI xanh (job `build`: test + coverage, lint, build debug và release;
-  job `firestore-rules`). Dùng "Create a merge commit" và xoá nhánh sau khi merge.
+- Merge khi có approve trên commit mới nhất **và** CI xanh: job `build` (test + coverage, lint, build debug và
+  release), job `ui-tests` (Espresso trên emulator) và job `firestore-rules`. Dùng "Create a merge commit" và xoá
+  nhánh sau khi merge.
 
 ## Phát hành
 

@@ -1,11 +1,15 @@
 package vn.edu.vlu.trippocket.ui
 
+import androidx.recyclerview.widget.RecyclerView
 import androidx.test.core.app.ActivityScenario
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions.click
 import androidx.test.espresso.action.ViewActions.closeSoftKeyboard
 import androidx.test.espresso.action.ViewActions.replaceText
 import androidx.test.espresso.assertion.ViewAssertions.matches
+import androidx.test.espresso.contrib.RecyclerViewActions
+import androidx.test.espresso.matcher.ViewMatchers.hasDescendant
+import androidx.test.espresso.matcher.ViewMatchers.isDisplayed
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import androidx.test.espresso.matcher.ViewMatchers.withText
 import androidx.test.ext.junit.runners.AndroidJUnit4
@@ -24,6 +28,11 @@ class TripFlowTest {
 
     private val dalat = MockData.trips.first { it.tripId == MockData.TRIP_DALAT }
 
+    private companion object {
+        /** The first sample stop of the Đà Lạt trip (MockData, day 1). */
+        const val FIRST_STOP = "Sleeper bus to Đà Lạt"
+    }
+
     @Test
     fun theSampleTrips_areListed_andOneOpensOnItsItinerary() {
         ActivityScenario.launch(MainActivity::class.java).use {
@@ -31,7 +40,12 @@ class TripFlowTest {
 
             onView(withText(dalat.name)).perform(click())
 
-            waitForView(withText("Sleeper bus to Đà Lạt"))
+            // On a small screen the stop can sit below the fold: scroll the day's list to it first.
+            waitForView(withId(R.id.rvActivities))
+            onView(withId(R.id.rvActivities)).perform(
+                RecyclerViewActions.scrollTo<RecyclerView.ViewHolder>(hasDescendant(withText(FIRST_STOP)))
+            )
+            onView(withText(FIRST_STOP)).check(matches(isDisplayed()))
         }
     }
 
