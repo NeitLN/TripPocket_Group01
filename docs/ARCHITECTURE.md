@@ -85,9 +85,16 @@ Test: `data/local/TripWriterTest.kt`. Riêng `WeatherCache` không nằm trong b
 ổn định) rồi đánh số lại. Kéo thả chỉ đổi `orderIndex`. Sửa tên, ghi chú hay chi phí thì giữ nguyên thứ tự.
 
 ### Migration
-`exportSchema = true`. Schema đã đóng băng ở version 1 (`app/schemas`) từ 30/10. Đổi schema thì **tăng version và
-viết Migration**. Từ 10/11 không còn destructive fallback, kể cả bản debug; bản demo là APK release đã ký (v1.1.x): thiếu migration
-thì app báo lỗi ngay khi mở, không lặng lẽ xoá chuyến chưa backup.
+`exportSchema = true`, mỗi version có file trong `app/schemas`. Đổi schema thì **tăng version, viết Migration trong
+`data/local/Migrations.kt` và test nó** (`androidTest/.../MigrationTest.kt`, dùng `MigrationTestHelper` dựng DB từ file
+JSON của version cũ). Từ 10/11 không còn destructive fallback, kể cả bản debug: thiếu migration thì app báo lỗi ngay khi
+mở, không lặng lẽ xoá chuyến chưa backup.
+- **v1** (30/10, v1.0.0–v1.1.1): 8 bảng.
+- **v2** (A1): thêm `trip_idea_cache`, `exchange_rate_cache`, `place_info_cache` (cache API, không backup, giống
+  `weather_cache`); thêm vào `expense` ba cột nullable `originalCurrency`, `originalAmount`, `rateToVnd` (số tiền gốc
+  khi trả bằng ngoại tệ); `activity` đổi index `tripId` thành index ghép `(tripId, dayIndex, orderIndex)`.
+  `MIGRATION_1_2` chỉ thêm bảng/cột/index, không sửa dòng nào, nên chuyến không bị đánh dấu thay đổi. Đã thử cài đè
+  bản v1 có dữ liệu lên v2 trên emulator: chuyến và hoạt động còn nguyên, `user_version` = 2.
 
 ## Tài khoản, phiên và backup
 - Quyền sở hữu được kiểm **ở các điểm vào**, không cần kiểm trong từng query bảng con:

@@ -15,17 +15,22 @@ import vn.edu.vlu.trippocket.data.local.dao.WeatherCacheDao
 import vn.edu.vlu.trippocket.data.local.entity.ActivityEntity
 import vn.edu.vlu.trippocket.data.local.entity.ChecklistItemEntity
 import vn.edu.vlu.trippocket.data.local.entity.ExpenseEntity
+import vn.edu.vlu.trippocket.data.local.entity.ExchangeRateCacheEntity
 import vn.edu.vlu.trippocket.data.local.entity.ExpenseShareEntity
+import vn.edu.vlu.trippocket.data.local.entity.PlaceInfoCacheEntity
 import vn.edu.vlu.trippocket.data.local.entity.SavedPlaceEntity
 import vn.edu.vlu.trippocket.data.local.entity.TripEntity
+import vn.edu.vlu.trippocket.data.local.entity.TripIdeaCacheEntity
 import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.local.entity.WeatherCacheEntity
 
 /**
  * TripPocket_DB (proposal 4.2). Owner: Tiến; ask before changing an entity.
- * The schema is frozen at version 1 (app/schemas). A change to it bumps [version] and adds a
- * Migration: there is no destructive fallback, so a missing migration fails at start-up
- * instead of silently wiping trips that are not backed up yet.
+ * Every schema version is exported to app/schemas. A change to it bumps [VERSION] and adds a
+ * Migration in Migrations.kt: there is no destructive fallback, so a missing migration fails
+ * at start-up instead of silently wiping trips that are not backed up yet.
+ * v1: v1.0.0-v1.1.1. v2 (A1): network caches, the expense's original currency, a composite
+ * index on activity.
  */
 @Database(
     entities = [
@@ -37,6 +42,9 @@ import vn.edu.vlu.trippocket.data.local.entity.WeatherCacheEntity
         ExpenseEntity::class,
         ExpenseShareEntity::class,
         WeatherCacheEntity::class,
+        TripIdeaCacheEntity::class,
+        ExchangeRateCacheEntity::class,
+        PlaceInfoCacheEntity::class,
     ],
     version = AppDatabase.VERSION,
     exportSchema = true,
@@ -53,7 +61,7 @@ abstract class AppDatabase : RoomDatabase() {
 
     companion object {
         private const val NAME = "TripPocket_DB"
-        const val VERSION = 1
+        const val VERSION = 2
 
         /** Written by one thread, read by all: @Volatile so no thread sees a half-built instance. */
         @Volatile
@@ -70,6 +78,8 @@ abstract class AppDatabase : RoomDatabase() {
 
         /** [name] is a parameter only so a test can open its own file next to the real one. */
         internal fun build(context: Context, name: String = NAME): AppDatabase =
-            Room.databaseBuilder(context, AppDatabase::class.java, name).build()
+            Room.databaseBuilder(context, AppDatabase::class.java, name)
+                .addMigrations(*Migrations.ALL)
+                .build()
     }
 }

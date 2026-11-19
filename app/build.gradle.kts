@@ -164,6 +164,16 @@ dependencies {
     androidTestImplementation(libs.androidx.espresso.contrib)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.test.runner)
+    // MigrationTest: builds a v1 database from app/schemas/1.json (the Room plugin copies the
+    // schemas into the instrumented tests' assets) and checks the migration to v2.
+    androidTestImplementation(libs.androidx.room.testing)
+    constraints {
+        // The test APK must use the app's versions, and lifecycle alone pulls kotlinx-serialization
+        // 1.7.3; room-testing reads the schema JSON with 1.8.1 and fails on 1.7.3 (AbstractMethodError).
+        implementation(libs.kotlinx.serialization.core) {
+            because("room-testing 2.8.5 needs kotlinx-serialization 1.8.1")
+        }
+    }
     androidTestUtil(libs.androidx.test.orchestrator)
 
     // M5 stage 3: LeakCanary only in debug builds; release packaging stays clean.

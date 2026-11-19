@@ -61,7 +61,7 @@ Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 | Part | What |
 |---|---|
-| Room | 8 tables: `trip`, `trip_member`, `activity`, `checklist_item`, `saved_place`, `expense`, `expense_share`, `weather_cache`; schema frozen at version 1 (`app/schemas`) |
+| Room | 11 tables: `trip`, `trip_member`, `activity`, `checklist_item`, `saved_place`, `expense`, `expense_share`, plus the API caches `weather_cache`, `trip_idea_cache`, `exchange_rate_cache`, `place_info_cache`; schema version 2 with a tested migration from 1 (`app/schemas`, `Migrations.kt`) |
 | REST (Retrofit + OkHttp + Gson) | Open-Meteo geocoding and 16-day forecast, Wikipedia GeoSearch and page summary, MockAPI.io Trip Ideas (GET / POST / PUT / DELETE), open.er-api.com exchange rates |
 | Firebase | Auth (email / password, session kept), Firestore backup `users/{uid}/trips/{tripId}` with owner-only rules (`firestore.rules`, tested in the emulator) |
 | Images | Glide: Trip Idea covers, place photos, country flags, with placeholders |
@@ -80,9 +80,9 @@ Open the folder in Android Studio and run the `app` configuration, or:
   With it, Firebase sign-in and backup are on. The file is shared privately and never committed.
 - A signed release needs `keystore.properties` (see `keystore.properties.example` and
   [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
-- 471 unit tests (Robolectric for Room, MockWebServer for the APIs) and 6 Espresso tests on an emulator
-  (`connectedDebugAndroidTest`: trip list, new-trip validation, rotation, adding an activity and an expense, a double
-  tap on Add). CI runs both plus the Firestore rules tests on every pull request, builds the release APK (R8 +
+- 471 unit tests (Robolectric for Room, MockWebServer for the APIs) and 9 instrumented tests on an emulator
+  (`connectedDebugAndroidTest`: 6 Espresso tests for the trip list, new-trip validation, rotation, adding an activity
+  and an expense, a double tap on Add; 3 Room migration tests from schema 1 to 2). CI runs both plus the Firestore rules tests on every pull request, builds the release APK (R8 +
   resource shrinking, unsigned) and attaches a JaCoCo coverage report (`./gradlew createDebugUnitTestCoverageReport`,
   about 55 % of instructions; repositories, DAOs and the domain rules are above 90 %).
 
