@@ -67,7 +67,7 @@ data class ItineraryFormUiState(
  * [ItineraryFormUiState.saved].
  */
 class ItineraryFormViewModel(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val tripRepository: TripRepository,
     private val itineraryRepository: ItineraryRepository,
 ) : ViewModel() {
@@ -89,7 +89,17 @@ class ItineraryFormViewModel(
             } catch (e: Exception) {
                 0
             }
-            if (activityId == null) {
+            val draft = restoredDraft()
+            if (draft != null && dayCount > 0) {
+                // Android killed the app while the form was open: show what was typed, not the saved row.
+                _uiState.update {
+                    draft.copy(
+                        editing = it.editing,
+                        dayCount = dayCount,
+                        dayIndex = draft.dayIndex.coerceIn(0, dayCount - 1),
+                    )
+                }
+            } else if (activityId == null) {
                 _uiState.update { it.copy(loading = false, dayCount = dayCount, notFound = dayCount == 0) }
             } else {
                 val activity = try {
@@ -120,20 +130,52 @@ class ItineraryFormViewModel(
         }
     }
 
-    fun onTitleChanged(value: String) = _uiState.update { it.copy(title = value, saved = false) }
+    fun onTitleChanged(value: String) = edit { it.copy(title = value, saved = false) }
 
-    fun onPlaceChanged(value: String) = _uiState.update { it.copy(place = value, saved = false) }
+    fun onPlaceChanged(value: String) = edit { it.copy(place = value, saved = false) }
 
-    fun onStartTimeChanged(value: LocalTime) = _uiState.update { it.copy(startTime = value, saved = false) }
+    fun onStartTimeChanged(value: LocalTime) = edit { it.copy(startTime = value, saved = false) }
 
-    fun onCostChanged(value: String) = _uiState.update { it.copy(cost = value, saved = false) }
+    fun onCostChanged(value: String) = edit { it.copy(cost = value, saved = false) }
 
-    fun onNoteChanged(value: String) = _uiState.update { it.copy(note = value, saved = false) }
+    fun onNoteChanged(value: String) = edit { it.copy(note = value, saved = false) }
 
-    fun onReminderChanged(value: String) = _uiState.update { it.copy(reminder = value, saved = false) }
+    fun onReminderChanged(value: String) = edit { it.copy(reminder = value, saved = false) }
 
-    fun onDayChanged(value: Int) = _uiState.update {
+    fun onDayChanged(value: Int) = edit {
         it.copy(dayIndex = value.coerceIn(0, (it.dayCount - 1).coerceAtLeast(0)), saved = false)
+    }
+
+    /**
+     * Applies a field change and copies the fields into the saved state, so they survive Android
+     * killing the app in the background. Nothing is kept while the activity is still loading.
+     */
+    private fun edit(change: (ItineraryFormUiState) -> ItineraryFormUiState) {
+        _uiState.update(change)
+        val state = _uiState.value
+        if (state.loading) return
+        savedStateHandle[KEY_DRAFT] = true
+        savedStateHandle[KEY_TITLE] = state.title
+        savedStateHandle[KEY_PLACE] = state.place
+        savedStateHandle[KEY_START_MINUTE] = state.startTime.hour * 60 + state.startTime.minute
+        savedStateHandle[KEY_COST] = state.cost
+        savedStateHandle[KEY_NOTE] = state.note
+        savedStateHandle[KEY_REMINDER] = state.reminder
+        savedStateHandle[KEY_DAY] = state.dayIndex
+    }
+
+    private fun restoredDraft(): ItineraryFormUiState? {
+        if (savedStateHandle.get<Boolean>(KEY_DRAFT) != true) return null
+        val minute = savedStateHandle[KEY_START_MINUTE] ?: (DEFAULT_START_TIME.hour * 60)
+        return ItineraryFormUiState(
+            title = savedStateHandle[KEY_TITLE] ?: "",
+            place = savedStateHandle[KEY_PLACE] ?: "",
+            startTime = LocalTime.of(minute / 60, minute % 60),
+            cost = savedStateHandle[KEY_COST] ?: "",
+            note = savedStateHandle[KEY_NOTE] ?: "",
+            reminder = savedStateHandle[KEY_REMINDER] ?: "",
+            dayIndex = savedStateHandle[KEY_DAY] ?: 0,
+        )
     }
 
     /** Saves the form; nothing is written when a field is invalid. */
@@ -279,6 +321,15 @@ class ItineraryFormViewModel(
     }
 
     companion object {
+        private const val KEY_DRAFT = "draft"
+        private const val KEY_TITLE = "draft_title"
+        private const val KEY_PLACE = "draft_place"
+        private const val KEY_START_MINUTE = "draft_start_minute"
+        private const val KEY_COST = "draft_cost"
+        private const val KEY_NOTE = "draft_note"
+        private const val KEY_REMINDER = "draft_reminder"
+        private const val KEY_DAY = "draft_day"
+
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer {
                 ItineraryFormViewModel(

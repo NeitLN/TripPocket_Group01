@@ -55,14 +55,27 @@ data class TripFormUiState(
  * still hold activities).
  */
 class TripFormViewModel(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val tripRepository: TripRepository,
 ) : ViewModel() {
 
     private val tripId: String? = savedStateHandle[ARG_EDIT_TRIP_ID]
 
-    private val _uiState = MutableStateFlow(
+    /** What the user typed before Android killed the app in the background; null on a fresh form. */
+    private val draft: TripFormUiState? = if (savedStateHandle.get<Boolean>(KEY_DRAFT) == true) {
         TripFormUiState(
+            editing = tripId != null,
+            name = savedStateHandle[KEY_NAME] ?: "",
+            destination = savedStateHandle[KEY_DESTINATION] ?: "",
+            startDate = savedStateHandle.get<Long>(KEY_START)?.let(LocalDate::ofEpochDay),
+            endDate = savedStateHandle.get<Long>(KEY_END)?.let(LocalDate::ofEpochDay),
+        )
+    } else {
+        null
+    }
+
+    private val _uiState = MutableStateFlow(
+        draft ?: TripFormUiState(
             editing = tripId != null,
             loading = tripId != null,
             // The prefill comes from a remote trip idea, so it is cut to what the form accepts.
@@ -74,7 +87,8 @@ class TripFormViewModel(
 
     init {
         val tripId = tripId
-        if (tripId != null) {
+        // A restored draft wins over the trip in Room: reloading it would throw the edits away.
+        if (tripId != null && draft == null) {
             viewModelScope.launch {
                 val trip = try {
                     tripRepository.getTrip(tripId)
@@ -100,12 +114,32 @@ class TripFormViewModel(
         }
     }
 
-    fun onNameChanged(value: String) = _uiState.update { it.copy(name = value) }
+    fun onNameChanged(value: String) {
+        _uiState.update { it.copy(name = value) }
+        keepDraft()
+    }
 
-    fun onDestinationChanged(value: String) = _uiState.update { it.copy(destination = value) }
+    fun onDestinationChanged(value: String) {
+        _uiState.update { it.copy(destination = value) }
+        keepDraft()
+    }
 
-    fun onDatesChanged(start: LocalDate, end: LocalDate) = _uiState.update {
-        it.copy(startDate = start, endDate = end, datesMissing = false, problems = it.problems - DATE_PROBLEMS)
+    fun onDatesChanged(start: LocalDate, end: LocalDate) {
+        _uiState.update {
+            it.copy(startDate = start, endDate = end, datesMissing = false, problems = it.problems - DATE_PROBLEMS)
+        }
+        keepDraft()
+    }
+
+    /** Copies the fields into the saved state, so they survive Android killing the app in the background. */
+    private fun keepDraft() {
+        val state = _uiState.value
+        if (state.loading) return
+        savedStateHandle[KEY_DRAFT] = true
+        savedStateHandle[KEY_NAME] = state.name
+        savedStateHandle[KEY_DESTINATION] = state.destination
+        savedStateHandle[KEY_START] = state.startDate?.toEpochDay()
+        savedStateHandle[KEY_END] = state.endDate?.toEpochDay()
     }
 
     fun save() {
@@ -175,6 +209,12 @@ class TripFormViewModel(
 
     companion object {
         private val DATE_PROBLEMS = setOf(TripProblem.DATES_REVERSED, TripProblem.DAYS_IN_USE)
+
+        private const val KEY_DRAFT = "draft"
+        private const val KEY_NAME = "draft_name"
+        private const val KEY_DESTINATION = "draft_destination"
+        private const val KEY_START = "draft_start"
+        private const val KEY_END = "draft_end"
 
         val Factory: ViewModelProvider.Factory = viewModelFactory {
             initializer { TripFormViewModel(createSavedStateHandle(), appContainer().tripRepository) }

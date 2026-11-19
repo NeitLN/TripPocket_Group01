@@ -93,7 +93,7 @@ data class ExpenseFormState(
 
 /** E2: add or edit one expense with an equal or custom split (proposal 3.4). */
 class ExpenseFormViewModel(
-    savedStateHandle: SavedStateHandle,
+    private val savedStateHandle: SavedStateHandle,
     private val repository: ExpenseRepository,
     private val exchangeRateRepository: ExchangeRateRepository,
     today: () -> LocalDate = LocalDate::now,
@@ -102,15 +102,27 @@ class ExpenseFormViewModel(
     private val tripId: String = savedStateHandle[ARG_TRIP_ID] ?: ""
     private val expenseId: String? = savedStateHandle[ARG_EXPENSE_ID]
 
+    /**
+     * A restored draft holds the VND amount as the user left it. The "Paid in" amount next to it
+     * may be only the 2-decimal echo of that VND, so converting it back when the rates arrive
+     * could change the amount (300,001 -> 300,000). Until the user edits the amount, the
+     * currency or the "Paid in" amount, the rates must not rewrite it.
+     */
+    private var keepRestoredAmount = false
+
     private val _state = MutableStateFlow(ExpenseFormState(isEdit = expenseId != null, spentAt = today()))
     val state: StateFlow<ExpenseFormState> = _state.asStateFlow()
 
     init {
         viewModelScope.launch {
             val members = repository.observeMembers(tripId).first()
-            val existing = expenseId?.let { repository.getExpense(it) }
+            val draft = savedStateHandle.get<Boolean>(KEY_DRAFT) == true
+            val existing = if (draft) null else expenseId?.let { repository.getExpense(it) }
             _state.update { state ->
-                if (existing == null) {
+                if (draft) {
+                    // Android killed the app while the form was open: show what was typed.
+                    restoreDraft(state.copy(loading = false, members = members))
+                } else if (existing == null) {
                     state.copy(
                         loading = false,
                         members = members,
@@ -133,7 +145,51 @@ class ExpenseFormViewModel(
                     )
                 }
             }
+            if (draft && _state.value.paidInCurrency != null) {
+                keepRestoredAmount = true
+                fetchExchangeRates()
+            }
+            // From now on every change is copied into the saved state (see [keepDraft]).
+            _state.collect { if (!it.loading && !it.done) keepDraft(it) }
         }
+    }
+
+    /**
+     * Copies the fields into the saved state, so they survive Android killing the app in the
+     * background. Rates are not kept: they are downloaded again for a restored "Paid in" currency.
+     */
+    private fun keepDraft(state: ExpenseFormState) {
+        savedStateHandle[KEY_DRAFT] = true
+        savedStateHandle[KEY_TITLE] = state.title
+        savedStateHandle[KEY_AMOUNT] = state.amountText
+        savedStateHandle[KEY_PAYER] = state.payerId
+        savedStateHandle[KEY_CATEGORY] = state.category.name
+        savedStateHandle[KEY_SPENT_AT] = state.spentAt.toEpochDay()
+        savedStateHandle[KEY_SPLIT] = state.splitType.name
+        savedStateHandle[KEY_PARTICIPANTS] = ArrayList(state.participants)
+        savedStateHandle[KEY_SHARE_IDS] = ArrayList(state.customShares.keys)
+        savedStateHandle[KEY_SHARE_TEXTS] = ArrayList(state.customShares.values)
+        savedStateHandle[KEY_PAID_IN] = state.paidInCurrency
+        savedStateHandle[KEY_PAID_IN_AMOUNT] = state.paidInAmountText
+    }
+
+    /** [state] with the saved draft; members removed since then are dropped from it. */
+    private fun restoreDraft(state: ExpenseFormState): ExpenseFormState {
+        val ids = state.members.map { it.memberId }.toSet()
+        val shareIds = savedStateHandle.get<ArrayList<String>>(KEY_SHARE_IDS).orEmpty()
+        val shareTexts = savedStateHandle.get<ArrayList<String>>(KEY_SHARE_TEXTS).orEmpty()
+        return state.copy(
+            title = savedStateHandle[KEY_TITLE] ?: "",
+            amountText = savedStateHandle[KEY_AMOUNT] ?: "",
+            payerId = savedStateHandle.get<String>(KEY_PAYER)?.takeIf { it in ids },
+            category = enumOrNull<ExpenseCategory>(savedStateHandle[KEY_CATEGORY]) ?: state.category,
+            spentAt = savedStateHandle.get<Long>(KEY_SPENT_AT)?.let(LocalDate::ofEpochDay) ?: state.spentAt,
+            splitType = enumOrNull<SplitType>(savedStateHandle[KEY_SPLIT]) ?: state.splitType,
+            participants = savedStateHandle.get<ArrayList<String>>(KEY_PARTICIPANTS).orEmpty().filter { it in ids }.toSet(),
+            customShares = shareIds.zip(shareTexts).toMap().filterKeys { it in ids },
+            paidInCurrency = savedStateHandle[KEY_PAID_IN],
+            paidInAmountText = savedStateHandle[KEY_PAID_IN_AMOUNT] ?: "",
+        )
     }
 
     fun setTitle(text: String) = _state.update { it.copy(title = text, titleError = null) }
@@ -147,6 +203,7 @@ class ExpenseFormViewModel(
     fun setAmount(text: String) {
         val typed = text.trim()
         if (typed == _state.value.amountText) return
+        keepRestoredAmount = false
         _state.update { it.copy(amountText = typed, amountError = null, splitError = null) }
         syncPaidInFromVnd()
     }
@@ -168,6 +225,7 @@ class ExpenseFormViewModel(
     }
 
     fun setPaidInCurrency(currency: String?) {
+        keepRestoredAmount = false
         _state.update { it.copy(paidInCurrency = currency) }
         if (currency != null && _state.value.exchangeRates == null && !_state.value.ratesLoading) {
             fetchExchangeRates()
@@ -179,6 +237,7 @@ class ExpenseFormViewModel(
     fun setPaidInAmount(text: String) {
         // Echo of a value [syncPaidInFromVnd] wrote: converting it back would undo the VND edit.
         if (text == _state.value.paidInAmountText) return
+        keepRestoredAmount = false
         _state.update { it.copy(paidInAmountText = text) }
         recalculateVndFromPaidIn()
     }
@@ -193,7 +252,7 @@ class ExpenseFormViewModel(
             when (val result = exchangeRateRepository.getExchangeRates()) {
                 is ApiResult.Success -> {
                     _state.update { it.copy(ratesLoading = false, exchangeRates = result.data, ratesError = null) }
-                    recalculateVndFromPaidIn()
+                    if (!keepRestoredAmount) recalculateVndFromPaidIn()
                 }
                 is ApiResult.Failure -> {
                     _state.update { it.copy(ratesLoading = false, ratesError = result.error) }
@@ -327,6 +386,22 @@ class ExpenseFormViewModel(
     }
 
     companion object {
+        private const val KEY_DRAFT = "draft"
+        private const val KEY_TITLE = "draft_title"
+        private const val KEY_AMOUNT = "draft_amount"
+        private const val KEY_PAYER = "draft_payer"
+        private const val KEY_CATEGORY = "draft_category"
+        private const val KEY_SPENT_AT = "draft_spent_at"
+        private const val KEY_SPLIT = "draft_split"
+        private const val KEY_PARTICIPANTS = "draft_participants"
+        private const val KEY_SHARE_IDS = "draft_share_ids"
+        private const val KEY_SHARE_TEXTS = "draft_share_texts"
+        private const val KEY_PAID_IN = "draft_paid_in"
+        private const val KEY_PAID_IN_AMOUNT = "draft_paid_in_amount"
+
+        private inline fun <reified E : Enum<E>> enumOrNull(name: String?): E? =
+            enumValues<E>().firstOrNull { it.name == name }
+
         /** Nav argument of expenseFormFragment; absent when adding. */
         const val ARG_EXPENSE_ID = "expenseId"
 

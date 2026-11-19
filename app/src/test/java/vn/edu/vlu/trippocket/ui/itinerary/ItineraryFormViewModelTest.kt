@@ -81,6 +81,34 @@ class ItineraryFormViewModelTest {
     ) = ActivityInput(dayIndex, title, "Langbiang", startTime, estimatedCost, "", reminderMinutesBefore)
 
     @Test
+    fun whatWasTyped_survivesAndroidKillingTheApp() = runBlocking {
+        val handle = SavedStateHandle(mapOf(ARG_TRIP_ID to trip))
+        val first = ItineraryFormViewModel(handle, tripRepository, repository)
+        withTimeout(5_000) { first.uiState.first { !it.loading } }
+        first.onTitleChanged("Chợ đêm")
+        first.onPlaceChanged("Đà Lạt")
+        first.onStartTimeChanged(LocalTime.of(19, 30))
+        first.onCostChanged("150000")
+        first.onReminderChanged("30")
+        first.onDayChanged(1)
+
+        val restored = ItineraryFormViewModel(
+            SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }),
+            tripRepository,
+            repository,
+        )
+
+        val state = withTimeout(5_000) { restored.uiState.first { !it.loading } }
+        assertEquals("Chợ đêm", state.title)
+        assertEquals("Đà Lạt", state.place)
+        assertEquals(LocalTime.of(19, 30), state.startTime)
+        assertEquals("150000", state.cost)
+        assertEquals("30", state.reminder)
+        assertEquals(1, state.dayIndex)
+        assertFalse(state.notFound)
+    }
+
+    @Test
     fun aNewActivity_savesEveryField_andReportsSavedOnce() = runBlocking {
         val viewModel = form()
         assertFalse(viewModel.uiState.value.editing)
