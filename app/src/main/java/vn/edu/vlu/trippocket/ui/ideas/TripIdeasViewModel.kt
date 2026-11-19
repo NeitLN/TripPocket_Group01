@@ -109,20 +109,31 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
         }
         loadJob = viewModelScope.launch {
             val result = repository.ideas()
+            // Read the saved copy before touching the state, so a failed load ends in one update:
+            // no error banner flashing before the copy replaces it.
+            val saved = if (result is ApiResult.Failure) savedCopy() else null
             _uiState.update { state ->
-                when (result) {
-                    is ApiResult.Success -> state.copy(
+                when {
+                    result is ApiResult.Success -> state.copy(
                         loading = false,
                         refreshing = false,
                         ideas = result.data.filterNot { it.id in deletedIds }.map { it.toCard() },
                         error = null,
                         offlineCopy = false,
                     )
+                    saved != null -> state.copy(
+                        loading = false,
+                        refreshing = false,
+                        ideas = saved.map { it.toCard() },
+                        error = null,
+                        offlineCopy = true,
+                    )
                     // Keep the rows of the last good load so a failed refresh hides nothing.
-                    is ApiResult.Failure -> state.copy(loading = false, refreshing = false, error = result.error)
+                    result is ApiResult.Failure ->
+                        state.copy(loading = false, refreshing = false, error = result.error)
+                    else -> state
                 }
             }
-            if (result is ApiResult.Failure) showSavedCopy()
         }
     }
 
@@ -156,14 +167,12 @@ class TripIdeasViewModel(private val repository: TripIdeaRepository) : ViewModel
     fun messageShown() = _uiState.update { it.copy(message = null) }
 
     /**
-     * After a failed load: when nothing fresher is on screen, the saved list replaces the error
-     * banner. Rows from a good load in this session stay as they are (they are newer).
+     * For a failed load: the saved list, or null when it must not be shown, either because rows
+     * from a good load in this session are on screen (they are newer) or because nothing is saved.
      */
-    private suspend fun showSavedCopy() {
-        if (_uiState.value.ideas.isNotEmpty() && !_uiState.value.offlineCopy) return
-        val saved = repository.savedIdeas().filterNot { it.id in deletedIds }
-        if (saved.isEmpty()) return
-        _uiState.update { it.copy(ideas = saved.map { idea -> idea.toCard() }, error = null, offlineCopy = true) }
+    private suspend fun savedCopy(): List<TripIdea>? {
+        if (_uiState.value.ideas.isNotEmpty() && !_uiState.value.offlineCopy) return null
+        return repository.savedIdeas().filterNot { it.id in deletedIds }.ifEmpty { null }
     }
 
     private fun TripIdea.toCard(): TripIdeaCard {
