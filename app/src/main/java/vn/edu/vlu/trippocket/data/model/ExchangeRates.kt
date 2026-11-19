@@ -8,11 +8,14 @@ import androidx.annotation.StringRes
  * @property lastUpdatedUtc UTC timestamp string provided by the API (e.g. "Tue, 05 Nov 2026 00:02:31 +0000").
  * @property baseCurrency The base currency requested from the API (e.g. "USD").
  * @property items The supported currency items with exchange rates converted to VND.
+ * @property fromCache true when the download failed and these are the last rates saved on the
+ *   phone (A1, offline): the screens say so instead of showing an error.
  */
 data class ExchangeRates(
     val lastUpdatedUtc: String,
     val baseCurrency: String,
     val items: List<CurrencyRateItem>,
+    val fromCache: Boolean = false,
 )
 
 /**

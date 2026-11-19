@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import vn.edu.vlu.trippocket.data.local.dao.ActivityDao
 import vn.edu.vlu.trippocket.data.local.dao.BackupDao
 import vn.edu.vlu.trippocket.data.local.dao.ChecklistDao
+import vn.edu.vlu.trippocket.data.local.dao.ExchangeRateCacheDao
 import vn.edu.vlu.trippocket.data.local.dao.ExpenseDao
 import vn.edu.vlu.trippocket.data.local.dao.SavedPlaceDao
 import vn.edu.vlu.trippocket.data.local.dao.TripDao
@@ -57,6 +58,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun savedPlaceDao(): SavedPlaceDao
     abstract fun expenseDao(): ExpenseDao
     abstract fun weatherCacheDao(): WeatherCacheDao
+    abstract fun exchangeRateCacheDao(): ExchangeRateCacheDao
     abstract fun backupDao(): BackupDao
 
     companion object {

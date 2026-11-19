@@ -112,7 +112,11 @@ class ExpenseFormFragment : Fragment() {
                 if (item != null) {
                     binding.tvPaidInRate.isVisible = true
                     binding.tvPaidInRate.text = getString(
-                        R.string.exchange_rates_rate_format,
+                        if (state.exchangeRates.fromCache) {
+                            R.string.exchange_rates_rate_format_saved
+                        } else {
+                            R.string.exchange_rates_rate_format
+                        },
                         item.code,
                         Format.rateToVnd(item.rateToVnd),
                     )

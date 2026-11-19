@@ -193,7 +193,12 @@ class AppContainer(context: Context) {
 
     /** Retrofit for https://open.er-api.com/ (Milestone 4): exchange rates for expenses (Minh). */
     val exchangeRateRetrofit: Retrofit by lazy { retrofit("https://open.er-api.com/") }
-    val exchangeRateRepository: ExchangeRateRepository by lazy { ExchangeRateRepository(exchangeRateRetrofit.create(ExchangeRateApi::class.java)) }
+    val exchangeRateRepository: ExchangeRateRepository by lazy {
+        ExchangeRateRepository(
+            exchangeRateRetrofit.create(ExchangeRateApi::class.java),
+            cache = database.exchangeRateCacheDao(),
+        )
+    }
 
     /** I4: activity alarms on AlarmManager (exact when allowed, inexact otherwise). */
     val reminderScheduler: ReminderScheduler = AlarmReminderScheduler(context)
