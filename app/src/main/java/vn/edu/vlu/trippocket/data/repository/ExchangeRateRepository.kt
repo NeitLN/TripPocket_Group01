@@ -116,18 +116,19 @@ class ExchangeRateRepository(
     /** Keeps the rates the app uses (VND and the supported currencies), not all ~160 of them. */
     private suspend fun save(rates: Map<String, Double>, lastUpdatedUtc: String) {
         val cache = cache ?: return
-        val kept = JSONObject()
-        (SUPPORTED_CURRENCIES.map { it.code } + TARGET_CURRENCY).forEach { code ->
-            rates[code]?.let { kept.put(code, it) }
-        }
         try {
+            // Inside the try: JSONObject.put throws for NaN or Infinity, which must not cost the fresh rates.
+            val kept = JSONObject()
+            (SUPPORTED_CURRENCIES.map { it.code } + TARGET_CURRENCY).forEach { code ->
+                rates[code]?.let { kept.put(code, it) }
+            }
             withContext(dispatcher) {
                 cache.upsert(ExchangeRateCacheEntity(BASE_CURRENCY, kept.toString(), lastUpdatedUtc, clock()))
             }
         } catch (e: CancellationException) {
             throw e
         } catch (e: Exception) {
-            // A full disk only costs the offline copy; the fresh rates are still returned.
+            // A full disk or an odd number only costs the offline copy; the fresh rates are still returned.
         }
     }
 
