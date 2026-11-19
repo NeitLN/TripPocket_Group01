@@ -80,6 +80,40 @@ class TripFormViewModelTest {
     }
 
     @Test
+    fun whatWasTyped_survivesAndroidKillingTheApp() = runBlocking {
+        val handle = SavedStateHandle(mapOf(ARG_EDIT_TRIP_ID to null))
+        val first = TripFormViewModel(handle, repository)
+        first.onNameChanged("Đà Lạt")
+        first.onDestinationChanged("Lâm Đồng")
+        first.onDatesChanged(nov3, nov3.plusDays(2))
+
+        // Android restores only the saved state into a new ViewModel.
+        val restored = TripFormViewModel(SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }), repository)
+
+        val state = restored.uiState.value
+        assertEquals("Đà Lạt", state.name)
+        assertEquals("Lâm Đồng", state.destination)
+        assertEquals(nov3, state.startDate)
+        assertEquals(nov3.plusDays(2), state.endDate)
+    }
+
+    @Test
+    fun anEditDraft_winsOverTheTripInRoom() = runBlocking {
+        val id = repository.createTrip(TripInput("Huế", "Thừa Thiên Huế", nov3, nov3.plusDays(1)))
+        val handle = SavedStateHandle(mapOf(ARG_EDIT_TRIP_ID to id))
+        val first = TripFormViewModel(handle, repository)
+        withTimeout(5_000) { first.uiState.first { !it.loading } }
+        first.onNameChanged("Huế cổ kính")
+
+        val restored = TripFormViewModel(SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }), repository)
+
+        val state = withTimeout(5_000) { restored.uiState.first { !it.loading } }
+        assertTrue(state.editing)
+        assertEquals("Huế cổ kính", state.name)
+        assertEquals(nov3.plusDays(1), state.endDate)
+    }
+
+    @Test
     fun missingFields_showErrors_andWriteNothing() = runBlocking {
         val form = form()
 

@@ -106,6 +106,38 @@ class ExpenseFormViewModelTest {
     private suspend fun revision() = t.db.tripDao().observeTrip("t1", TestDatabase.OWNER).first()!!.localRevision
 
     @Test
+    fun whatWasTyped_survivesAndroidKillingTheApp() = runBlocking {
+        val handle = SavedStateHandle(mapOf(ARG_TRIP_ID to "t1"))
+        val first = ExpenseFormViewModel(handle, repository, exchangeRateRepository) { day }
+        withTimeout(5_000) { first.state.first { !it.loading } }
+        first.setTitle("Lẩu gà lá é")
+        first.setAmount("300000")
+        first.setPayer("b")
+        first.setCategory(ExpenseCategory.STAY)
+        first.setDate(day.plusDays(1))
+        first.setSplitType(SplitType.CUSTOM)
+        first.setCustomShare("a", "100000")
+        first.setCustomShare("c", "200000")
+        first.setParticipant("c", false)
+
+        val restored = ExpenseFormViewModel(
+            SavedStateHandle(handle.keys().associateWith { handle.get<Any?>(it) }),
+            repository,
+            exchangeRateRepository,
+        ) { day }
+
+        val state = withTimeout(5_000) { restored.state.first { !it.loading } }
+        assertEquals("Lẩu gà lá é", state.title)
+        assertEquals("300000", state.amountText)
+        assertEquals("b", state.payerId)
+        assertEquals(ExpenseCategory.STAY, state.category)
+        assertEquals(day.plusDays(1), state.spentAt)
+        assertEquals(SplitType.CUSTOM, state.splitType)
+        assertEquals(mapOf("a" to "100000", "c" to "200000"), state.customShares)
+        assertEquals(setOf("a", "b"), state.participants)
+    }
+
+    @Test
     fun aDatabaseError_endsSaving_withAMessage_insteadOfCrashing() = runBlocking {
         val viewModel = form()
         viewModel.setTitle("Bánh căn")
