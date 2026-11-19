@@ -7,6 +7,10 @@
   `app/build/reports/coverage/test/debug/index.html`. CI chạy lệnh này, ghi bảng tổng vào Summary của lần chạy và
   đính kèm báo cáo (artifact `coverage`). CI cũng chạy `assembleRelease lintRelease` để bắt lỗi R8 / keep rule
   trước khi ký bản phát hành.
+- Test giao diện (Espresso, `app/src/androidTest`): mở emulator rồi chạy `./gradlew connectedDebugAndroidTest`.
+  Các test này dùng tài khoản offline có sẵn chuyến mẫu, nên phải build **không có** `app/google-services.json`
+  (tạm đổi tên file, chạy xong trả lại). CI chạy chúng trong job `ui-tests`; mỗi test bắt đầu với dữ liệu app trống
+  nhờ Android Test Orchestrator.
 - **Đường dẫn có dấu tiếng Việt** (vd `Lập trình ứng dụng di động`) làm Gradle/Java không tìm thấy
   `gradle-wrapper.jar` khi chạy từ terminal. Cách xử lý: clone repo vào đường dẫn không dấu, hoặc gán ổ ảo:
   `subst T: "<đường dẫn repo>"` rồi chạy Gradle từ `T:\`.

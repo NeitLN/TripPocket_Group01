@@ -44,6 +44,9 @@ android {
         versionName = "1.1.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+        // Each UI test runs in its own instrumentation with the app data cleared (Orchestrator),
+        // so one test's trips or expenses never leak into the next.
+        testInstrumentationRunnerArguments["clearPackageData"] = "true"
 
         // Milestone 4: base URL of the team's MockAPI.io project (Trip Ideas CRUD). Read from
         // local.properties, else gradle.properties; the value is a
@@ -97,6 +100,7 @@ android {
     }
 
     testOptions {
+        execution = "ANDROIDX_TEST_ORCHESTRATOR"
         // Robolectric needs the merged resources and manifest.
         unitTests.isIncludeAndroidResources = true
         // Robolectric cannot open its jar cache under a home folder with spaces or accents
@@ -157,7 +161,10 @@ dependencies {
     testImplementation(libs.okhttp.mockwebserver)
     testImplementation(libs.androidx.test.core.ktx)
     androidTestImplementation(libs.androidx.espresso.core)
+    androidTestImplementation(libs.androidx.espresso.contrib)
     androidTestImplementation(libs.androidx.junit)
+    androidTestImplementation(libs.androidx.test.runner)
+    androidTestUtil(libs.androidx.test.orchestrator)
 
     // M5 stage 3: LeakCanary only in debug builds; release packaging stays clean.
     debugImplementation(libs.leakcanary.android)

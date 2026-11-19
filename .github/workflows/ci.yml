@@ -78,3 +78,39 @@ jobs:
           cache-dependency-path: firestore-tests/package-lock.json
       - run: npm ci
       - run: npm test
+
+  # A3: Espresso tests (app/src/androidTest) on an emulator. Without google-services.json the
+  # debug app signs in as the offline stand-in that owns the sample trips, so no Firebase is
+  # needed. The Orchestrator clears the app data before every test.
+  ui-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - uses: gradle/actions/setup-gradle@v4
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Espresso tests
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 34
+          arch: x86_64
+          target: google_apis
+          # A phone-sized screen; the runner's default AVD is much smaller than any real phone.
+          profile: pixel_6
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest --console=plain
+      - name: Upload UI test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-test-reports
+          path: app/build/reports/androidTests
+          if-no-files-found: ignore
