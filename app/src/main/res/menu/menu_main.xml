@@ -9,7 +9,7 @@
         android:title="@string/ideas_title"
         app:showAsAction="ifRoom" />
 
-    <!-- Demo helper so the empty state can be shown during review. -->
+    <!-- Review helper to show the empty state; MainActivity hides it in release builds. -->
     <item
         android:id="@+id/action_toggle_empty"
         android:title="@string/action_toggle_empty"

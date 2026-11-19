@@ -127,11 +127,11 @@
     <!-- Empty state for a day without activities -->
     <ImageView
         android:id="@+id/ivEmptyDay"
-        android:layout_width="@dimen/empty_icon_size"
-        android:layout_height="@dimen/empty_icon_size"
+        android:layout_width="@dimen/itinerary_empty_icon_size"
+        android:layout_height="@dimen/itinerary_empty_icon_size"
         android:background="@drawable/bg_circle_primary_container"
         android:contentDescription="@null"
-        android:padding="@dimen/space_xl"
+        android:padding="@dimen/itinerary_empty_icon_padding"
         android:src="@drawable/ic_event"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyDayTitle"
         app:layout_constraintEnd_toEndOf="parent"
