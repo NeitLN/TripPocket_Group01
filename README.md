@@ -7,7 +7,7 @@ weather for saved places, and shared expenses with balances and suggested paymen
 first and works in Airplane Mode; a signed-in account backs its trips up to Firestore and can restore them on a
 new install.
 
-**Release:** [`v1.1.0`](https://github.com/NeitLN/TripPocket_Group01/releases/tag/v1.1.0) — signed release APK and
+**Release:** [`v1.1.1`](https://github.com/NeitLN/TripPocket_Group01/releases/tag/v1.1.1) — signed release APK and
 AAB (`CN=TripPocket, OU=VLU, O=Nhom01`). Demo video: https://youtu.be/4aHB0uAgqk4
 
 ## Team and work split
@@ -24,7 +24,7 @@ feature has its own branch `feature/<name>-<ID>` and pull request.
 | Weather | W5 weather in the itinerary (#27) | W4 weather tests (#19) | W1 search, W3 forecast cache (#9, #16, #28, #38) | W2 saved places (#4) |
 | Expenses | E4 budget + share (#26) | E3 balances (#21) | E1 members (#7) | E2 expense + split (#2, #32), members layout (#6), sample-expense order (#31) |
 | Network & cloud (M4) | Trip Ideas on MockAPI (#36), network layer (#46) | Nearby sights (#47, #48, #52) | Wikipedia photos, exchange-rate screen (#41, #43, #44, #45) | Exchange-rate rounding (#53) |
-| Release | Release-gate fixes and evidence (#50, #51) | — | v1.0 release and M4 worksheet (#55, #56), M5 hardening and signed release v1.1.0 (#60, #61) | — |
+| Release | Release-gate fixes and evidence (#50, #51), final fixes and release v1.1.1 (#63, #64) | — | v1.0 release and M4 worksheet (#55, #56), M5 hardening and signed release v1.1.0 (#60, #61) | — |
 
 ## Architecture (MVVM)
 
@@ -80,7 +80,7 @@ Open the folder in Android Studio and run the `app` configuration, or:
   With it, Firebase sign-in and backup are on. The file is shared privately and never committed.
 - A signed release needs `keystore.properties` (see `keystore.properties.example` and
   [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
-- 457 unit tests (Robolectric for Room, MockWebServer for the APIs); CI runs them plus the Firestore rules tests on
+- 460 unit tests (Robolectric for Room, MockWebServer for the APIs); CI runs them plus the Firestore rules tests on
   every pull request.
 
 ## Documents
