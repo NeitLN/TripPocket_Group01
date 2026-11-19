@@ -1,4 +1,5 @@
 import java.util.Properties
+import org.gradle.testing.jacoco.plugins.JacocoTaskExtension
 
 plugins {
     alias(libs.plugins.android.application)
@@ -67,6 +68,11 @@ android {
     }
 
     buildTypes {
+        debug {
+            // JaCoCo for the unit tests (A3): `createDebugUnitTestCoverageReport` writes
+            // app/build/reports/coverage/test/debug. Only the test run is instrumented, not the APK.
+            enableUnitTestCoverage = true
+        }
         release {
             // M5 spike (18/11): in AGP 9.4.1 `optimization.enable`, `isMinifyEnabled` and both
             // together produce the same APK (4.52 MB) and the same mapping.txt, so the two DSLs
@@ -102,6 +108,14 @@ android {
         val home = System.getProperty("user.home")
         if (home.any { it == ' ' || it.code > 127 }) {
             unitTests.all { it.systemProperty("maven.repo.local", "C:/Users/Public/robolectric-m2") }
+        }
+        // Robolectric loads the app classes through its own class loader; without this JaCoCo
+        // skips them and reports DAOs and ViewModels at 0 % although the tests run them.
+        unitTests.all {
+            it.extensions.configure<JacocoTaskExtension> {
+                isIncludeNoLocationClasses = true
+                excludes = listOf("jdk.internal.*")
+            }
         }
     }
 }

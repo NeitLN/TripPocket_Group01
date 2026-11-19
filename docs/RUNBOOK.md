@@ -3,6 +3,10 @@
 ## Chạy local
 - Mở thư mục bằng Android Studio, chạy cấu hình `app`. Trước khi mở PR, chạy:
   `./gradlew testDebugUnitTest lintDebug assembleDebug`
+- Độ phủ test: `./gradlew createDebugUnitTestCoverageReport`, mở
+  `app/build/reports/coverage/test/debug/index.html`. CI chạy lệnh này, ghi bảng tổng vào Summary của lần chạy và
+  đính kèm báo cáo (artifact `coverage`). CI cũng chạy `assembleRelease lintRelease` để bắt lỗi R8 / keep rule
+  trước khi ký bản phát hành.
 - Test giao diện (Espresso, `app/src/androidTest`): mở emulator rồi chạy `./gradlew connectedDebugAndroidTest`.
   Các test này dùng tài khoản offline có sẵn chuyến mẫu, nên phải build **không có** `app/google-services.json`
   (tạm đổi tên file, chạy xong trả lại). CI chạy chúng trong job `ui-tests`; mỗi test bắt đầu với dữ liệu app trống

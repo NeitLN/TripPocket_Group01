@@ -80,12 +80,15 @@ Open the folder in Android Studio and run the `app` configuration, or:
   With it, Firebase sign-in and backup are on. The file is shared privately and never committed.
 - A signed release needs `keystore.properties` (see `keystore.properties.example` and
   [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
-- 471 unit tests (Robolectric for Room, MockWebServer for the APIs); 6 Espresso tests on an emulator
+- 471 unit tests (Robolectric for Room, MockWebServer for the APIs) and 6 Espresso tests on an emulator
   (`connectedDebugAndroidTest`: trip list, new-trip validation, rotation, adding an activity and an expense, a double
-  tap on Add). CI runs both plus the Firestore rules tests on every pull request.
+  tap on Add). CI runs both plus the Firestore rules tests on every pull request, builds the release APK (R8 +
+  resource shrinking, unsigned) and attaches a JaCoCo coverage report (`./gradlew createDebugUnitTestCoverageReport`,
+  about 55 % of instructions; repositories, DAOs and the domain rules are above 90 %).
 
 ## Documents
 
 - Proposal tasks and status: [`docs/ROADMAP.md`](docs/ROADMAP.md), [`docs/STATUS.md`](docs/STATUS.md)
 - Milestone 4 worksheet (APIs, Firebase, Glide): [`docs/worksheet.md`](docs/worksheet.md)
 - Milestone 5 report (performance, security, signed release): [`docs/m5/report.pdf`](docs/m5/report.pdf)
+- How we branch, test, review and merge: [`CONTRIBUTING.md`](CONTRIBUTING.md)
