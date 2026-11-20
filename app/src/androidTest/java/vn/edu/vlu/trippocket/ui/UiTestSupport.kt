@@ -1,5 +1,6 @@
 package vn.edu.vlu.trippocket.ui
 
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.view.View
 import androidx.annotation.StringRes
@@ -13,6 +14,19 @@ import androidx.test.platform.app.InstrumentationRegistry
 import com.google.android.material.textfield.TextInputLayout
 import org.hamcrest.Description
 import org.hamcrest.Matcher
+
+/**
+ * Clears what can steal the window focus on a fresh emulator (the lock screen, a system dialog
+ * such as "System UI isn't responding") before a test opens its first screen. Without it,
+ * Espresso waits 10 s for focus and fails with RootViewWithoutFocusException.
+ */
+fun clearTheScreen() {
+    val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
+    listOf("input keyevent 82", "am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS").forEach { command ->
+        // executeShellCommand runs asynchronously; reading the output to the end waits for it.
+        ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes() }
+    }
+}
 
 /** A string of the app under test (not of the test APK). */
 fun string(@StringRes id: Int): String =
