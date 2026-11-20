@@ -161,6 +161,57 @@ class ExpenseFormViewModelTest {
         assertEquals("112500", state.amountText)
     }
 
+    /** A saved expense of 4.5 USD at 25,000 VND per USD (112,500 VND). */
+    private suspend fun savedDollarExpense(): String {
+        val form = form()
+        form.setTitle("Phở")
+        form.setPaidInCurrency("USD")
+        withTimeout(5_000) { form.state.first { it.exchangeRates != null } }
+        form.setPaidInAmount("4.5")
+        form.save()
+        form.awaitDone()
+        return repository.observeExpenses("t1").first().single().expenseId
+    }
+
+    @Test
+    fun anUntouchedPaidIn_keepsItsRate_whenOnlyTheTitleIsEdited() = runBlocking {
+        val id = savedDollarExpense()
+        fakeExchangeRateApi.response = ExchangeRateResponse(
+            result = "success",
+            timeLastUpdateUtc = "Sat, 21 Nov 2026 00:00:00 +0000",
+            rates = mapOf("USD" to 1.0, "VND" to 26_000.0),
+        )
+        val reopened = form(id)
+        withTimeout(5_000) { reopened.state.first { it.exchangeRates != null } }
+
+        reopened.setTitle("Phở bò")
+        reopened.save()
+        reopened.awaitDone()
+
+        val saved = repository.getExpense(id)!!
+        assertEquals(PaidIn("USD", 4.5, 25_000.0), saved.paidIn)
+        assertEquals(112_500L, saved.amount)
+    }
+
+    @Test
+    fun aNewCurrency_neverGetsTheOldCurrencysRate() = runBlocking {
+        val id = savedDollarExpense()
+        fakeExchangeRateApi.error = IOException("offline") // no rate for anything now
+        val reopened = form(id)
+        withTimeout(5_000) { reopened.state.first { it.ratesError != null } }
+
+        reopened.setPaidInCurrency("EUR")
+        reopened.setPaidInAmount("5")
+        reopened.save()
+        reopened.awaitDone()
+
+        val paidIn = repository.getExpense(id)!!.paidIn!!
+        assertEquals("EUR", paidIn.currency)
+        assertEquals(5.0, paidIn.amount, 0.0)
+        // 112,500 VND / 5 EUR, not the 25,000 VND that 1 USD was worth.
+        assertEquals(22_500.0, paidIn.rateToVnd, 0.001)
+    }
+
     @Test
     fun aVndOnlyExpense_savesNoPaidIn() = runBlocking {
         val form = form()
