@@ -24,6 +24,15 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
+      # Robolectric downloads its Android jars from Maven Central on first use, outside Gradle's
+      # cache. A hiccup there failed every Robolectric class twice (FileNotFoundException), so
+      # the jars are cached between runs, keyed on the version catalog (Robolectric's version).
+      - name: Cache Robolectric jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: robolectric-
       - name: Test with coverage, lint, build
         run: ./gradlew createDebugUnitTestCoverageReport lintDebug assembleDebug --console=plain
       # The release build runs R8 and resource shrinking, which a debug build never does: a
