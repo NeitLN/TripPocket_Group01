@@ -80,7 +80,7 @@ Open the folder in Android Studio and run the `app` configuration, or:
   With it, Firebase sign-in and backup are on. The file is shared privately and never committed.
 - A signed release needs `keystore.properties` (see `keystore.properties.example` and
   [`docs/m5/keystore.md`](docs/m5/keystore.md)); the keystore itself stays outside the repo.
-- 476 unit tests (Robolectric for Room, MockWebServer for the APIs) and 9 instrumented tests on an emulator
+- 480 unit tests (Robolectric for Room, MockWebServer for the APIs) and 9 instrumented tests on an emulator
   (`connectedDebugAndroidTest`: 6 Espresso tests for the trip list, new-trip validation, rotation, adding an activity
   and an expense, a double tap on Add; 3 Room migration tests from schema 1 to 2). CI runs both plus the Firestore rules tests on every pull request, builds the release APK (R8 +
   resource shrinking, unsigned) and attaches a JaCoCo coverage report (`./gradlew createDebugUnitTestCoverageReport`,

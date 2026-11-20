@@ -39,7 +39,13 @@ class LoginViewModelTest {
     /** Every uid the ViewModel asked the reminder reconciler to rebuild alarms for. */
     private val reminderSyncs = mutableListOf<String?>()
 
-    private fun viewModel() = LoginViewModel(auth, sessions, syncReminders = { reminderSyncs += it })
+    /**
+     * io = Unconfined: the session read in init finishes before the test goes on. With the real
+     * Dispatchers.IO a test that ends at once (a form error) left that read running, and it came
+     * back to Main while the next test was setting it ("Dispatchers.Main is used concurrently").
+     */
+    private fun viewModel() =
+        LoginViewModel(auth, sessions, syncReminders = { reminderSyncs += it }, io = Dispatchers.Unconfined)
 
     private suspend fun LoginViewModel.awaitState(condition: (LoginUiState) -> Boolean) =
         withTimeout(5_000) { uiState.first(condition) }
@@ -203,7 +209,7 @@ class LoginViewModelTest {
 
     @Test
     fun aRestoredSession_isReportedOnce_asAlreadySignedIn(): Unit = runBlocking {
-        val restored = LoginViewModel(FakeAuthRepository("uid-restored"), InMemorySessionStore())
+        val restored = LoginViewModel(FakeAuthRepository("uid-restored"), InMemorySessionStore(), io = Dispatchers.Unconfined)
 
         assertTrue(restored.uiState.value.alreadySignedIn)
         assertFalse(restored.uiState.value.signedIn)

@@ -211,7 +211,11 @@ class AppContainer(context: Context) {
 
     /** Trip Ideas on MockAPI.io (Milestone 4, Tiến). */
     val tripIdeaRepository: TripIdeaRepository by lazy {
-        TripIdeaRepository(mockApiRetrofit.create(TripIdeaApi::class.java), authRepository)
+        TripIdeaRepository(
+            mockApiRetrofit.create(TripIdeaApi::class.java),
+            authRepository,
+            cache = database.tripIdeaCacheDao(),
+        )
     }
 
     /**

@@ -3,6 +3,7 @@
 <resources>
     <string name="ideas_title">Trip ideas</string>
     <string name="ideas_subtitle">Trips other TripPocket users shared. Pull down to refresh.</string>
+    <string name="ideas_subtitle_offline">Offline copy from your last visit. Pull down to refresh when you are online.</string>
     <string name="ideas_share">Share an idea</string>
     <string name="ideas_loading">Loading trip ideas</string>
     <string name="ideas_empty_title">No ideas yet</string>

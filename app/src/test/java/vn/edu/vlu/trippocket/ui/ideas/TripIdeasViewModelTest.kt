@@ -18,6 +18,8 @@ import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
+import vn.edu.vlu.trippocket.data.local.dao.TripIdeaCacheDao
+import vn.edu.vlu.trippocket.data.local.entity.TripIdeaCacheEntity
 import vn.edu.vlu.trippocket.data.repository.TripIdeaRepository
 import vn.edu.vlu.trippocket.data.repository.TripIdeaRepositoryTest.Companion.IDEAS_JSON
 import vn.edu.vlu.trippocket.data.repository.TripIdeaRepositoryTest.Companion.json
@@ -92,6 +94,80 @@ class TripIdeasViewModelTest {
         vm.retry()
         val loaded = vm.uiState.await { !it.loading && it.ideas.isNotEmpty() }
         assertNull(loaded.error)
+    }
+
+    /** In-memory stand-in for the Room table (A1). */
+    private class FakeIdeaCache : TripIdeaCacheDao {
+        val rows = mutableListOf<TripIdeaCacheEntity>()
+        override suspend fun all() = rows.sortedBy { it.position }
+        override suspend fun clear() = rows.clear()
+        override suspend fun insertAll(rows: List<TripIdeaCacheEntity>) {
+            this.rows += rows
+        }
+        override suspend fun delete(id: String) {
+            rows.removeAll { it.id == id }
+        }
+    }
+
+    private fun cachedRepository(cache: FakeIdeaCache) =
+        TripIdeaRepository(tripIdeaApiOn(server), signedInAs("uid-1", "tien"), cache = cache)
+
+    @Test
+    fun offline_theListOfTheLastVisit_showsMarkedOfflineCopy_insteadOfTheBanner() = runBlocking {
+        val cache = FakeIdeaCache()
+        val repository = cachedRepository(cache)
+        server.enqueue(json(200, IDEAS_JSON))
+        TripIdeasViewModel(repository).uiState.await { !it.loading }
+        assertEquals(listOf("1", "2"), cache.rows.map { it.id })
+
+        server.enqueue(json(503, "{}")) // next visit: no network
+        val state = TripIdeasViewModel(repository).uiState.await { it.offlineCopy }
+
+        assertNull(state.error)
+        assertEquals(listOf("1", "2"), state.ideas.map { it.idea.id })
+        assertEquals(listOf(true, false), state.ideas.map { it.mine })
+    }
+
+    @Test
+    fun offline_withNothingSaved_stillShowsTheBanner() = runBlocking {
+        server.enqueue(json(500, "{}"))
+
+        val state = TripIdeasViewModel(cachedRepository(FakeIdeaCache())).uiState.await { !it.loading }
+
+        assertEquals(ApiError.SERVER, state.error)
+        assertFalse(state.offlineCopy)
+    }
+
+    @Test
+    fun backOnline_theFreshListReplacesTheOfflineCopy() = runBlocking {
+        val cache = FakeIdeaCache()
+        val repository = cachedRepository(cache)
+        server.enqueue(json(200, IDEAS_JSON))
+        TripIdeasViewModel(repository).uiState.await { !it.loading }
+        server.enqueue(json(503, "{}"))
+        server.enqueue(json(200, "[]"))
+        val vm = TripIdeasViewModel(repository)
+        vm.uiState.await { it.offlineCopy }
+
+        vm.refresh()
+
+        val state = vm.uiState.await { !it.refreshing && !it.offlineCopy }
+        assertTrue(state.showEmpty)
+        assertTrue("the empty server list replaced the copy", cache.rows.isEmpty())
+    }
+
+    @Test
+    fun aDeletedIdea_leavesTheOfflineCopyToo() = runBlocking {
+        val cache = FakeIdeaCache()
+        server.enqueue(json(200, IDEAS_JSON))
+        val vm = TripIdeasViewModel(cachedRepository(cache))
+        vm.uiState.await { !it.loading }
+        server.enqueue(json(200, "{}"))
+
+        vm.delete("1")
+
+        vm.uiState.await { it.message == TripIdeasMessage.Deleted }
+        assertEquals(listOf("2"), cache.rows.map { it.id })
     }
 
     @Test

@@ -1,7 +1,11 @@
 package vn.edu.vlu.trippocket.data.repository
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.withContext
+import vn.edu.vlu.trippocket.data.local.dao.TripIdeaCacheDao
+import vn.edu.vlu.trippocket.data.local.entity.TripIdeaCacheEntity
 import vn.edu.vlu.trippocket.data.model.TripIdea
 import vn.edu.vlu.trippocket.data.model.TripIdeaInput
 import vn.edu.vlu.trippocket.data.remote.ApiResult
@@ -19,21 +23,62 @@ import java.time.Instant
  *
  * Every call runs through [safeApiCall] on [io] (Dispatchers.IO) and returns an [ApiResult], so
  * a 400 / 404 / 5xx / timeout / offline arrives as data the screen can show, never as a crash.
- * The ideas are not kept in Room: they belong to the server, and the list is reloaded each time
- * the screen opens.
+ * The server owns the ideas and the list is reloaded each time the screen opens. A1: the last
+ * good list is also copied to [cache], which [savedIdeas] reads when the download fails, so the
+ * screen still shows something in Airplane Mode.
  */
 class TripIdeaRepository(
     private val api: TripIdeaApi,
     private val auth: AuthRepository,
     private val io: CoroutineDispatcher = Dispatchers.IO,
     private val now: () -> Instant = Instant::now,
+    private val cache: TripIdeaCacheDao? = null,
 ) {
 
     /** Uid of the signed-in account, to know which ideas it may edit. */
     val currentUid: String? get() = auth.currentUid.value
 
-    /** GET /ideas, newest first. */
-    suspend fun ideas(): ApiResult<List<TripIdea>> = safeApiCall(io) { api.list().toModels() }
+    /** GET /ideas, newest first. A good answer replaces the offline copy. */
+    suspend fun ideas(): ApiResult<List<TripIdea>> {
+        val result = safeApiCall(io) { api.list().toModels() }
+        if (result is ApiResult.Success) keep(result.data)
+        return result
+    }
+
+    /** The list of the last good load, in the same order; empty when there is none or it cannot be read. */
+    suspend fun savedIdeas(): List<TripIdea> {
+        val cache = cache ?: return emptyList()
+        return try {
+            withContext(io) { cache.all() }.map { it.toModel() }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    private suspend fun keep(ideas: List<TripIdea>) {
+        val cache = cache ?: return
+        val fetchedAt = now().toEpochMilli()
+        try {
+            withContext(io) { cache.replaceAll(ideas.mapIndexed { i, idea -> idea.toCacheRow(i, fetchedAt) }) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // Only the offline copy is lost; the fresh list is still shown.
+        }
+    }
+
+    private suspend fun forget(id: String) {
+        val cache = cache ?: return
+        try {
+            withContext(io) { cache.delete(id) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Exception) {
+            // The next good load rewrites the copy anyway.
+        }
+    }
 
     /** GET /ideas/{id}; a row the app cannot read counts as a bad response. */
     suspend fun idea(id: String): ApiResult<TripIdea> = safeApiCall(io) {
@@ -84,11 +129,25 @@ class TripIdeaRepository(
         }
         val uid = currentUid
         if (uid == null || current.authorUid != uid) return ApiResult.Failure(ApiError.FORBIDDEN)
-        return when (val result = safeApiCall(io) { api.delete(id) }) {
+        val result = when (val sent = safeApiCall(io) { api.delete(id) }) {
             is ApiResult.Success -> ApiResult.Success(Unit)
-            is ApiResult.Failure -> if (result.error == ApiError.NOT_FOUND) ApiResult.Success(Unit) else result
+            is ApiResult.Failure -> if (sent.error == ApiError.NOT_FOUND) ApiResult.Success(Unit) else sent
         }
+        // A deleted idea must not come back in the offline copy.
+        if (result is ApiResult.Success) forget(id)
+        return result
     }
+
+    private fun TripIdea.toCacheRow(position: Int, fetchedAt: Long) = TripIdeaCacheEntity(
+        id = id, position = position, title = title, destination = destination, days = days,
+        budgetVnd = budgetVnd, coverUrl = coverUrl, summary = summary, author = author,
+        authorUid = authorUid, fetchedAt = fetchedAt,
+    )
+
+    private fun TripIdeaCacheEntity.toModel() = TripIdea(
+        id = id, title = title, destination = destination, days = days, budgetVnd = budgetVnd,
+        coverUrl = coverUrl, summary = summary, author = author, authorUid = authorUid,
+    )
 
     companion object {
         /** Author name when the account has no profile name. */

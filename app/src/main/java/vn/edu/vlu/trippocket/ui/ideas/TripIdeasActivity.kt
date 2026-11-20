@@ -88,6 +88,8 @@ class TripIdeasActivity : AppCompatActivity() {
         binding.rvIdeas.isVisible = state.ideas.isNotEmpty()
         binding.groupEmpty.isVisible = state.showEmpty
 
+        binding.tvSubtitle.setText(if (state.offlineCopy) R.string.ideas_subtitle_offline else R.string.ideas_subtitle)
+
         val error = state.error
         binding.networkError.root.isVisible = error != null
         if (error != null) binding.networkError.tvNetworkError.setText(error.messageRes)
