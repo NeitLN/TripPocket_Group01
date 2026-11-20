@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- A postage stamp of Ha Long Bay. Its scalloped paper edge and inks also work offline. -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="112dp" android:height="84dp"
+    android:viewportWidth="112" android:viewportHeight="84">
+    <path android:fillColor="@color/postcard_paper"
+        android:pathData="M2,3h5q3,5 6,0h6q3,5 6,0h6q3,5 6,0h6q3,5 6,0h6q3,5 6,0h6q3,5 6,0h6q3,5 6,0h6q3,5 6,0h5v6q-5,3 0,6v6q-5,3 0,6v6q-5,3 0,6v6q-5,3 0,6v6q-5,3 0,6v6q-5,3 0,6v4h-5q-3,-5 -6,0h-6q-3,-5 -6,0h-6q-3,-5 -6,0h-6q-3,-5 -6,0h-6q-3,-5 -6,0h-6q-3,-5 -6,0h-6q-3,-5 -6,0h-6q-3,-5 -6,0h-5v-4q5,-3 0,-6v-6q5,-3 0,-6v-6q5,-3 0,-6v-6q5,-3 0,-6v-6q5,-3 0,-6v-6q5,-3 0,-6z" />
+    <path android:fillColor="@color/postcard_sky" android:pathData="M10,11h90v60h-90z" />
+    <path android:fillColor="@color/postcard_sun" android:pathData="M73,16a10,10 0,1 1,0 20a10,10 0,1 1,0 -20" />
+    <path android:fillColor="@color/postcard_karst_far" android:pathData="M10,53l7,-8 5,-14 4,-3 4,4 4,14 5,6 7,-3 5,-7 5,-2 5,7 5,2 6,-8 5,-15 4,-2 4,4 5,14 10,6v13H10z" />
+    <path android:fillColor="@color/postcard_karst" android:pathData="M10,45l5,-6 4,1 4,8 10,3 5,-4 4,-16 4,-5 4,1 4,6 2,14 6,5 6,2 5,-3 5,0 5,-5 5,-14 5,-3 7,4v24H10z" />
+    <path android:fillColor="@color/postcard_water" android:pathData="M10,54q18,-2 39,0t51,-1v18H10z" />
+    <path android:strokeColor="@color/postcard_wave" android:strokeWidth="1.3" android:strokeLineCap="round" android:pathData="M16,58h14m3,0h5m38,0h13M21,65h10m10,3h15m23,-4h10" />
+    <path android:fillColor="@color/postcard_sun" android:pathData="M54,57l10,-14v14z" />
+    <path android:fillColor="@color/postcard_paper" android:pathData="M66,46l6,11h-6z" />
+    <path android:fillColor="@color/postcard_ink" android:pathData="M52,58h23l-5,4H57z" />
+    <path android:strokeColor="@color/postcard_ink" android:strokeWidth="1.3" android:strokeLineCap="round" android:pathData="M24,19q3,-1 5,2q1,-3 4,-3M34,22q2,-1 4,1q1,-2 3,-2" />
+</vector>

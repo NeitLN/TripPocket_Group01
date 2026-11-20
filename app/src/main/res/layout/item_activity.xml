@@ -5,8 +5,7 @@
     - barrierTimeEnd (direction=end) is placed after the wider of the time
       text and the reminder icon. The timeline line starts at the barrier, so
       "07:00" and "17:30" rows line up even with a larger system font.
-    - The title ends where the cost begins (constraintEnd_toStartOf), so a
-      long title wraps instead of running under the price.
+    - The price sits below the place and optional note, leaving room for longer activity names.
     - The note is optional: when it is GONE the card simply gets shorter.
     - ivDragHandle and btnActivityMore are on the right, keeping ConstraintLayout flat
       and never displacing barrierTimeEnd.
@@ -15,7 +14,7 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/cardActivity"
-    style="@style/Widget.Material3.CardView.Outlined"
+    style="@style/Widget.TripPocket.Card"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_marginHorizontal="@dimen/screen_margin"
@@ -30,11 +29,14 @@
         android:padding="@dimen/space_lg">
 
         <TextView
+            android:background="@drawable/bg_summary_panel"
+            android:paddingHorizontal="@dimen/space_xs"
+            android:paddingVertical="@dimen/space_xxs"
             android:id="@+id/tvTime"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:textAppearance="@style/TextAppearance.TripPocket.Money"
-            android:textColor="?attr/colorPrimary"
+            android:textColor="?attr/colorOnPrimaryContainer"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="07:00" />
@@ -73,21 +75,23 @@
             android:layout_height="wrap_content"
             android:layout_marginStart="@dimen/space_md"
             android:layout_marginEnd="@dimen/space_sm"
-            android:textAppearance="?attr/textAppearanceTitleMedium"
+            android:textAppearance="@style/TextAppearance.TripPocket.CardTitle"
             app:layout_constrainedWidth="true"
-            app:layout_constraintEnd_toStartOf="@id/tvActivityCost"
+            app:layout_constraintEnd_toStartOf="@id/btnActivityMore"
             app:layout_constraintStart_toEndOf="@id/vTimeline"
             app:layout_constraintTop_toTopOf="parent"
             tools:text="Dinner: lẩu gà lá é" />
 
         <TextView
             android:id="@+id/tvActivityCost"
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginEnd="@dimen/space_xs"
             android:textAppearance="?attr/textAppearanceLabelLarge"
             android:textColor="?attr/colorTertiary"
-            app:layout_constraintBaseline_toBaselineOf="@id/tvActivityTitle"
+            android:layout_marginTop="@dimen/space_xs"
+            app:layout_constraintStart_toStartOf="@id/tvActivityTitle"
+            app:layout_constraintTop_toBottomOf="@id/tvActivityNote"
             app:layout_constraintEnd_toStartOf="@id/btnActivityMore"
             app:layout_goneMarginEnd="0dp"
             tools:text="300,000 ₫" />
@@ -100,7 +104,7 @@
             android:contentDescription="@string/itinerary_activity_more_desc"
             android:scaleType="center"
             android:src="@drawable/ic_more_vert"
-            app:layout_constraintEnd_toStartOf="@id/ivDragHandle"
+            app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:layout_goneMarginEnd="0dp"
             app:tint="?attr/colorOnSurfaceVariant" />
@@ -116,7 +120,7 @@
             android:scaleType="center"
             android:src="@drawable/ic_drag_handle"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/btnActivityMore"
             app:tint="?attr/colorOnSurfaceVariant" />
 
         <TextView

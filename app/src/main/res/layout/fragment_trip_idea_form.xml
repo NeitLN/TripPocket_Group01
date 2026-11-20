@@ -28,12 +28,13 @@
             app:layout_constraintWidth_max="@dimen/form_max_width">
 
             <TextView
+                style="@style/Widget.TripPocket.PassTitle"
+                app:drawableEndCompat="@drawable/art_camera"
                 android:id="@+id/tvFormTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
                 android:accessibilityHeading="true"
-                android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"

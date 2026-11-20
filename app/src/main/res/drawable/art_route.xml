@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="64" android:viewportHeight="64">
+    <path android:fillColor="@color/postcard_paper"
+        android:pathData="M12,8Q8,8 7,14L4,48Q3,54 9,55L49,60Q55,61 56,54L60,17Q61,12 55,11Z" />
+    <path android:fillColor="@color/postcard_sky" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M14,12L54,16L50,55L9,50Z" />
+    <path android:fillColor="@color/postcard_paper" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M14,26l10,-5 12,4 11,-5v23l-11,5 -12,-4 -10,4z" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M24,22v22M36,26v21" />
+    <path android:fillColor="@color/postcard_sun" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M27,25a7,7 0,1 1,14 0q0,5 -7,12q-7,-7 -7,-12z" />
+    <path android:fillColor="@color/postcard_paper"
+        android:pathData="M32,25a2,2 0,1 1,4 0a2,2 0,1 1,-4 0" />
+</vector>

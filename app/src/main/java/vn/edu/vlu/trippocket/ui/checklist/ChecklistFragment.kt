@@ -87,6 +87,9 @@ class ChecklistFragment : Fragment() {
     private fun render(state: ChecklistUiState) {
         binding.tvCount.text = getString(R.string.checklist_count, state.done, state.total)
         binding.tvCount.isVisible = state.total > 0
+        binding.packingProgress.isVisible = state.total > 0
+        binding.packingProgress.max = state.total.coerceAtLeast(1)
+        binding.packingProgress.progress = state.done
         binding.groupEmpty.isVisible = !state.loading && state.items.isEmpty()
         binding.btnAdd.isEnabled = state.canAdd
         binding.tilNewItem.isEnabled = state.canAdd

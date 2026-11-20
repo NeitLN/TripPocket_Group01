@@ -14,11 +14,22 @@
     android:layout_height="match_parent"
     tools:context=".ui.members.MembersFragment">
 
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:background="@drawable/bg_mail_panel"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="@id/barrierHeaderBottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/flStickerSlot" />
+
     <FrameLayout
         android:id="@+id/flStickerSlot"
         android:layout_width="@dimen/sticker_slot"
         android:layout_height="@dimen/sticker_slot"
-        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginStart="@dimen/space_xl"
         android:layout_marginTop="@dimen/space_lg"
         android:clipChildren="false"
         app:layout_constraintStart_toStartOf="parent"
@@ -33,11 +44,13 @@
     </FrameLayout>
 
     <TextView
+        android:textColor="@color/postcard_paper"
+        android:paddingTop="@dimen/space_sm"
         android:id="@+id/tvMembersTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_sm"
-        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginEnd="@dimen/space_xxl"
         android:accessibilityHeading="true"
         android:text="@string/members_title"
         android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
@@ -48,11 +61,12 @@
         tools:targetApi="28" />
 
     <TextView
+        android:paddingBottom="@dimen/space_sm"
         android:id="@+id/tvMemberCount"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintEnd_toEndOf="@id/tvMembersTitle"
         app:layout_constraintStart_toStartOf="@id/tvMembersTitle"
         app:layout_constraintTop_toBottomOf="@id/tvMembersTitle"
@@ -138,16 +152,14 @@
         android:id="@+id/ivEmptyMembers"
         android:layout_width="@dimen/empty_icon_size"
         android:layout_height="@dimen/empty_icon_size"
-        android:background="@drawable/bg_circle_primary_container"
         android:contentDescription="@null"
-        android:padding="@dimen/space_xl"
-        android:src="@drawable/ic_sticker_pocket"
+        android:padding="@dimen/space_xs"
+        android:src="@drawable/art_pack"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyMembers"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tvMembersRule"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvEmptyMembers"

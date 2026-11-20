@@ -20,6 +20,13 @@
     tools:context=".ui.itinerary.ItineraryFragment">
 
     <com.google.android.material.tabs.TabLayout
+        android:background="@drawable/bg_postcard"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        app:tabTextColor="@color/postcard_paper"
+        app:tabSelectedTextColor="@color/brand_lime"
+        app:tabIndicatorColor="@color/brand_lime"
+        app:tabIndicatorHeight="3dp"
+        app:tabTextAppearance="@style/TextAppearance.TripPocket.LabelLarge.Heavy"
         android:id="@+id/tabDays"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -36,7 +43,7 @@
         android:layout_marginStart="@dimen/screen_margin"
         android:layout_marginTop="@dimen/space_lg"
         android:layout_marginEnd="@dimen/space_sm"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
+        android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
         app:layout_constraintEnd_toStartOf="@id/btnChecklist"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/tabDays"
@@ -112,6 +119,7 @@
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvActivities"
+        android:layout_marginTop="@dimen/space_sm"
         android:layout_width="0dp"
         android:layout_height="0dp"
         android:clipToPadding="false"
@@ -129,16 +137,14 @@
         android:id="@+id/ivEmptyDay"
         android:layout_width="@dimen/itinerary_empty_icon_size"
         android:layout_height="@dimen/itinerary_empty_icon_size"
-        android:background="@drawable/bg_circle_primary_container"
         android:contentDescription="@null"
-        android:padding="@dimen/itinerary_empty_icon_padding"
-        android:src="@drawable/ic_event"
+        android:padding="@dimen/space_xs"
+        android:src="@drawable/art_route"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyDayTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/barrierHeader"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvEmptyDayTitle"
@@ -178,7 +184,6 @@
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddActivity"
-        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/screen_margin"

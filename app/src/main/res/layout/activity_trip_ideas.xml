@@ -25,13 +25,14 @@
         app:title="@string/ideas_title" />
 
     <TextView
+        style="@style/Widget.TripPocket.PassTitle"
+        app:drawableEndCompat="@drawable/art_camera"
         android:id="@+id/tvSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_margin"
         android:text="@string/ideas_subtitle"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textAppearance="@style/TextAppearance.TripPocket.TitleMedium"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/toolbar"
@@ -105,17 +106,17 @@
 
     <!-- Empty state: the server answered with no ideas. -->
     <ImageView
+        android:padding="@dimen/space_xs"
         android:id="@+id/ivEmpty"
         android:layout_width="@dimen/empty_icon_size"
         android:layout_height="@dimen/empty_icon_size"
         android:contentDescription="@null"
-        android:src="@drawable/ic_lightbulb"
+        android:src="@drawable/art_camera"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/networkError"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:tint="?attr/colorOnSurfaceVariant" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvEmptyTitle"

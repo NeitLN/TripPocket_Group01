@@ -19,18 +19,22 @@
     tools:context=".ui.itinerary.NearbySightsFragment">
 
     <TextView
+        style="@style/Widget.TripPocket.PassTitle"
+        app:drawableEndCompat="@drawable/art_compass"
+        android:textColor="?attr/colorOnSecondaryContainer"
+        android:background="@drawable/bg_today_panel"
         android:id="@+id/tvSightsTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_margin"
         android:layout_marginTop="@dimen/space_lg"
         android:text="@string/sights_title"
-        android:textAppearance="?attr/textAppearanceTitleLarge"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
     <TextView
+        android:paddingTop="@dimen/space_xs"
         android:id="@+id/tvSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -113,17 +117,17 @@
     <!-- Empty (nothing within 10 km) and No place (no saved place) share these views;
          the fragment sets the two sentences, which differ so the user knows what to do. -->
     <ImageView
+        android:padding="@dimen/space_xs"
         android:id="@+id/ivEmpty"
         android:layout_width="@dimen/empty_icon_size"
         android:layout_height="@dimen/empty_icon_size"
         android:contentDescription="@null"
-        android:src="@drawable/ic_place"
+        android:src="@drawable/art_compass"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyTitle"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/networkError"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:tint="?attr/colorOnSurfaceVariant" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvEmptyTitle"

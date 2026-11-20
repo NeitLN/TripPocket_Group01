@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="48dp" android:height="48dp"
+    android:viewportWidth="64" android:viewportHeight="64">
+    <path android:fillColor="@color/postcard_paper"
+        android:pathData="M12,8Q8,8 7,14L4,48Q3,54 9,55L49,60Q55,61 56,54L60,17Q61,12 55,11Z" />
+    <path android:fillColor="@color/brand_lime" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M14,12L54,16L50,55L9,50Z" />
+    <path android:fillColor="@color/postcard_paper" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M16,33a16,16 0,1 1,32 0a16,16 0,1 1,-32 0" />
+    <path android:fillColor="@color/postcard_sun" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M41,22l-5,15 -13,6 5,-15z" />
+    <path android:fillColor="@color/postcard_water" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M28,28l8,9 -13,6z" />
+    <path android:fillColor="@android:color/transparent" android:strokeColor="@color/postcard_ink" android:strokeWidth="2.1" android:strokeLineJoin="round" android:strokeLineCap="round"
+        android:pathData="M32,19v3m14,11h-3m-11,14v-3m-14,-11h3" />
+</vector>

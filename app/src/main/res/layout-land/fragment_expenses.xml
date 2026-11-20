@@ -29,7 +29,7 @@
         android:layout_height="0dp"
         android:layout_marginHorizontal="@dimen/screen_margin"
         android:layout_marginTop="@dimen/space_md"
-        android:background="@drawable/bg_summary_panel"
+        android:background="@drawable/bg_mail_panel"
         app:layout_constraintBottom_toBottomOf="@id/spaceSummaryBottom"
         app:layout_constraintEnd_toEndOf="@id/guideColumns"
         app:layout_constraintStart_toStartOf="parent"
@@ -47,7 +47,7 @@
         app:layout_constraintEnd_toStartOf="@id/btnMembers"
         app:layout_constraintHorizontal_bias="0"
         android:textAppearance="@style/TextAppearance.TripPocket.Overline"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
         app:layout_constraintTop_toTopOf="@id/vSummaryPanel" />
 
@@ -57,7 +57,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:minHeight="48dp"
-        android:textColor="?attr/colorPrimary"
+        android:textColor="@color/brand_lime"
         app:layout_constraintBottom_toBottomOf="@id/btnExchangeRates"
         app:layout_constraintEnd_toStartOf="@id/btnExchangeRates"
         app:layout_constraintTop_toTopOf="@id/btnExchangeRates"
@@ -70,7 +70,7 @@
         android:layout_height="48dp"
         android:contentDescription="@string/exchange_rates_title"
         app:icon="@drawable/ic_currency_exchange"
-        app:iconTint="?attr/colorOnPrimaryContainer"
+        app:iconTint="@color/postcard_paper"
         app:layout_constraintBottom_toBottomOf="@id/btnShare"
         app:layout_constraintEnd_toStartOf="@id/btnShare"
         app:layout_constraintTop_toTopOf="@id/btnShare" />
@@ -84,7 +84,7 @@
         android:layout_marginEnd="@dimen/space_xs"
         android:contentDescription="@string/expenses_share"
         app:icon="@drawable/ic_share"
-        app:iconTint="?attr/colorOnPrimaryContainer"
+        app:iconTint="@color/postcard_paper"
         app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
         app:layout_constraintTop_toTopOf="@id/vSummaryPanel" />
 
@@ -94,7 +94,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="?attr/textAppearanceHeadlineMedium"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/brand_lime"
         app:layout_constraintEnd_toStartOf="@id/tvPlanned"
         app:layout_constraintHorizontal_bias="0"
         app:layout_constraintHorizontal_chainStyle="packed"
@@ -108,7 +108,7 @@
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_sm"
         android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constrainedWidth="true"
         app:layout_constraintBaseline_toBaselineOf="@id/tvSpentTotal"
         app:layout_constraintEnd_toEndOf="@id/btnShare"
@@ -124,6 +124,8 @@
         app:constraint_referenced_ids="tvSpentTotal,tvPlanned" />
 
     <com.google.android.material.progressindicator.LinearProgressIndicator
+        app:indicatorColor="@color/brand_lime"
+        app:trackColor="@color/postcard_karst"
         android:id="@+id/progressBudget"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -146,7 +148,7 @@
         android:layout_marginTop="@dimen/space_lg"
         android:text="@string/expenses_category_food"
         android:textAppearance="?attr/textAppearanceLabelMedium"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintEnd_toStartOf="@id/tvStayLabel"
         app:layout_constraintHorizontal_chainStyle="spread_inside"
         app:layout_constraintStart_toStartOf="@id/vSummaryPanel"
@@ -158,7 +160,7 @@
         android:layout_height="wrap_content"
         android:text="@string/expenses_category_stay"
         android:textAppearance="?attr/textAppearanceLabelMedium"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintEnd_toStartOf="@id/tvTransportLabel"
         app:layout_constraintStart_toEndOf="@id/tvFoodLabel"
         app:layout_constraintTop_toTopOf="@id/tvFoodLabel" />
@@ -170,7 +172,7 @@
         android:layout_marginEnd="@dimen/space_xxl"
         android:text="@string/expenses_category_transport"
         android:textAppearance="?attr/textAppearanceLabelMedium"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintEnd_toEndOf="@id/vSummaryPanel"
         app:layout_constraintStart_toEndOf="@id/tvStayLabel"
         app:layout_constraintTop_toTopOf="@id/tvFoodLabel" />
@@ -180,7 +182,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.TripPocket.Money"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintStart_toStartOf="@id/tvFoodLabel"
         app:layout_constraintTop_toBottomOf="@id/tvFoodLabel"
         tools:text="440,000" />
@@ -190,7 +192,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.TripPocket.Money"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintStart_toStartOf="@id/tvStayLabel"
         app:layout_constraintTop_toBottomOf="@id/tvStayLabel"
         tools:text="1,500,000" />
@@ -200,7 +202,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:textAppearance="@style/TextAppearance.TripPocket.Money"
-        android:textColor="?attr/colorOnPrimaryContainer"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintStart_toStartOf="@id/tvTransportLabel"
         app:layout_constraintTop_toBottomOf="@id/tvTransportLabel"
         tools:text="210,000" />
@@ -260,6 +262,8 @@
 
     <!-- Empty state -->
     <TextView
+        app:drawableTopCompat="@drawable/art_wallet"
+        android:drawablePadding="@dimen/space_md"
         android:id="@+id/tvEmptyExpenses"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -276,7 +280,6 @@
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabAddExpense"
-        style="@style/Widget.Material3.ExtendedFloatingActionButton.Icon.Primary"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_margin="@dimen/screen_margin"
