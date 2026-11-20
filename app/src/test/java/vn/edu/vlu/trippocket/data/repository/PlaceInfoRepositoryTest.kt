@@ -3,6 +3,7 @@ package vn.edu.vlu.trippocket.data.repository
 import kotlinx.coroutines.runBlocking
 import okhttp3.mockwebserver.MockResponse
 import okhttp3.mockwebserver.MockWebServer
+import okhttp3.mockwebserver.SocketPolicy
 import org.junit.After
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -11,6 +12,8 @@ import org.junit.Before
 import org.junit.Test
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import vn.edu.vlu.trippocket.data.local.dao.PlaceInfoCacheDao
+import vn.edu.vlu.trippocket.data.local.entity.PlaceInfoCacheEntity
 import vn.edu.vlu.trippocket.data.model.PlaceInfo
 import vn.edu.vlu.trippocket.data.remote.ApiResult
 import vn.edu.vlu.trippocket.data.remote.wikipedia.PageSummaryApi
@@ -40,6 +43,72 @@ class PlaceInfoRepositoryTest {
     fun tearDown() {
         // A test may have shut the server down already (the offline case).
         runCatching { server.shutdown() }
+    }
+
+    /** In-memory stand-in for place_info_cache (A1). */
+    private class FakeCache : PlaceInfoCacheDao {
+        val rows = mutableMapOf<String, PlaceInfoCacheEntity>()
+        override suspend fun get(page: String) = rows[page]
+        override suspend fun upsert(row: PlaceInfoCacheEntity) {
+            rows[row.page] = row
+        }
+    }
+
+    private fun cachedRepository(cache: FakeCache): PlaceInfoRepository {
+        val api = Retrofit.Builder()
+            .baseUrl(server.url("/"))
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(PageSummaryApi::class.java)
+        return PlaceInfoRepository(api, cache = cache)
+    }
+
+    private fun dalatSummary() = MockResponse().setBody(
+        """
+        {
+          "title": "Da Lat",
+          "description": "City in Vietnam",
+          "extract": "Da Lat is the capital of Lam Dong province.",
+          "thumbnail": { "source": "https://upload.wikimedia.org/dalat.jpg" }
+        }
+        """.trimIndent()
+    )
+
+    @Test
+    fun offline_theSavedSummaryComesBack() = runBlocking {
+        val cache = FakeCache()
+        val repository = cachedRepository(cache)
+        server.enqueue(dalatSummary())
+        repository.placeInfo("Da Lat")
+        server.enqueue(MockResponse().setSocketPolicy(SocketPolicy.DISCONNECT_AT_START))
+
+        val info = (repository.placeInfo("Da Lat") as ApiResult.Success).data!!
+
+        assertEquals("Da Lat", info.title)
+        assertEquals("https://upload.wikimedia.org/dalat.jpg", info.imageUrl)
+        assertEquals("Da Lat is the capital of Lam Dong province.", info.extract)
+    }
+
+    @Test
+    fun offline_aSaved404_isStill_noArticle_notAnError() = runBlocking {
+        val cache = FakeCache()
+        val repository = cachedRepository(cache)
+        server.enqueue(MockResponse().setResponseCode(404))
+        repository.placeInfo("Nowhere")
+        server.enqueue(MockResponse().setResponseCode(503))
+
+        val result = repository.placeInfo("Nowhere")
+
+        assertEquals(ApiResult.Success(null), result)
+    }
+
+    @Test
+    fun offline_withNothingSaved_isTheError() = runBlocking {
+        server.enqueue(MockResponse().setResponseCode(503))
+
+        val result = cachedRepository(FakeCache()).placeInfo("Hue")
+
+        assertEquals(ApiError.SERVER, (result as ApiResult.Failure).error)
     }
 
     @Test
