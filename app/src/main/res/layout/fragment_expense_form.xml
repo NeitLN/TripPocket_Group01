@@ -28,13 +28,14 @@
             app:layout_constraintWidth_max="@dimen/form_max_width">
 
             <TextView
+                style="@style/Widget.TripPocket.PassTitle"
+                app:drawableEndCompat="@drawable/art_wallet"
                 android:id="@+id/tvFormTitle"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
                 android:accessibilityHeading="true"
                 tools:targetApi="28"
-                android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
@@ -64,7 +65,7 @@
             <!-- Paid in: foreign currency & amount (M4) -->
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilPaidInCurrency"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                style="@style/Widget.TripPocket.Field.Dropdown"
                 android:layout_width="120dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_sm"
@@ -81,7 +82,6 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilPaidInAmount"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="@dimen/space_sm"
@@ -116,7 +116,7 @@
 
             <com.google.android.material.button.MaterialButton
                 android:id="@+id/btnPaidInRetry"
-                style="@style/Widget.Material3.Button.TextButton"
+                style="@style/Widget.TripPocket.Button.Text"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:minHeight="48dp"
@@ -156,7 +156,7 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilPayer"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu"
+                style="@style/Widget.TripPocket.Field.Dropdown"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"

@@ -2,5 +2,7 @@
 <resources>
     <!-- Landscape phones are short: a smaller empty-day icon keeps the text above the FAB. -->
     <dimen name="itinerary_empty_icon_size">48dp</dimen>
-    <dimen name="itinerary_empty_icon_padding">12dp</dimen>
+    <dimen name="postcard_stamp_width">64dp</dimen>
+    <dimen name="postcard_stamp_height">48dp</dimen>
+    <dimen name="postcard_padding">6dp</dimen>
 </resources>

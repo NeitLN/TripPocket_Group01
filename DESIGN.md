@@ -6,8 +6,11 @@ colors:
   on-primary: "#FFFFFF"
   primary-container: "#E6DEFF"
   on-primary-container: "#21105D"
-  secondary-dusk: "#62577C"
-  secondary-container: "#E9DDFB"
+  secondary-jade: "#36695E"
+  secondary-container: "#CCEFE6"
+  postcard-ink: "#32216E"
+  postcard-paper: "#FFFAEB"
+  ticket-line: "#D1C7E3"
   tertiary-olive: "#4F6500"
   brand-lime: "#C6F432"
   on-brand-lime: "#1B1B1F"
@@ -196,9 +199,9 @@ components:
 
 **Creative North Star: "Túi sticker của chuyến đi"**
 
-Mỗi chuyến đi trong TripPocket là một con sticker cắt viền trắng, giống sticker bạn bè thả vào group chat của chuyến đi. Nền app là màu lilac nhạt (`md_background`), thẻ chuyến đi màu trắng bo góc 20dp, mọi thứ bấm được đều là violet (`?attr/colorPrimary`). Lime chỉ xuất hiện ở hai chỗ: nút "New trip" và một chữ được dán sticker trong tiêu đề màn hình. Sticker chỉ dùng để nhận ra chuyến đi; trạng thái, tiền và nút bấm thì luôn trình bày thẳng, không trang trí.
+Mỗi chuyến đi trong TripPocket là một con sticker cắt viền trắng, giống sticker bạn bè thả vào group chat của chuyến đi. Nền app là màu lilac nhạt (`md_background`), thẻ chuyến đi màu trắng bo góc 20dp, mọi thứ bấm được đều là violet (`?attr/colorPrimary`). Lime nhấn nút tạo chuyến, chữ dán sticker, ngày được chọn và số tiền đã chi. Sticker chỉ dùng để nhận ra chuyến đi; trạng thái, tiền và nút bấm thì luôn trình bày thẳng, không trang trí.
 
-Mật độ vừa phải: mỗi thẻ chuyến đi là một cột chữ có thể dãn ra (tên, điểm đến, ngày + số ngày, thành viên + đã chi, dòng trạng thái sao lưu) đặt cạnh một ô sticker 80dp. Không có chiều cao cố định, nên cỡ chữ hệ thống 200% vẫn đọc được. Cả app dùng một họ chữ duy nhất là Be Vietnam Pro (đóng gói sẵn trong `res/font`, chạy offline), đọc tốt tiếng Việt có dấu.
+Ở màn đăng nhập và danh sách chuyến đi, một con tem minh họa vịnh Hạ Long nằm trên nền tím mực. Tem là tài nguyên vector đóng gói cùng ứng dụng. Mỗi thẻ chuyến đi có sticker điểm đến bên cạnh tên, ngày và chi phí. Đường nét đứt tách phần thông tin này khỏi trạng thái sao lưu và nút thử lại. Phông Be Vietnam Pro được đóng gói sẵn để hiển thị cả khi ngoại tuyến.
 
 Nhóm đã chủ động bỏ kiểu mặc định của các app du lịch: app bar trắng, thẻ trắng trên nền trắng và một màu xanh dương làm điểm nhấn. App bar của TripPocket phẳng, cùng màu nền lilac.
 
@@ -208,6 +211,12 @@ Nhóm đã chủ động bỏ kiểu mặc định của các app du lịch: app
 - Sticker sinh tự động từ điểm đến: 5 màu, mã 2 ký tự, viền trắng 3dp, nghiêng -3/0/+3 độ.
 - Một họ chữ Be Vietnam Pro: 900 cho wordmark, tiêu đề màn hình và mã sticker; 800 cho headline và tên thẻ; 600 cho title, label, tiền; 400 cho body.
 - Light và dark đều là giao diện chính thức, không phải bản phụ.
+
+### Tem theo chức năng
+
+Tem ba lô đi cùng danh sách đóng gói. Bản đồ và la bàn nhận diện lịch trình và điểm tham quan. Mây, ví và máy ảnh lần lượt nhận diện thời tiết, chi phí và ý tưởng chuyến đi. Biểu mẫu dùng lại tem của chức năng tương ứng. Mỗi tiêu đề vẫn ghi rõ tên màn hình để người dùng nhận biết chức năng khi dùng trình đọc màn hình.
+
+Thẻ ngân sách dùng nền tím mực, số tiền đã chi và thanh tiến độ màu lime. Dải ngày của lịch trình dùng cùng cặp màu để đánh dấu ngày đang mở. Dòng hành lý đã đóng gói chuyển sang nền bạc hà và giữ dấu chọn trên ô kiểm.
 
 ## Colors
 
@@ -220,10 +229,10 @@ Mọi màu đều khai báo trong `res/values/colors.xml` (sáng) và `res/value
 - **Violet container** (`md_primary_container` → `?attr/colorPrimaryContainer`): nền nhạt cho phần tử đang chọn, chip được chọn.
 
 ### Secondary
-- **Tím xám** (`md_secondary`, `md_secondary_container`): thành phần phụ của Material (chip, tonal button) khi cần một tông dịu hơn violet.
+- **Xanh bạc hà** dùng cho tab đang chọn, chip lọc, nút phụ và bảng thời tiết. Chữ trên nền bạc hà lấy màu từ `colorOnSecondaryContainer` để đọc được ở cả hai chế độ.
 
 ### Tertiary
-- **Lime thương hiệu** (`brand_lime`, cũng là `md_tertiary_container`; giữ nguyên `#C6F432` ở cả hai theme): chỉ dành cho FAB "New trip" (`Widget.TripPocket.ExtendedFab.Lime`) và chữ được dán sticker trong tiêu đề (`StickerHighlightSpan`). Chữ trên lime luôn là `on_brand_lime`. `md_tertiary` (olive `#4F6500`, tối là lime) là bản đủ tương phản để làm chữ/biểu tượng trên nền sáng nếu Material component cần.
+- **Lime thương hiệu** (`brand_lime`, cũng là `md_tertiary_container`; giữ nguyên `#C6F432` ở cả hai theme): dùng cho dải ngày, bảng ngân sách, FAB "New trip" (`Widget.TripPocket.ExtendedFab.Lime`) và chữ được dán sticker trong tiêu đề (`StickerHighlightSpan`). Chữ trên lime luôn là `on_brand_lime`. `md_tertiary` (olive `#4F6500`, tối là lime) là bản đủ tương phản để làm chữ/biểu tượng trên nền sáng nếu Material component cần.
 
 ### Error và tiền
 - **Đỏ mâm xôi** (`md_error` → `?attr/colorError`; tối `#FFB1C2`): lỗi form và biểu tượng "Backup failed". Luôn kèm chữ.
@@ -298,7 +307,7 @@ Hệ thống phẳng, độ sâu đến từ tầng màu chứ không từ bóng
 Ngoại lệ duy nhất là sticker: ở theme sáng `TripStickerView` có elevation 2dp (`sticker_elevation`) cho một bóng ngắn, mềm, giống sticker dán trên giấy; ở theme tối elevation về 0 và viền trắng 3dp tự tách sticker khỏi nền. FAB lime giữ elevation mặc định của Material.
 
 ### Named Rules
-**The Flat Card Rule.** Thẻ không đổ bóng và không có viền; tách khỏi nền bằng màu `trip_card_surface`.
+**The Flat Card Rule.** Thẻ dùng nền `trip_card_surface` và viền `ticket_line` dày 1dp để tách khỏi nền màn hình.
 
 ## Shapes
 
@@ -332,12 +341,12 @@ Tròn như viên thuốc, rõ ràng, không trang trí.
 - **Corner Style:** 20dp.
 - **Background:** `trip_card_surface` qua `Widget.TripPocket.Card` (là `materialCardViewStyle` mặc định nên `MaterialCardView` tự nhận).
 - **Shadow Strategy:** phẳng, `cardElevation="@dimen/card_elevation"` (0dp).
-- **Border:** không.
+- Thẻ dùng viền `ticket_line` dày 1dp. Trên thẻ chuyến đi, phần sao lưu có đường phân cách nét đứt cùng màu.
 - **Internal Padding:** 12dp trên/dưới, 16dp phải, 8dp trái (bên trái là ô sticker 80dp đã có khoảng trống riêng).
 - Toàn thẻ bấm được (`clickable`, `focusable`); nút bên trong (Retry) là một vùng chạm riêng 48dp.
 
 ### Inputs / Fields
-- **Style:** `Widget.Material3.TextInputLayout.OutlinedBox` (là `textInputStyle` mặc định), bo 12dp, có icon đầu dòng khi giúp nhận ra ô (email, khoá).
+- **Style:** `Widget.TripPocket.Field` (là `textInputStyle` mặc định), nền cùng màu thẻ, bo 12dp, có icon đầu dòng khi giúp nhận ra ô (email, khoá).
 - **Focus:** viền violet mặc định của Material.
 - **Error:** dùng `TextInputLayout.error` (màu `?attr/colorError`), có chữ giải thích; helper text cho yêu cầu đã biết trước (ví dụ độ dài mật khẩu).
 - Đặt `autofillHints`, `inputType`, `imeOptions` đúng cho từng ô.
@@ -391,7 +400,7 @@ Thành phần đặc trưng của TripPocket: một ô vuông bo 18dp, tô một
 
 ### Don't:
 - **Don't** viết mã hex hay `@color/md_*` trong layout; ngoại lệ duy nhất là `balance_positive` / `balance_negative` cho số dư.
-- **Don't** thêm lime vào màn của module khác: không nút lime, chip lime, nền lime, chữ tô lime thứ hai.
+- Dùng lime trên nền tím mực cho ngày đang mở và số tiền đã chi.
 - **Don't** dùng màu sticker cho trạng thái, danh mục chi tiêu, thời tiết hay tiền.
 - **Don't** dùng sticker làm nút bấm, và không đặt sticker mà không có tên chuyến đi bên cạnh.
 - **Don't** dùng `sticker_violet` (#7C5CFF) cho nút hay link; màu thao tác là `?attr/colorPrimary`.

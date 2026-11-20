@@ -41,11 +41,22 @@
     android:layout_height="match_parent">
 
     <!-- ===== Trip header with sticker ===== -->
+    <View
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:background="@drawable/bg_mail_panel"
+        android:importantForAccessibility="no"
+        app:layout_constraintBottom_toBottomOf="@id/barrierHeaderBottom"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="@id/flStickerSlot" />
+
     <FrameLayout
         android:id="@+id/flStickerSlot"
         android:layout_width="@dimen/sticker_slot"
         android:layout_height="@dimen/sticker_slot"
-        android:layout_marginStart="@dimen/screen_margin"
+        android:layout_marginStart="@dimen/space_xl"
         android:layout_marginTop="@dimen/space_md"
         android:clipChildren="false"
         app:layout_constraintStart_toStartOf="parent"
@@ -60,11 +71,13 @@
     </FrameLayout>
 
     <TextView
+        android:textColor="@color/postcard_paper"
+        android:paddingTop="@dimen/space_sm"
         android:id="@+id/tvWeatherTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="@dimen/space_sm"
-        android:layout_marginEnd="@dimen/screen_margin"
+        android:layout_marginEnd="@dimen/space_xxl"
         android:accessibilityHeading="true"
         android:text="@string/weather_title"
         android:textAppearance="@style/TextAppearance.TripPocket.HeadlineSmall"
@@ -75,11 +88,12 @@
         tools:targetApi="28" />
 
     <TextView
+        android:paddingBottom="@dimen/space_sm"
         android:id="@+id/tvTripSubtitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:textColor="@color/postcard_paper"
         app:layout_constraintEnd_toEndOf="@id/tvWeatherTitle"
         app:layout_constraintStart_toStartOf="@id/tvWeatherTitle"
         app:layout_constraintTop_toBottomOf="@id/tvWeatherTitle"
@@ -95,7 +109,6 @@
     <!-- ===== Search bar ===== -->
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilSearch"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginHorizontal="@dimen/screen_margin"
@@ -175,16 +188,14 @@
         android:id="@+id/ivEmptyPlaces"
         android:layout_width="@dimen/empty_icon_size"
         android:layout_height="@dimen/empty_icon_size"
-        android:background="@drawable/bg_circle_primary_container"
         android:contentDescription="@null"
-        android:padding="@dimen/space_xl"
-        android:src="@drawable/ic_sticker_pocket"
+        android:padding="@dimen/space_xs"
+        android:src="@drawable/art_sky"
         app:layout_constraintBottom_toTopOf="@id/tvEmptyPlacesTitle"
         app:layout_constraintEnd_toEndOf="@id/tilSearch"
         app:layout_constraintStart_toStartOf="@id/tilSearch"
         app:layout_constraintTop_toBottomOf="@id/chipGroupPlaces"
-        app:layout_constraintVertical_chainStyle="packed"
-        app:tint="?attr/colorOnPrimaryContainer" />
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <TextView
         android:id="@+id/tvEmptyPlacesTitle"
@@ -424,7 +435,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnRetry"
-        style="@style/Widget.Material3.Button.TextButton"
+        style="@style/Widget.TripPocket.Button.Text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/weather_retry"
@@ -538,7 +549,7 @@
 
     <com.google.android.material.button.MaterialButton
         android:id="@+id/btnAboutRetry"
-        style="@style/Widget.Material3.Button.TextButton"
+        style="@style/Widget.TripPocket.Button.Text"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginEnd="@dimen/space_sm"
@@ -670,7 +681,7 @@
 
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btnSearchRetry"
-            style="@style/Widget.Material3.Button.TextButton"
+            style="@style/Widget.TripPocket.Button.Text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="@dimen/space_xs"

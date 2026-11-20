@@ -7,6 +7,7 @@
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:paddingHorizontal="@dimen/space_xl"
+    app:startIconDrawable="@drawable/ic_edit"
     android:paddingTop="@dimen/space_sm"
     android:hint="@string/weather_place_note_hint"
     app:counterEnabled="true"

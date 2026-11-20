@@ -98,6 +98,25 @@
             app:layout_constraintTop_toBottomOf="@id/tvDates"
             tools:text="2 members · 0 ₫ spent" />
 
+        <androidx.constraintlayout.widget.Barrier
+            android:id="@+id/tripInfoBottom"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            app:barrierDirection="bottom"
+            app:constraint_referenced_ids="stickerSlot,tvMeta" />
+
+        <View
+            android:id="@+id/perforation"
+            android:layout_width="0dp"
+            android:layout_height="2dp"
+            android:layout_marginStart="@dimen/space_sm"
+            android:layout_marginTop="@dimen/space_md"
+            android:background="@drawable/ticket_perforation"
+            android:importantForAccessibility="no"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@id/tripInfoBottom" />
+
         <!-- Backup status: icon + label, with the note under the label. -->
         <ImageView
             android:id="@+id/ivSync"
@@ -105,7 +124,7 @@
             android:layout_height="@dimen/icon_size_sm"
             android:contentDescription="@null"
             app:layout_constraintBottom_toBottomOf="@id/tvSync"
-            app:layout_constraintStart_toStartOf="@id/tvTripName"
+            app:layout_constraintStart_toStartOf="@id/perforation"
             app:layout_constraintTop_toTopOf="@id/tvSync"
             tools:src="@drawable/ic_cloud_alert"
             tools:tint="?attr/colorError" />
@@ -120,7 +139,7 @@
             android:textColor="?attr/colorOnSurface"
             app:layout_constraintEnd_toStartOf="@id/btnRetry"
             app:layout_constraintStart_toEndOf="@id/ivSync"
-            app:layout_constraintTop_toBottomOf="@id/tvMeta"
+            app:layout_constraintTop_toBottomOf="@id/perforation"
             tools:text="@string/sync_failed" />
 
         <TextView
@@ -142,9 +161,9 @@
             android:minHeight="48dp"
             android:text="@string/sync_retry"
             android:visibility="gone"
-            app:layout_constraintBottom_toBottomOf="@id/tvSyncNote"
+            app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tvSync"
+            app:layout_constraintTop_toBottomOf="@id/perforation"
             tools:visibility="visible" />
 
     </androidx.constraintlayout.widget.ConstraintLayout>

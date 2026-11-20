@@ -2,7 +2,7 @@
 <!--
     Checklist tab (I2). Title + "n/m packed", an always-visible add row (outlined field + Add),
     then the list. At 100 items the Add button turns off and the field says so (proposal 6.2).
-    Done items keep full-contrast text; only the standard checkbox shows the state.
+    Packed items keep full-contrast text and show a check mark on a mint surface.
 -->
 <androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
@@ -12,6 +12,9 @@
     tools:context=".ui.checklist.ChecklistFragment">
 
     <TextView
+        style="@style/Widget.TripPocket.PassTitle"
+        app:drawableEndCompat="@drawable/art_pack"
+        android:background="@drawable/bg_today_panel"
         android:id="@+id/tvTitle"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -19,8 +22,7 @@
         android:layout_marginTop="@dimen/space_lg"
         android:accessibilityHeading="true"
         android:text="@string/checklist_title"
-        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-        android:textColor="?attr/colorOnSurface"
+        android:textColor="?attr/colorOnSecondaryContainer"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
@@ -28,6 +30,7 @@
         tools:targetApi="28" />
 
     <TextView
+        android:paddingTop="@dimen/space_xs"
         android:id="@+id/tvCount"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
@@ -38,9 +41,24 @@
         app:layout_constraintTop_toBottomOf="@id/tvTitle"
         tools:text="5/12 packed" />
 
+    <com.google.android.material.progressindicator.LinearProgressIndicator
+        android:id="@+id/packingProgress"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="@dimen/space_xs"
+        android:importantForAccessibility="no"
+        android:visibility="gone"
+        app:indicatorColor="?attr/colorPrimary"
+        app:trackColor="?attr/colorPrimaryContainer"
+        app:trackCornerRadius="3dp"
+        app:trackThickness="6dp"
+        app:layout_constraintEnd_toEndOf="@id/tvTitle"
+        app:layout_constraintStart_toStartOf="@id/tvTitle"
+        app:layout_constraintTop_toBottomOf="@id/tvCount"
+        tools:visibility="visible" />
+
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilNewItem"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginTop="@dimen/space_md"
@@ -50,7 +68,7 @@
         app:counterMaxLength="80"
         app:layout_constraintEnd_toStartOf="@id/btnAdd"
         app:layout_constraintStart_toStartOf="@id/tvTitle"
-        app:layout_constraintTop_toBottomOf="@id/tvCount">
+        app:layout_constraintTop_toBottomOf="@id/packingProgress">
 
         <com.google.android.material.textfield.TextInputEditText
             android:id="@+id/etNewItem"

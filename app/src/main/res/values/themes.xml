@@ -69,10 +69,14 @@
         <item name="materialButtonOutlinedStyle">@style/Widget.TripPocket.Button.Outlined</item>
         <item name="borderlessButtonStyle">@style/Widget.TripPocket.Button.Text</item>
         <item name="materialCardViewStyle">@style/Widget.TripPocket.Card</item>
-        <item name="textInputStyle">@style/Widget.Material3.TextInputLayout.OutlinedBox</item>
+        <item name="textInputStyle">@style/Widget.TripPocket.Field</item>
+        <item name="bottomNavigationStyle">@style/Widget.TripPocket.BottomNavigation</item>
+        <item name="extendedFloatingActionButtonStyle">@style/Widget.TripPocket.ExtendedFab</item>
+        <item name="materialAlertDialogTheme">@style/ThemeOverlay.TripPocket.Dialog</item>
         <item name="toolbarStyle">@style/Widget.TripPocket.Toolbar</item>
 
         <!-- Edge-to-edge system bar icons: dark on the light lilac, light at night. -->
+        <item name="android:statusBarColor">?attr/colorSurface</item>
         <item name="android:windowLightStatusBar">@bool/light_system_bars</item>
         <item name="android:windowLightNavigationBar" tools:targetApi="27">@bool/light_system_bars</item>
     </style>
@@ -250,21 +254,70 @@
     </style>
     <style name="Widget.TripPocket.Card" parent="Widget.Material3.CardView.Filled">
         <item name="cardBackgroundColor">@color/trip_card_surface</item>
+        <item name="cardCornerRadius">@dimen/card_corner_radius</item>
+        <item name="strokeColor">@color/ticket_line</item>
+        <item name="strokeWidth">1dp</item>
     </style>
     <style name="Widget.TripPocket.Toolbar" parent="Widget.Material3.Toolbar">
-        <item name="titleTextAppearance">@style/TextAppearance.TripPocket.TitleLarge</item>
+        <item name="titleTextAppearance">@style/TextAppearance.TripPocket.ToolbarTitle</item>
+        <item name="subtitleTextAppearance">@style/TextAppearance.TripPocket.BodySmall</item>
+    </style>
+    <style name="TextAppearance.TripPocket.ToolbarTitle" parent="TextAppearance.TripPocket.CardTitle">
+        <item name="android:textSize">20sp</item>
+        <item name="lineHeight">28sp</item>
+    </style>
+
+    <style name="Widget.TripPocket.Field" parent="Widget.Material3.TextInputLayout.OutlinedBox">
+        <item name="boxBackgroundColor">@color/trip_card_surface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.TripPocket.Corner12</item>
+    </style>
+    <style name="Widget.TripPocket.Field.Dense" parent="Widget.Material3.TextInputLayout.OutlinedBox.Dense">
+        <item name="boxBackgroundColor">@color/trip_card_surface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.TripPocket.Corner12</item>
+    </style>
+    <style name="Widget.TripPocket.Field.Dropdown" parent="Widget.Material3.TextInputLayout.OutlinedBox.ExposedDropdownMenu">
+        <item name="boxBackgroundColor">@color/trip_card_surface</item>
+        <item name="shapeAppearance">@style/ShapeAppearance.TripPocket.Corner12</item>
+    </style>
+
+    <style name="Widget.TripPocket.BottomNavigation" parent="Widget.Material3.BottomNavigationView">
+        <item name="backgroundTint">@color/trip_card_surface</item>
+        <item name="itemTextAppearanceActive">@style/TextAppearance.TripPocket.LabelMedium</item>
+        <item name="itemTextAppearanceInactive">@style/TextAppearance.TripPocket.LabelMedium</item>
+        <item name="labelVisibilityMode">labeled</item>
+        <item name="itemHorizontalTranslationEnabled">false</item>
+    </style>
+
+    <style name="Widget.TripPocket.ExtendedFab" parent="Widget.Material3.ExtendedFloatingActionButton.Icon.Primary">
+        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.TripPocket.Pill</item>
+        <item name="android:textAppearance">@style/TextAppearance.TripPocket.LabelLarge.Heavy</item>
     </style>
     <!-- The one loud action: lime in both themes, pill, no decorative ring. -->
-    <style name="Widget.TripPocket.ExtendedFab.Lime" parent="Widget.Material3.ExtendedFloatingActionButton.Icon.Primary">
+    <style name="Widget.TripPocket.ExtendedFab.Lime" parent="Widget.TripPocket.ExtendedFab">
         <item name="backgroundTint">@color/brand_lime</item>
         <item name="android:textColor">@color/on_brand_lime</item>
         <item name="iconTint">@color/on_brand_lime</item>
         <item name="rippleColor">#331B1B1F</item>
-        <item name="shapeAppearanceOverlay">@style/ShapeAppearance.TripPocket.Pill</item>
-        <item name="android:textAppearance">@style/TextAppearance.TripPocket.LabelLarge.Heavy</item>
     </style>
     <style name="TextAppearance.TripPocket.LabelLarge.Heavy" parent="TextAppearance.TripPocket.LabelLarge">
         <item name="fontFamily">@font/be_vietnam_pro_extrabold</item>
         <item name="android:fontFamily">@font/be_vietnam_pro_extrabold</item>
+    </style>
+    <style name="Widget.TripPocket.PassTitle" parent="">
+        <item name="android:background">@drawable/bg_mail_panel</item>
+        <item name="android:textAppearance">@style/TextAppearance.TripPocket.HeadlineSmall</item>
+        <item name="android:textColor">@color/postcard_paper</item>
+        <item name="android:gravity">center_vertical</item>
+        <item name="android:paddingHorizontal">@dimen/space_lg</item>
+        <item name="android:paddingVertical">@dimen/space_sm</item>
+        <item name="android:drawablePadding">@dimen/space_md</item>
+    </style>
+    <style name="ThemeOverlay.TripPocket.Dialog" parent="ThemeOverlay.Material3.MaterialAlertDialog">
+        <item name="colorSurfaceContainerHigh">@color/trip_card_surface</item>
+        <item name="materialAlertDialogTitleTextStyle">@style/Widget.TripPocket.DialogTitle</item>
+    </style>
+    <style name="Widget.TripPocket.DialogTitle" parent="MaterialAlertDialog.Material3.Title.Text">
+        <item name="android:textAppearance">@style/TextAppearance.TripPocket.HeadlineSmall</item>
+        <item name="android:textColor">?attr/colorPrimary</item>
     </style>
 </resources>

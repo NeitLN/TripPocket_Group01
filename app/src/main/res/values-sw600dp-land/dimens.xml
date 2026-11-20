@@ -2,5 +2,4 @@
 <resources>
     <!-- Tablets in landscape are tall enough for the full-size empty-day icon. -->
     <dimen name="itinerary_empty_icon_size">96dp</dimen>
-    <dimen name="itinerary_empty_icon_padding">24dp</dimen>
 </resources>

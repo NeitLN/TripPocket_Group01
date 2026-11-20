@@ -59,37 +59,54 @@
         </LinearLayout>
 
         <!-- Decorative sample stickers (bound in LoginActivity); not focusable, not announced -->
-        <FrameLayout
+        <LinearLayout
             android:id="@+id/clusterStickers"
-            android:layout_width="160dp"
-            android:layout_height="88dp"
-            android:layout_marginTop="@dimen/space_xl"
-            android:clipChildren="false"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="@dimen/space_md"
+            android:background="@drawable/bg_mail_panel"
+            android:gravity="center"
+            android:orientation="horizontal"
+            android:padding="@dimen/space_sm"
             android:importantForAccessibility="noHideDescendants"
+            app:layout_constraintEnd_toEndOf="@id/form"
             app:layout_constraintStart_toStartOf="@id/form"
             app:layout_constraintTop_toBottomOf="@id/lockup">
+            <FrameLayout
+                android:layout_width="0dp"
+                android:layout_height="88dp"
+                android:clipChildren="false"
+                android:layout_weight="1">
 
-            <vn.edu.vlu.trippocket.ui.common.TripStickerView
-                android:id="@+id/sticker1"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:layout_marginStart="4dp"
-                android:layout_marginTop="20dp" />
+                <vn.edu.vlu.trippocket.ui.common.TripStickerView
+                    android:id="@+id/sticker1"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="4dp"
+                    android:layout_marginTop="20dp" />
 
-            <vn.edu.vlu.trippocket.ui.common.TripStickerView
-                android:id="@+id/sticker2"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:layout_marginStart="52dp"
-                android:layout_marginTop="4dp" />
+                <vn.edu.vlu.trippocket.ui.common.TripStickerView
+                    android:id="@+id/sticker2"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="52dp"
+                    android:layout_marginTop="4dp" />
 
-            <vn.edu.vlu.trippocket.ui.common.TripStickerView
-                android:id="@+id/sticker3"
-                android:layout_width="56dp"
-                android:layout_height="56dp"
-                android:layout_marginStart="100dp"
-                android:layout_marginTop="24dp" />
-        </FrameLayout>
+                <vn.edu.vlu.trippocket.ui.common.TripStickerView
+                    android:id="@+id/sticker3"
+                    android:layout_width="56dp"
+                    android:layout_height="56dp"
+                    android:layout_marginStart="100dp"
+                    android:layout_marginTop="24dp" />
+            </FrameLayout>
+            <ImageView
+                android:layout_width="96dp"
+                android:layout_height="72dp"
+                android:layout_marginHorizontal="@dimen/space_sm"
+                android:importantForAccessibility="no"
+                android:rotation="6"
+                android:src="@drawable/ic_ha_long_stamp" />
+        </LinearLayout>
 
         <!-- The form column, capped for tablets and centered -->
         <androidx.constraintlayout.widget.ConstraintLayout
@@ -117,7 +134,6 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilEmail"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_lg"
@@ -138,7 +154,6 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilPassword"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
@@ -161,7 +176,6 @@
 
             <com.google.android.material.textfield.TextInputLayout
                 android:id="@+id/tilConfirmPassword"
-                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="@dimen/space_md"
@@ -183,6 +197,12 @@
             </com.google.android.material.textfield.TextInputLayout>
 
             <TextView
+                android:background="@drawable/bg_paper_row"
+                android:padding="@dimen/space_md"
+                app:drawableStartCompat="@drawable/ic_cloud_done"
+                app:drawableTint="?attr/colorPrimary"
+                android:drawablePadding="@dimen/space_sm"
+                android:gravity="center_vertical"
                 android:id="@+id/tvOfflineNote"
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"

@@ -7,10 +7,10 @@
     <color name="md_on_primary">#FFFFFF</color>
     <color name="md_primary_container">#E6DEFF</color>
     <color name="md_on_primary_container">#21105D</color>
-    <color name="md_secondary">#62577C</color>
+    <color name="md_secondary">#36695E</color>
     <color name="md_on_secondary">#FFFFFF</color>
-    <color name="md_secondary_container">#E9DDFB</color>
-    <color name="md_on_secondary_container">#211632</color>
+    <color name="md_secondary_container">#CCEFE6</color>
+    <color name="md_on_secondary_container">#123D35</color>
     <color name="md_tertiary">#4F6500</color>
     <color name="md_on_tertiary">#FFFFFF</color>
     <color name="md_tertiary_container">#C6F432</color>
@@ -63,4 +63,14 @@
          with explicit "owes" / "is owed" wording. -->
     <color name="balance_positive">#1B6D2F</color>
     <color name="balance_negative">#AD1743</color>
+
+    <color name="postcard_ink">#32216E</color>
+    <color name="postcard_paper">#FFFAEB</color>
+    <color name="postcard_sky">#FFD1A7</color>
+    <color name="postcard_sun">#FF785F</color>
+    <color name="postcard_karst_far">#AC9AE6</color>
+    <color name="postcard_karst">#6652A0</color>
+    <color name="postcard_water">#92DBCC</color>
+    <color name="postcard_wave">#439690</color>
+    <color name="ticket_line">#D1C7E3</color>
 </resources>

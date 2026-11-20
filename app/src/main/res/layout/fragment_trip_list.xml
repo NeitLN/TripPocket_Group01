@@ -15,33 +15,56 @@
     android:layout_height="match_parent"
     tools:context=".ui.trips.TripListFragment">
 
-    <TextView
-        android:id="@+id/tvTitle"
+    <LinearLayout
+        android:id="@+id/tripPostcard"
         android:layout_width="0dp"
         android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/title_inset"
-        android:layout_marginTop="@dimen/space_sm"
-        android:accessibilityHeading="true"
-        tools:targetApi="28"
-        android:text="@string/trips_title"
-        android:textAppearance="@style/TextAppearance.TripPocket.ScreenTitle"
-        android:textColor="?attr/colorOnSurface"
+        android:layout_marginHorizontal="@dimen/screen_margin"
+        android:layout_marginTop="@dimen/space_xs"
+        android:background="@drawable/bg_mail_panel"
+        android:gravity="center_vertical"
+        android:orientation="horizontal"
+        android:paddingHorizontal="@dimen/title_inset"
+        android:paddingVertical="@dimen/postcard_padding"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintWidth_max="@dimen/content_max_width" />
+        app:layout_constraintWidth_max="@dimen/content_max_width">
 
-    <TextView
-        android:id="@+id/tvSummary"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_xs"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
-        app:layout_constraintEnd_toEndOf="@id/tvTitle"
-        app:layout_constraintStart_toStartOf="@id/tvTitle"
-        app:layout_constraintTop_toBottomOf="@id/tvTitle"
-        tools:text="3 trips" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/tvTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:accessibilityHeading="true"
+                android:text="@string/trips_title"
+                android:textAppearance="@style/TextAppearance.TripPocket.ScreenTitle"
+                android:textColor="@color/postcard_paper"
+                tools:targetApi="28" />
+
+            <TextView
+                android:id="@+id/tvSummary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_xs"
+                android:textAppearance="?attr/textAppearanceBodySmall"
+                android:textColor="@color/postcard_paper"
+                tools:text="3 trips" />
+        </LinearLayout>
+
+        <ImageView
+            android:layout_width="@dimen/postcard_stamp_width"
+            android:layout_height="@dimen/postcard_stamp_height"
+            android:layout_marginStart="@dimen/space_sm"
+            android:importantForAccessibility="no"
+            android:rotation="6"
+            android:src="@drawable/ic_ha_long_stamp" />
+    </LinearLayout>
 
     <androidx.recyclerview.widget.RecyclerView
         android:id="@+id/rvTrips"
@@ -54,58 +77,60 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvSummary"
+        app:layout_constraintTop_toBottomOf="@id/tripPostcard"
         app:layout_constraintWidth_max="@dimen/content_max_width"
         tools:itemCount="3"
         tools:listitem="@layout/item_trip" />
 
-    <!-- Empty state: the pocket, a title and one line of guidance; the FAB is the action. -->
-    <ImageView
-        android:id="@+id/ivEmpty"
-        android:layout_width="@dimen/empty_icon_size"
-        android:layout_height="@dimen/empty_icon_size"
-        android:contentDescription="@null"
-        android:src="@drawable/ic_logo_pocket"
-        app:layout_constraintBottom_toTopOf="@id/tvEmptyTitle"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_chainStyle="packed" />
-
-    <TextView
-        android:id="@+id/tvEmptyTitle"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="@dimen/space_lg"
-        android:text="@string/trips_empty_title"
-        android:textAppearance="?attr/textAppearanceHeadlineSmall"
-        app:layout_constraintBottom_toTopOf="@id/tvEmptyBody"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/ivEmpty" />
-
-    <TextView
-        android:id="@+id/tvEmptyBody"
+    <ScrollView
+        android:id="@+id/groupEmpty"
         android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginHorizontal="@dimen/space_xxl"
-        android:layout_marginTop="@dimen/space_sm"
-        android:gravity="center"
-        android:text="@string/trips_empty_body"
-        android:textAppearance="?attr/textAppearanceBodyMedium"
-        android:textColor="?attr/colorOnSurfaceVariant"
+        android:layout_height="0dp"
+        android:fillViewport="true"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tvEmptyTitle"
-        app:layout_constraintWidth_max="@dimen/form_max_width" />
+        app:layout_constraintTop_toBottomOf="@id/tripPostcard"
+        app:layout_constraintWidth_max="@dimen/form_max_width">
 
-    <androidx.constraintlayout.widget.Group
-        android:id="@+id/groupEmpty"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:visibility="gone"
-        app:constraint_referenced_ids="ivEmpty,tvEmptyTitle,tvEmptyBody" />
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:paddingHorizontal="@dimen/space_xl"
+            android:paddingTop="@dimen/space_lg"
+            android:paddingBottom="@dimen/fab_clearance">
+
+            <ImageView
+                android:padding="@dimen/space_xs"
+                android:id="@+id/ivEmpty"
+                android:layout_width="@dimen/empty_icon_size"
+                android:layout_height="@dimen/empty_icon_size"
+                android:importantForAccessibility="no"
+                android:src="@drawable/art_route" />
+
+            <TextView
+                android:id="@+id/tvEmptyTitle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_lg"
+                android:gravity="center"
+                android:text="@string/trips_empty_title"
+                android:textAppearance="?attr/textAppearanceHeadlineSmall" />
+
+            <TextView
+                android:id="@+id/tvEmptyBody"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="@dimen/space_sm"
+                android:gravity="center"
+                android:text="@string/trips_empty_body"
+                android:textAppearance="?attr/textAppearanceBodyMedium"
+                android:textColor="?attr/colorOnSurfaceVariant" />
+        </LinearLayout>
+    </ScrollView>
 
     <com.google.android.material.floatingactionbutton.ExtendedFloatingActionButton
         android:id="@+id/fabNewTrip"

@@ -28,7 +28,6 @@
     <dimen name="empty_icon_size">96dp</dimen>
     <!-- Itinerary empty day: smaller in landscape so the whole message fits above the FAB. -->
     <dimen name="itinerary_empty_icon_size">96dp</dimen>
-    <dimen name="itinerary_empty_icon_padding">24dp</dimen>
     <!-- Weather: the forecast list keeps this height when the page has to scroll (landscape). -->
     <dimen name="forecast_min_height">280dp</dimen>
     <dimen name="timeline_divider_width">2dp</dimen>
@@ -49,4 +48,7 @@
     <dimen name="title_highlight_pad">8dp</dimen>
     <dimen name="title_inset">20dp</dimen>
     <dimen name="login_padding">24dp</dimen>
+    <dimen name="postcard_stamp_width">96dp</dimen>
+    <dimen name="postcard_stamp_height">72dp</dimen>
+    <dimen name="postcard_padding">14dp</dimen>
 </resources>

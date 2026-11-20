@@ -1,0 +1,5 @@
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:drawable="@drawable/bg_postcard" />
+    <item android:drawable="@drawable/postmark_lines" android:gravity="end|center_vertical"
+        android:end="8dp" android:width="104dp" android:height="56dp" />
+</layer-list>

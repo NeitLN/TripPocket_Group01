@@ -55,7 +55,7 @@
 
     <com.google.android.material.textfield.TextInputLayout
         android:id="@+id/tilShare"
-        style="@style/Widget.Material3.TextInputLayout.OutlinedBox.Dense"
+        style="@style/Widget.TripPocket.Field.Dense"
         android:layout_width="160dp"
         android:layout_height="wrap_content"
         android:layout_marginVertical="@dimen/space_xs"

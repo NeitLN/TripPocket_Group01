@@ -30,6 +30,7 @@ class ChecklistAdapter(
             binding.cbItem.setOnCheckedChangeListener(null)
             binding.cbItem.text = item.title
             binding.cbItem.isChecked = item.isDone
+            binding.root.isActivated = item.isDone
             binding.cbItem.setOnCheckedChangeListener { _, checked -> onToggle(item, checked) }
             binding.btnEdit.contentDescription = context.getString(R.string.checklist_edit_desc, item.title)
             binding.btnDelete.contentDescription = context.getString(R.string.checklist_delete_desc, item.title)
