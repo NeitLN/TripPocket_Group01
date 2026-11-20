@@ -24,6 +24,15 @@ jobs:
           distribution: temurin
           java-version: 21
       - uses: gradle/actions/setup-gradle@v4
+      # Robolectric downloads its Android jars from Maven Central on first use, outside Gradle's
+      # cache. A hiccup there failed every Robolectric class twice (FileNotFoundException), so
+      # the jars are cached between runs, keyed on the version catalog (Robolectric's version).
+      - name: Cache Robolectric jars
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository/org/robolectric
+          key: robolectric-${{ hashFiles('gradle/libs.versions.toml') }}
+          restore-keys: robolectric-
       - name: Test with coverage, lint, build
         run: ./gradlew createDebugUnitTestCoverageReport lintDebug assembleDebug --console=plain
       # The release build runs R8 and resource shrinking, which a debug build never does: a
@@ -106,7 +115,16 @@ jobs:
           # A phone-sized screen; the runner's default AVD is much smaller than any real phone.
           profile: pixel_6
           disable-animations: true
-          script: ./gradlew connectedDebugAndroidTest --console=plain
+          # Usual CI options: no window, software GPU, no camera or audio; boot from scratch.
+          emulator-options: -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none -no-snapshot
+          # About half the runs had every Espresso test fail with RootViewWithoutFocusException:
+          # something else held the focus (a system dialog or the lock screen right after boot).
+          # Unlock and close system dialogs first; on a failure, keep a screenshot and the focused
+          # window, so the report shows what was in the way.
+          script: |
+            adb shell input keyevent 82
+            adb shell am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS
+            ./gradlew connectedDebugAndroidTest --console=plain || { mkdir -p app/build/reports/androidTests; adb exec-out screencap -p > app/build/reports/androidTests/failure-screen.png; adb shell dumpsys window | grep -E 'mCurrentFocus|mFocusedApp' > app/build/reports/androidTests/focus.txt; exit 1; }
       - name: Upload UI test reports
         if: always()
         uses: actions/upload-artifact@v4
