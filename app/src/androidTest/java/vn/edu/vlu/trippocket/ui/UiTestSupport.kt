@@ -1,5 +1,6 @@
 package vn.edu.vlu.trippocket.ui
 
+import android.os.ParcelFileDescriptor
 import android.os.SystemClock
 import android.view.View
 import androidx.annotation.StringRes
@@ -23,9 +24,7 @@ fun clearTheScreen() {
     val automation = InstrumentationRegistry.getInstrumentation().uiAutomation
     listOf("input keyevent 82", "am broadcast -a android.intent.action.CLOSE_SYSTEM_DIALOGS").forEach { command ->
         // executeShellCommand runs asynchronously; reading the output to the end waits for it.
-        automation.executeShellCommand(command).use { fd ->
-            java.io.FileInputStream(fd.fileDescriptor).use { it.readBytes() }
-        }
+        ParcelFileDescriptor.AutoCloseInputStream(automation.executeShellCommand(command)).use { it.readBytes() }
     }
 }
 
