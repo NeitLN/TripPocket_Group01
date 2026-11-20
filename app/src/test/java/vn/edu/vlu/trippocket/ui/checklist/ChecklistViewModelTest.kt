@@ -1,6 +1,10 @@
 package vn.edu.vlu.trippocket.ui.checklist
 
 import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModelProvider
+import androidx.lifecycle.ViewModelStore
+import androidx.lifecycle.viewmodel.initializer
+import androidx.lifecycle.viewmodel.viewModelFactory
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.first
@@ -23,13 +27,27 @@ import vn.edu.vlu.trippocket.data.local.entity.ChecklistItemEntity
 import vn.edu.vlu.trippocket.data.repository.ChecklistRepository
 import vn.edu.vlu.trippocket.domain.Limits
 import vn.edu.vlu.trippocket.ui.detail.ARG_TRIP_ID
+import java.util.concurrent.Executors
+import java.util.concurrent.TimeUnit
 
 /** Checklist tab on a real (in-memory) Room database (I2). */
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(RobolectricTestRunner::class)
 class ChecklistViewModelTest {
 
-    private val t = TestDatabase()
+    /**
+     * Room runs on these threads so tearDown can wait for them. The ViewModel collects Room with
+     * stateIn(Eagerly): an invalidation that arrives after a test ends resumes that collector on
+     * Dispatchers.Main (the Unconfined test dispatcher runs it on Room's thread), and if that
+     * happens while tearDown resets Main, kotlinx-coroutines-test throws "Dispatchers.Main is
+     * used concurrently with setting it" (seen once in a full run). Same fix as WeatherViewModelTest.
+     */
+    private val roomExecutor = Executors.newFixedThreadPool(4)
+    private val t = TestDatabase(roomExecutor)
+
+    /** Holds the ViewModels so tearDown can cancel their scopes before Main is reset. */
+    private val viewModels = ViewModelStore()
+    private var created = 0
 
     @Before
     fun setUp() {
@@ -39,14 +57,28 @@ class ChecklistViewModelTest {
 
     @After
     fun tearDown() {
+        // A ViewModel still collecting Room would touch Main while the next test sets it.
+        viewModels.clear()
+        // Let Room finish what it already started (and its resumes reach Main) before Main changes.
+        roomExecutor.shutdown()
+        val roomIdle = roomExecutor.awaitTermination(10, TimeUnit.SECONDS)
         Dispatchers.resetMain()
         t.close()
+        assertTrue("Room work was still running 10 s after the test; resetting Main could race it", roomIdle)
     }
 
-    private fun viewModel() = ChecklistViewModel(
-        SavedStateHandle(mapOf(ARG_TRIP_ID to "t1")),
-        ChecklistRepository(t.db.checklistDao(), t.writer),
-    )
+    private fun viewModel(): ChecklistViewModel {
+        val factory = viewModelFactory {
+            initializer {
+                ChecklistViewModel(
+                    SavedStateHandle(mapOf(ARG_TRIP_ID to "t1")),
+                    ChecklistRepository(t.db.checklistDao(), t.writer),
+                )
+            }
+        }
+        // A new key each time: a test that builds a second ViewModel gets a fresh one.
+        return ViewModelProvider(viewModels, factory)["vm${created++}", ChecklistViewModel::class.java]
+    }
 
     private suspend fun ChecklistViewModel.state(total: Int) =
         withTimeout(5_000) { uiState.first { !it.loading && it.total == total } }
