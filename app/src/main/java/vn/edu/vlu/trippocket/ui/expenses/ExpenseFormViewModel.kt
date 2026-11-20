@@ -20,6 +20,7 @@ import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.ExchangeRates
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
+import vn.edu.vlu.trippocket.data.model.PaidIn
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.model.TripMember
 import vn.edu.vlu.trippocket.data.remote.ApiResult
@@ -110,6 +111,13 @@ class ExpenseFormViewModel(
      */
     private var keepRestoredAmount = false
 
+    /**
+     * The "Paid in" saved with the expense being edited (kept in the draft too). Saved again as it
+     * is while the user has not touched the amount, the currency or the foreign amount; its rate
+     * is only ever used for its own currency.
+     */
+    private var savedPaidIn: PaidIn? = null
+
     private val _state = MutableStateFlow(ExpenseFormState(isEdit = expenseId != null, spentAt = today()))
     val state: StateFlow<ExpenseFormState> = _state.asStateFlow()
 
@@ -142,10 +150,15 @@ class ExpenseFormViewModel(
                         splitType = existing.splitType,
                         participants = existing.shares.filterValues { it > 0 }.keys,
                         customShares = existing.shares.mapValues { it.value.toString() },
+                        // Schema v2: reopening shows what was paid, e.g. 12.5 USD, again.
+                        paidInCurrency = existing.paidIn?.currency,
+                        paidInAmountText = existing.paidIn?.amount?.let(::plainNumber).orEmpty(),
                     )
                 }
             }
-            if (draft && _state.value.paidInCurrency != null) {
+            if (!draft) savedPaidIn = existing?.paidIn
+            // Like a draft: the saved VND stays as it is when today's rates arrive.
+            if ((draft || existing?.paidIn != null) && _state.value.paidInCurrency != null) {
                 keepRestoredAmount = true
                 fetchExchangeRates()
             }
@@ -171,6 +184,9 @@ class ExpenseFormViewModel(
         savedStateHandle[KEY_SHARE_TEXTS] = ArrayList(state.customShares.values)
         savedStateHandle[KEY_PAID_IN] = state.paidInCurrency
         savedStateHandle[KEY_PAID_IN_AMOUNT] = state.paidInAmountText
+        savedStateHandle[KEY_SAVED_CURRENCY] = savedPaidIn?.currency
+        savedStateHandle[KEY_SAVED_AMOUNT] = savedPaidIn?.amount
+        savedStateHandle[KEY_SAVED_RATE] = savedPaidIn?.rateToVnd
     }
 
     /** [state] with the saved draft; members removed since then are dropped from it. */
@@ -189,7 +205,11 @@ class ExpenseFormViewModel(
             customShares = shareIds.zip(shareTexts).toMap().filterKeys { it in ids },
             paidInCurrency = savedStateHandle[KEY_PAID_IN],
             paidInAmountText = savedStateHandle[KEY_PAID_IN_AMOUNT] ?: "",
-        )
+        ).also {
+            savedPaidIn = PaidIn.of(
+                savedStateHandle[KEY_SAVED_CURRENCY], savedStateHandle[KEY_SAVED_AMOUNT], savedStateHandle[KEY_SAVED_RATE],
+            )
+        }
     }
 
     fun setTitle(text: String) = _state.update { it.copy(title = text, titleError = null) }
@@ -295,6 +315,28 @@ class ExpenseFormViewModel(
         _state.update { it.copy(paidInAmountText = foreign) }
     }
 
+    /**
+     * What to save as "Paid in"; null without a currency or a usable foreign amount (a VND expense).
+     * - Untouched (no edit to the amount, the currency or the foreign amount since it was opened):
+     *   the saved one exactly, so its rate still matches the VND it produced.
+     * - Otherwise: today's rate for the currency if loaded, else the saved rate if the currency is
+     *   still the saved one, else the rate the two amounts imply. Never another currency's rate.
+     */
+    private fun paidInOf(state: ExpenseFormState, vnd: Long): PaidIn? {
+        val currency = state.paidInCurrency ?: return null
+        val foreign = parseForeignAmount(state.paidInAmountText) ?: return null
+        val saved = savedPaidIn?.takeIf { it.currency == currency }
+        if (keepRestoredAmount && saved != null && saved.amount == foreign) return saved
+        val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd?.takeIf { it > 0.0 }
+            ?: saved?.rateToVnd
+            ?: (vnd / foreign)
+        return PaidIn(currency, foreign, rate)
+    }
+
+    /** 12.5 -> "12.5", 12.0 -> "12": how the foreign amount field shows a saved number. */
+    private fun plainNumber(value: Double): String =
+        java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
+
     private fun parseForeignAmount(text: String): Double? {
         val normalized = text.trim().replace(',', '.')
         return normalized.toDoubleOrNull()?.takeIf { it > 0.0 && !it.isNaN() && !it.isInfinite() }
@@ -341,7 +383,10 @@ class ExpenseFormViewModel(
             return
         }
 
-        val input = ExpenseInput(state.title.trim(), amount, payerId, state.category, state.splitType, state.spentAt, shares)
+        val input = ExpenseInput(
+            state.title.trim(), amount, payerId, state.category, state.splitType, state.spentAt, shares,
+            paidIn = paidInOf(state, amount),
+        )
         _state.value = checked.copy(saving = true)
         viewModelScope.launch {
             try {
@@ -383,6 +428,7 @@ class ExpenseFormViewModel(
         ExpenseProblem.SPLIT -> R.string.expense_error_custom_sum
         ExpenseProblem.AMOUNT_NOT_POSITIVE -> R.string.expense_error_amount
         ExpenseProblem.BLANK_TITLE, ExpenseProblem.TITLE_TOO_LONG -> R.string.expense_error_title
+        ExpenseProblem.PAID_IN -> R.string.expense_error_save_failed
     }
 
     companion object {
@@ -398,6 +444,9 @@ class ExpenseFormViewModel(
         private const val KEY_SHARE_TEXTS = "draft_share_texts"
         private const val KEY_PAID_IN = "draft_paid_in"
         private const val KEY_PAID_IN_AMOUNT = "draft_paid_in_amount"
+        private const val KEY_SAVED_CURRENCY = "draft_saved_paid_in_currency"
+        private const val KEY_SAVED_AMOUNT = "draft_saved_paid_in_amount"
+        private const val KEY_SAVED_RATE = "draft_saved_paid_in_rate"
 
         private inline fun <reified E : Enum<E>> enumOrNull(name: String?): E? =
             enumValues<E>().firstOrNull { it.name == name }

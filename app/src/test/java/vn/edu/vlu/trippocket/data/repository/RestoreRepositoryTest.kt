@@ -17,6 +17,7 @@ import vn.edu.vlu.trippocket.data.remote.firebase.BackupRemote
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshot
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotCodec
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotCodecTest.Companion.fullSnapshot
+import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotCodecTest.Companion.paidInSnapshot
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotMapper
 import vn.edu.vlu.trippocket.domain.Limits
 import java.io.IOException
@@ -60,6 +61,17 @@ class RestoreRepositoryTest {
     private suspend fun onPhone(id: String) = t.db.backupDao().rowsOf(id)?.let(TripSnapshotMapper::toSnapshot)
 
     private suspend fun trip(id: String) = t.db.backupDao().trip(id)
+
+    @Test
+    fun anExpensePaidInDollars_comesBackWithItsForeignAmount(): Unit = runBlocking {
+        val backup = paidInSnapshot("t1")
+        remote.put(backup)
+
+        restore.apply(restore.prepare(), emptySet())
+
+        // onPhone maps the Room rows back to a snapshot, so this also checks the backup mapper.
+        assertEquals(backup, onPhone("t1"))
+    }
 
     @Test
     fun aTripOnlyInTheBackup_comesBackWhole_withItsIds_synced(): Unit = runBlocking {

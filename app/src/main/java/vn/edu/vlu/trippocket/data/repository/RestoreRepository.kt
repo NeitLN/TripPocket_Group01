@@ -210,6 +210,9 @@ class RestoreRepository(
                     expense.expenseId, s.tripId, expense.title, expense.amount, expense.payerId,
                     ExpenseCategory.valueOf(expense.category), SplitType.valueOf(expense.splitType),
                     expense.spentAt, expense.createdAt,
+                    originalCurrency = expense.originalCurrency,
+                    originalAmount = expense.originalAmount,
+                    rateToVnd = expense.rateToVnd,
                 )
             )
             db.expenseDao().insertShares(expense.shares.map { (memberId, amount) -> ExpenseShareEntity(expense.expenseId, memberId, amount) })

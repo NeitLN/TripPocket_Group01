@@ -95,7 +95,7 @@ object FullTripFixture {
         )
     }
 
-    /** Large amounts with leftover dong, split between all 15 members. */
+    /** Large amounts with leftover dong, split between all 15 members, all paid in dollars. */
     val expenses: List<ExpenseEntity> = (0 until Limits.MAX_EXPENSES).map { i ->
         ExpenseEntity(
             expenseId = id("expense", i),
@@ -107,6 +107,10 @@ object FullTripFixture {
             splitType = SplitType.EQUAL,
             spentAt = START_DAY + i % 30,
             createdAt = NOW + i,
+            // Schema v2: every expense paid in a foreign currency, the largest a row can get.
+            originalCurrency = "USD",
+            originalAmount = 39_999_999.99,
+            rateToVnd = 25_000.0,
         )
     }
 

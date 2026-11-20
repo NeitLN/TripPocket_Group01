@@ -8,6 +8,11 @@ import org.junit.Test
 class TripSnapshotCodecTest {
 
     companion object {
+        /** [fullSnapshot] whose expense was paid in US dollars (A1, schema v2). */
+        fun paidInSnapshot(tripId: String = "t1") = fullSnapshot(tripId).let { s ->
+            s.copy(expenses = s.expenses.map { it.copy(originalCurrency = "USD", originalAmount = 12.5, rateToVnd = 24_000.08) })
+        }
+
         /** A trip with one row of every kind, shared by the restore tests. */
         fun fullSnapshot(tripId: String = "t1", ownerUid: String = "uid-a", revision: Long = 7) = TripSnapshot(
             tripId = tripId,
@@ -33,6 +38,41 @@ class TripSnapshotCodecTest {
                 ),
             ),
         )
+    }
+
+    @Test
+    fun anExpensePaidInDollars_readsBackUnchanged_andIsMeasuredLikeTheMap() {
+        val snapshot = paidInSnapshot()
+
+        assertEquals(snapshot, TripSnapshotCodec.fromMap(TripSnapshotCodec.toMap(snapshot)))
+        val path = listOf("users", snapshot.ownerUid, "trips", snapshot.tripId)
+        val ofMap = path.sumOf(FirestoreDocumentSize::ofString) + 16 +
+            FirestoreDocumentSize.ofValue(TripSnapshotCodec.toMap(snapshot)) + 32
+        assertEquals(FirestoreDocumentSize.ofTripBackup(snapshot), ofMap)
+    }
+
+    @Test
+    fun aBackupFromBeforeV2_withoutThePaidInKeys_stillReads_asVnd() {
+        val map = TripSnapshotCodec.toMap(fullSnapshot()).toMutableMap()
+        @Suppress("UNCHECKED_CAST")
+        map["expenses"] = (map["expenses"] as List<Map<String, Any?>>).map {
+            it - setOf("originalCurrency", "originalAmount", "rateToVnd")
+        }
+
+        val expense = TripSnapshotCodec.fromMap(map).expenses.single()
+
+        assertNull(expense.originalCurrency)
+        assertNull(expense.originalAmount)
+        assertNull(expense.rateToVnd)
+    }
+
+    @Test
+    fun aWholeForeignAmount_comesBackFromFirestoreAsLong_andIsRead() {
+        val map = TripSnapshotCodec.toMap(paidInSnapshot()).toMutableMap()
+        @Suppress("UNCHECKED_CAST")
+        map["expenses"] = (map["expenses"] as List<Map<String, Any?>>).map { it + ("originalAmount" to 12L) }
+
+        assertEquals(12.0, TripSnapshotCodec.fromMap(map).expenses.single().originalAmount!!, 0.0)
     }
 
     @Test

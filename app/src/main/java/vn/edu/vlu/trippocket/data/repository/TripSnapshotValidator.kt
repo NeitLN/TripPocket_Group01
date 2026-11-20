@@ -1,7 +1,9 @@
 package vn.edu.vlu.trippocket.data.repository
 
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
+import vn.edu.vlu.trippocket.data.model.PaidIn
 import vn.edu.vlu.trippocket.data.model.SplitType
+import vn.edu.vlu.trippocket.data.remote.firebase.ExpenseSnapshot
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshot
 import vn.edu.vlu.trippocket.domain.ExpenseCalculator
 import vn.edu.vlu.trippocket.domain.Limits
@@ -52,11 +54,18 @@ object TripSnapshotValidator {
                     ExpenseCategory.entries.none { c -> c.name == it.category } ||
                     SplitType.entries.none { t -> t.name == it.splitType } ||
                     it.payerId !in memberIds || !memberIds.containsAll(it.shares.keys) ||
-                    ExpenseCalculator.validateCustomSplit(it.amount, it.shares) != null
+                    ExpenseCalculator.validateCustomSplit(it.amount, it.shares) != null ||
+                    !it.hasValidPaidIn()
             } -> "expense"
             else -> null
         }
     }
 
     private fun String.isValidText() = isNotBlank() && length <= Limits.MAX_TEXT
+
+    /** "Paid in" is optional, but when any of its three fields is there, all three must be valid. */
+    private fun ExpenseSnapshot.hasValidPaidIn(): Boolean {
+        if (originalCurrency == null && originalAmount == null && rateToVnd == null) return true
+        return PaidIn.of(originalCurrency, originalAmount, rateToVnd)?.isValid == true
+    }
 }
