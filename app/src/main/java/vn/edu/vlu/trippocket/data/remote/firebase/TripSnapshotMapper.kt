@@ -50,6 +50,9 @@ object TripSnapshotMapper {
                     spentAt = expense.spentAt,
                     createdAt = expense.createdAt,
                     shares = sharesByExpense[expense.expenseId].orEmpty().associate { it.memberId to it.shareAmount },
+                    originalCurrency = expense.originalCurrency,
+                    originalAmount = expense.originalAmount,
+                    rateToVnd = expense.rateToVnd,
                 )
             },
         )

@@ -20,6 +20,7 @@ import vn.edu.vlu.trippocket.appContainer
 import vn.edu.vlu.trippocket.data.model.ExchangeRates
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
+import vn.edu.vlu.trippocket.data.model.PaidIn
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.model.TripMember
 import vn.edu.vlu.trippocket.data.remote.ApiResult
@@ -110,6 +111,9 @@ class ExpenseFormViewModel(
      */
     private var keepRestoredAmount = false
 
+    /** The rate saved with the expense being edited; used when no fresh rate is loaded (offline). */
+    private var savedRateToVnd: Double? = null
+
     private val _state = MutableStateFlow(ExpenseFormState(isEdit = expenseId != null, spentAt = today()))
     val state: StateFlow<ExpenseFormState> = _state.asStateFlow()
 
@@ -142,10 +146,15 @@ class ExpenseFormViewModel(
                         splitType = existing.splitType,
                         participants = existing.shares.filterValues { it > 0 }.keys,
                         customShares = existing.shares.mapValues { it.value.toString() },
+                        // Schema v2: reopening shows what was paid, e.g. 12.5 USD, again.
+                        paidInCurrency = existing.paidIn?.currency,
+                        paidInAmountText = existing.paidIn?.amount?.let(::plainNumber).orEmpty(),
                     )
                 }
             }
-            if (draft && _state.value.paidInCurrency != null) {
+            savedRateToVnd = existing?.paidIn?.rateToVnd
+            // Like a draft: the saved VND stays as it is when today's rates arrive.
+            if ((draft || existing?.paidIn != null) && _state.value.paidInCurrency != null) {
                 keepRestoredAmount = true
                 fetchExchangeRates()
             }
@@ -295,6 +304,24 @@ class ExpenseFormViewModel(
         _state.update { it.copy(paidInAmountText = foreign) }
     }
 
+    /**
+     * What to save as "Paid in": the currency and the foreign amount the form shows, at today's
+     * rate if one is loaded, otherwise the rate saved with the expense, otherwise the rate the two
+     * amounts imply. null without a currency or a usable foreign amount (a VND expense).
+     */
+    private fun paidInOf(state: ExpenseFormState, vnd: Long): PaidIn? {
+        val currency = state.paidInCurrency ?: return null
+        val foreign = parseForeignAmount(state.paidInAmountText) ?: return null
+        val rate = state.exchangeRates?.items?.find { it.code == currency }?.rateToVnd?.takeIf { it > 0.0 }
+            ?: savedRateToVnd
+            ?: (vnd / foreign)
+        return PaidIn(currency, foreign, rate)
+    }
+
+    /** 12.5 -> "12.5", 12.0 -> "12": how the foreign amount field shows a saved number. */
+    private fun plainNumber(value: Double): String =
+        java.math.BigDecimal.valueOf(value).stripTrailingZeros().toPlainString()
+
     private fun parseForeignAmount(text: String): Double? {
         val normalized = text.trim().replace(',', '.')
         return normalized.toDoubleOrNull()?.takeIf { it > 0.0 && !it.isNaN() && !it.isInfinite() }
@@ -341,7 +368,10 @@ class ExpenseFormViewModel(
             return
         }
 
-        val input = ExpenseInput(state.title.trim(), amount, payerId, state.category, state.splitType, state.spentAt, shares)
+        val input = ExpenseInput(
+            state.title.trim(), amount, payerId, state.category, state.splitType, state.spentAt, shares,
+            paidIn = paidInOf(state, amount),
+        )
         _state.value = checked.copy(saving = true)
         viewModelScope.launch {
             try {
@@ -383,6 +413,7 @@ class ExpenseFormViewModel(
         ExpenseProblem.SPLIT -> R.string.expense_error_custom_sum
         ExpenseProblem.AMOUNT_NOT_POSITIVE -> R.string.expense_error_amount
         ExpenseProblem.BLANK_TITLE, ExpenseProblem.TITLE_TOO_LONG -> R.string.expense_error_title
+        ExpenseProblem.PAID_IN -> R.string.expense_error_save_failed
     }
 
     companion object {

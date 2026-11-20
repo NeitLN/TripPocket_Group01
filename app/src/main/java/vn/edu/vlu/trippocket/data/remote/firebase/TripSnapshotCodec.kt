@@ -58,7 +58,7 @@ object TripSnapshotCodec {
                 "spentAt" to it.spentAt,
                 "createdAt" to it.createdAt,
                 "shares" to it.shares,
-            )
+            ) + paidInFields(it)
         },
     )
 
@@ -111,11 +111,38 @@ object TripSnapshotCodec {
                 shares = it.value<Map<*, *>>("shares").entries.associate { (key, amount) ->
                     (key as? String ?: bad("shares")) to (amount as? Long ?: bad("shares"))
                 },
+                // Optional: absent in backups written before v2.
+                originalCurrency = it.stringOrNull("originalCurrency"),
+                originalAmount = it.doubleOrNull("originalAmount"),
+                rateToVnd = it.doubleOrNull("rateToVnd"),
             )
         },
     )
 
     private inline fun <reified T> Map<*, *>.value(key: String): T = this[key] as? T ?: bad(key)
+
+    /**
+     * "Paid in" is always written, null for a VND expense: FirestoreDocumentSize measures the
+     * snapshot's getters, nulls included, and the 1 MiB check must measure this same document.
+     */
+    private fun paidInFields(e: ExpenseSnapshot): Map<String, Any?> = mapOf(
+        "originalCurrency" to e.originalCurrency,
+        "originalAmount" to e.originalAmount,
+        "rateToVnd" to e.rateToVnd,
+    )
+
+    private fun Map<*, *>.stringOrNull(key: String): String? = when (val v = this[key]) {
+        null -> null
+        is String -> v
+        else -> bad(key)
+    }
+
+    /** Firestore hands back a whole double (e.g. 12.0) as a Long, so any Number is accepted. */
+    private fun Map<*, *>.doubleOrNull(key: String): Double? = when (val v = this[key]) {
+        null -> null
+        is Number -> v.toDouble()
+        else -> bad(key)
+    }
 
     private fun Map<*, *>.string(key: String): String = value(key)
 

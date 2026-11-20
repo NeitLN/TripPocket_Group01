@@ -71,4 +71,11 @@ data class ExpenseSnapshot(
     val createdAt: Long = 0,
     /** memberId -> share in VND; adds up to [amount]. */
     val shares: Map<String, Long> = emptyMap(),
+    /**
+     * A1 "Paid in": all three or none (null for a VND expense). Backups written before v2 do not
+     * have these keys at all; the codec reads a missing key as null, so they still restore.
+     */
+    val originalCurrency: String? = null,
+    val originalAmount: Double? = null,
+    val rateToVnd: Double? = null,
 )

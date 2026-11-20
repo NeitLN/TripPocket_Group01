@@ -7,6 +7,7 @@ import org.junit.Test
 import vn.edu.vlu.trippocket.data.remote.firebase.ChecklistItemSnapshot
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshot
 import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotCodecTest.Companion.fullSnapshot
+import vn.edu.vlu.trippocket.data.remote.firebase.TripSnapshotCodecTest.Companion.paidInSnapshot
 import vn.edu.vlu.trippocket.domain.Limits
 
 /** A4: a backup snapshot is checked whole before restore writes any of it (proposal 6.2). */
@@ -19,6 +20,18 @@ class TripSnapshotValidatorTest {
 
     @Test
     fun aFullValidTrip_passes() = assertNull(problem(ok))
+
+    @Test
+    fun paidIn_isOptional_butMustBeWholeAndValid() {
+        assertNull(problem(paidInSnapshot()))
+        fun withPaidIn(currency: String?, amount: Double?, rate: Double?) =
+            ok.copy(expenses = ok.expenses.map { it.copy(originalCurrency = currency, originalAmount = amount, rateToVnd = rate) })
+
+        assertEquals("expense", problem(withPaidIn("USD", 12.5, null)))
+        assertEquals("expense", problem(withPaidIn("usd", 12.5, 25_000.0)))
+        assertEquals("expense", problem(withPaidIn("USD", 0.0, 25_000.0)))
+        assertEquals("expense", problem(withPaidIn("USD", 12.5, Double.NaN)))
+    }
 
     @Test
     fun theTripAtEveryCap_passes() {

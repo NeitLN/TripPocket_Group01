@@ -13,6 +13,7 @@ import vn.edu.vlu.trippocket.data.local.entity.ExpenseShareEntity
 import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.Expense
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
+import vn.edu.vlu.trippocket.data.model.PaidIn
 import vn.edu.vlu.trippocket.data.model.TripBalances
 import vn.edu.vlu.trippocket.data.model.TripMember
 import vn.edu.vlu.trippocket.data.model.TripTotals
@@ -27,7 +28,7 @@ import java.util.UUID
 class InvalidExpenseException(val problem: ExpenseProblem) :
     IllegalArgumentException("Invalid expense: $problem")
 
-enum class ExpenseProblem { BLANK_TITLE, TITLE_TOO_LONG, AMOUNT_NOT_POSITIVE, SPLIT, MEMBER_NOT_IN_TRIP, NOT_FOUND }
+enum class ExpenseProblem { BLANK_TITLE, TITLE_TOO_LONG, AMOUNT_NOT_POSITIVE, SPLIT, MEMBER_NOT_IN_TRIP, NOT_FOUND, PAID_IN }
 
 /** Why the repository refused to save or remove a member; the whole write is rolled back. */
 class InvalidMemberException(val problem: MemberProblem) :
@@ -186,6 +187,7 @@ class ExpenseRepository(
             input.title.trim().length > Limits.MAX_TEXT -> ExpenseProblem.TITLE_TOO_LONG
             input.amount <= 0 -> ExpenseProblem.AMOUNT_NOT_POSITIVE
             ExpenseCalculator.validateCustomSplit(input.amount, input.shares) != null -> ExpenseProblem.SPLIT
+            input.paidIn != null && !input.paidIn.isValid -> ExpenseProblem.PAID_IN
             else -> {
                 // Payer and participants must all be members of this trip.
                 val tripMembers = memberDao.idsByTrip(tripId).toSet()
@@ -206,6 +208,10 @@ class ExpenseRepository(
         splitType = input.splitType,
         spentAt = input.spentAt.toEpochDay(),
         createdAt = createdAt,
+        // The whole row is written on an update, so "Paid in" must come from the input every time.
+        originalCurrency = input.paidIn?.currency,
+        originalAmount = input.paidIn?.amount,
+        rateToVnd = input.paidIn?.rateToVnd,
     )
 
     /** Members with a 0 share took no part, so they get no row. */
@@ -225,5 +231,6 @@ class ExpenseRepository(
         splitType = row.expense.splitType,
         spentAt = LocalDate.ofEpochDay(row.expense.spentAt),
         shares = row.shares.associate { it.memberId to it.shareAmount },
+        paidIn = PaidIn.of(row.expense.originalCurrency, row.expense.originalAmount, row.expense.rateToVnd),
     )
 }

@@ -35,7 +35,29 @@ data class Expense(
     val spentAt: LocalDate,
     /** memberId -> share in VND. Always adds up to [amount]. */
     val shares: Map<String, Long>,
+    /** What was actually paid when it was not VND ("Paid in"); null for a VND expense. */
+    val paidIn: PaidIn? = null,
 )
+
+/**
+ * A1 (schema v2): the foreign amount behind a VND expense, e.g. 12.5 USD at 25,704 VND per USD.
+ * [amount] of [currency] is what the receipt says; the expense's VND amount stays the one the
+ * shares add up to.
+ */
+data class PaidIn(val currency: String, val amount: Double, val rateToVnd: Double) {
+    /** A 3-letter upper-case code and two finite positive numbers. */
+    val isValid: Boolean
+        get() = CURRENCY_CODE.matches(currency) &&
+            amount.isFinite() && amount > 0.0 && rateToVnd.isFinite() && rateToVnd > 0.0
+
+    companion object {
+        private val CURRENCY_CODE = Regex("[A-Z]{3}")
+
+        /** From the three nullable columns / backup fields; null unless all three are there. */
+        fun of(currency: String?, amount: Double?, rateToVnd: Double?): PaidIn? =
+            if (currency != null && amount != null && rateToVnd != null) PaidIn(currency, amount, rateToVnd) else null
+    }
+}
 
 data class Settlement(val fromId: String, val toId: String, val amount: Long)
 
@@ -61,6 +83,8 @@ data class ExpenseInput(
     val spentAt: LocalDate,
     /** memberId -> share in VND; must add up to [amount]. */
     val shares: Map<String, Long>,
+    /** null = paid in VND; editing an expense with null clears an earlier foreign amount. */
+    val paidIn: PaidIn? = null,
 )
 
 /** What a trip card shows about members and money. */

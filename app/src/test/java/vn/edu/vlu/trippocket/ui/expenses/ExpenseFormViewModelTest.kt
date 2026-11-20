@@ -24,6 +24,7 @@ import vn.edu.vlu.trippocket.data.local.TestDatabase
 import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
+import vn.edu.vlu.trippocket.data.model.PaidIn
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateApi
 import vn.edu.vlu.trippocket.data.remote.exchangerate.ExchangeRateResponse
@@ -136,6 +137,40 @@ class ExpenseFormViewModelTest {
         assertEquals(SplitType.CUSTOM, state.splitType)
         assertEquals(mapOf("a" to "100000", "c" to "200000"), state.customShares)
         assertEquals(setOf("a", "b"), state.participants)
+    }
+
+    @Test
+    fun paidIn_isSaved_andReopeningTheExpenseShowsItAgain_withTheSameVnd() = runBlocking {
+        val form = form()
+        form.setTitle("Phở")
+        form.setPaidInCurrency("USD")
+        withTimeout(5_000) { form.state.first { it.exchangeRates != null } }
+        form.setPaidInAmount("4.5") // 1 USD = 25,000 VND in the fake rates
+        assertEquals("112500", form.state.value.amountText)
+
+        form.save()
+        form.awaitDone()
+
+        val saved = repository.observeExpenses("t1").first().single()
+        assertEquals(PaidIn("USD", 4.5, 25_000.0), saved.paidIn)
+
+        val reopened = form(saved.expenseId)
+        val state = withTimeout(5_000) { reopened.state.first { !it.loading && it.exchangeRates != null } }
+        assertEquals("USD", state.paidInCurrency)
+        assertEquals("4.5", state.paidInAmountText)
+        assertEquals("112500", state.amountText)
+    }
+
+    @Test
+    fun aVndOnlyExpense_savesNoPaidIn() = runBlocking {
+        val form = form()
+        form.setTitle("Bánh mì")
+        form.setAmount("30000")
+
+        form.save()
+        form.awaitDone()
+
+        assertNull(repository.observeExpenses("t1").first().single().paidIn)
     }
 
     @Test

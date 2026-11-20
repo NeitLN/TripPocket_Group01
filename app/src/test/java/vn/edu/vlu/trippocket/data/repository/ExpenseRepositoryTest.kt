@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.runBlocking
 import org.junit.After
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Assert.fail
 import org.junit.Before
@@ -20,6 +21,7 @@ import vn.edu.vlu.trippocket.data.local.entity.ExpenseShareEntity
 import vn.edu.vlu.trippocket.data.local.entity.TripMemberEntity
 import vn.edu.vlu.trippocket.data.model.ExpenseCategory
 import vn.edu.vlu.trippocket.data.model.ExpenseInput
+import vn.edu.vlu.trippocket.data.model.PaidIn
 import vn.edu.vlu.trippocket.data.model.SplitType
 import vn.edu.vlu.trippocket.data.model.SyncStatus
 import vn.edu.vlu.trippocket.data.model.TripMember
@@ -71,6 +73,36 @@ class ExpenseRepositoryTest {
         }
         fail("Expected ${E::class.simpleName}")
         throw AssertionError()
+    }
+
+    @Test
+    fun paidIn_isSaved_keptByAnEditThatPassesIt_andClearedByOneThatDoesNot() = runBlocking {
+        val dollars = PaidIn("USD", 12.5, 24_000.08)
+        val shares = ExpenseCalculator.splitEqually(300_001, members)
+        val id = repository.addExpense("t1", input(300_001, shares).copy(paidIn = dollars))
+        assertEquals(dollars, repository.getExpense(id)!!.paidIn)
+
+        repository.updateExpense("t1", id, input(300_001, shares).copy(title = "Lẩu bò", paidIn = dollars))
+        assertEquals(dollars, repository.getExpense(id)!!.paidIn)
+
+        repository.updateExpense("t1", id, input(300_001, shares))
+        assertNull(repository.getExpense(id)!!.paidIn)
+    }
+
+    @Test
+    fun anInvalidPaidIn_isRefused_andNothingIsWritten() = runBlocking {
+        val problem = try {
+            repository.addExpense(
+                "t1",
+                input(100_000, ExpenseCalculator.splitEqually(100_000, members)).copy(paidIn = PaidIn("usd", 4.0, 25_000.0)),
+            )
+            null
+        } catch (e: InvalidExpenseException) {
+            e.problem
+        }
+
+        assertEquals(ExpenseProblem.PAID_IN, problem)
+        assertTrue(repository.observeExpenses("t1").first().isEmpty())
     }
 
     @Test
